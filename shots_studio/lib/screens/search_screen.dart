@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/screens/screenshot_details_screen.dart';
-import 'package:shots_studio/widgets/screenshot_card.dart';
+import 'package:shots_studio/widgets/screenshots/screenshot_card.dart';
 
 class SearchScreen extends StatefulWidget {
   final List<Screenshot> allScreenshots;
@@ -90,6 +90,9 @@ class _SearchScreenState extends State<SearchScreen> {
               allCollections: widget.allCollections,
               onUpdateCollection: widget.onUpdateCollection,
               onDeleteScreenshot: widget.onDeleteScreenshot,
+              onScreenshotUpdated: () {
+                setState(() {});
+              },
             ),
       ),
     );
@@ -97,6 +100,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: TextField(
@@ -105,18 +109,20 @@ class _SearchScreenState extends State<SearchScreen> {
           decoration: InputDecoration(
             hintText: 'Search by title, description, tags...',
             border: InputBorder.none,
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+            hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant),
           ),
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: theme.colorScheme.onSurface),
         ),
-        backgroundColor: Colors.black,
       ),
       body:
           _filteredScreenshots.isEmpty && _searchQuery.isNotEmpty
               ? Center(
                 child: Text(
                   'No screenshots found for "$_searchQuery"',
-                  style: const TextStyle(fontSize: 16),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               )
               : GridView.builder(

@@ -9,20 +9,15 @@ class CollectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const double kDefaultInnerPadding = 12.0;
-    const double kDefaultOuterOffset = 8.0;
+    const double kDefaultInnerPadding = 8.0;
+    const double kDefaultOuterOffset = 6.0;
     const double kIconContainerSize = 24.0;
     const double kIconGlyphSize = 16.0;
-    const double kGapBetweenIconAndText = 4.0;
 
-    final double textContainerLeftPadding =
-        collection.isAutoAddEnabled
-            ? kDefaultOuterOffset +
-                kIconContainerSize +
-                kGapBetweenIconAndText // Calculated for icon: 8 (offset) + 24 (size) + 4 (gap) = 36
-            : kDefaultInnerPadding;
+    final double textContainerLeftPadding = kDefaultInnerPadding;
 
     return Card(
+      color: Theme.of(context).colorScheme.secondaryContainer,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -42,10 +37,10 @@ class CollectionCard extends StatelessWidget {
                 children: [
                   Text(
                     collection.name ?? 'Untitled Collection',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -60,16 +55,16 @@ class CollectionCard extends StatelessWidget {
                 width: kIconContainerSize,
                 height: kIconContainerSize,
                 decoration: BoxDecoration(
-                  color: Colors.amber.shade200,
+                  color: Theme.of(context).colorScheme.primary,
                   shape: BoxShape.circle,
                 ),
                 child: Center(
                   child: Text(
                     '${collection.screenshotCount}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: Theme.of(context).colorScheme.onPrimary,
                     ),
                   ),
                 ),
@@ -83,13 +78,13 @@ class CollectionCard extends StatelessWidget {
                   width: kIconContainerSize,
                   height: kIconContainerSize,
                   decoration: BoxDecoration(
-                    color: Colors.amber.shade200,
+                    color: Theme.of(context).colorScheme.primary,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.auto_awesome_outlined,
                     size: kIconGlyphSize,
-                    color: Colors.black,
+                    color: Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
               ),

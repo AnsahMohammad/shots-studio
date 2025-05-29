@@ -54,10 +54,11 @@ class SnackbarService {
     String message, {
     bool forceShow = false,
   }) {
+    final theme = Theme.of(context);
     showSnackbar(
       context,
       message: message,
-      backgroundColor: Colors.redAccent,
+      backgroundColor: theme.colorScheme.error,
       forceShow: forceShow,
     );
   }
@@ -67,10 +68,11 @@ class SnackbarService {
     String message, {
     bool forceShow = false,
   }) {
+    final theme = Theme.of(context);
     showSnackbar(
       context,
       message: message,
-      backgroundColor: Colors.green,
+      backgroundColor: theme.colorScheme.primary,
       forceShow: forceShow,
     );
   }
@@ -80,10 +82,11 @@ class SnackbarService {
     String message, {
     bool forceShow = false,
   }) {
+    final theme = Theme.of(context);
     showSnackbar(
       context,
       message: message,
-      backgroundColor: Colors.orange,
+      backgroundColor: theme.colorScheme.tertiary,
       forceShow: forceShow,
     );
   }
@@ -93,10 +96,11 @@ class SnackbarService {
     String message, {
     bool forceShow = false,
   }) {
+    final theme = Theme.of(context);
     showSnackbar(
       context,
       message: message,
-      backgroundColor: Colors.blueAccent,
+      backgroundColor: theme.colorScheme.secondary,
       forceShow: forceShow,
     );
   }

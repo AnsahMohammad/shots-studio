@@ -25,7 +25,6 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
         'Shots Studio',
         style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
       ),
-      backgroundColor: Colors.transparent,
       elevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.menu),

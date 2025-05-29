@@ -16,15 +16,22 @@ class FullScreenImageViewer extends StatelessWidget {
     } else if (screenshot.bytes != null) {
       imageContent = Image.memory(screenshot.bytes!);
     } else {
-      imageContent = const Center(
+      imageContent = Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.broken_image, size: 100, color: Colors.white54),
+            Icon(
+              Icons.broken_image,
+              size: 100,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
             SizedBox(height: 16),
             Text(
               'Image not available',
-              style: TextStyle(color: Colors.white70, fontSize: 18),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 18,
+              ),
             ),
           ],
         ),
@@ -32,17 +39,19 @@ class FullScreenImageViewer extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
+          icon: const Icon(Icons.close),
           onPressed: () => Navigator.of(context).pop(),
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
         title: Text(
           screenshot.title ?? 'Screenshot',
-          style: const TextStyle(color: Colors.white, fontSize: 18),
+          style: TextStyle(
+            fontSize: 18,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           overflow: TextOverflow.ellipsis,
         ),
       ),

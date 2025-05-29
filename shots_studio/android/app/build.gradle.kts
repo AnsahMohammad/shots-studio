@@ -42,12 +42,13 @@ android {
 
     applicationVariants.all {
         val variant = this
-        variant.outputs.all {
-            val output = this
-            if (output is com.android.build.gradle.internal.api.ApkVariantOutputImpl) {
-                output.outputFileName = "${variant.name}-${variant.versionName}.apk"
+        variant.outputs
+            .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
+            .forEach { output ->
+                val outputFileName = "shots_studio-${variant.buildType.name}-${variant.versionName}.apk"
+                output.outputFileName = outputFileName
+                println("Setting APK output name to: $outputFileName")
             }
-        }
     }
 }
 

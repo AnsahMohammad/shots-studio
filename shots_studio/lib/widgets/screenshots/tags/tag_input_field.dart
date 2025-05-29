@@ -36,17 +36,26 @@ class _TagInputFieldState extends State<TagInputField> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.grey[800],
+          color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(80),
           borderRadius: BorderRadius.circular(20),
         ),
         child: InkWell(
           onTap: () => setState(() => _isEditing = true),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.add, size: 16, color: Colors.white70),
+              Icon(
+                Icons.add,
+                size: 16,
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
+              ),
               SizedBox(width: 4),
-              Text('Add Tag', style: TextStyle(color: Colors.white70)),
+              Text(
+                'Add Tag',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+                ),
+              ),
             ],
           ),
         ),
@@ -56,7 +65,7 @@ class _TagInputFieldState extends State<TagInputField> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        color: Colors.grey[800],
+        color: Theme.of(context).colorScheme.secondaryContainer,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -66,7 +75,9 @@ class _TagInputFieldState extends State<TagInputField> {
             child: TextField(
               controller: _controller,
               autofocus: true,
-              style: const TextStyle(color: Colors.white70),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
+              ),
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
@@ -79,7 +90,11 @@ class _TagInputFieldState extends State<TagInputField> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.check, size: 16, color: Colors.white70),
+            icon: Icon(
+              Icons.check,
+              size: 16,
+              color: Theme.of(context).colorScheme.onSecondaryContainer,
+            ),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             onPressed: _submitTag,

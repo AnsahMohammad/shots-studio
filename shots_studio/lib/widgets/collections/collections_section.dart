@@ -4,8 +4,8 @@ import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/screens/create_collection_screen.dart';
 import 'package:shots_studio/screens/collection_detail_screen.dart';
 import 'package:shots_studio/screens/all_collections_screen.dart';
-import 'package:shots_studio/widgets/collection_card.dart';
-import 'package:shots_studio/widgets/add_collection_button.dart';
+import 'package:shots_studio/widgets/collections/collection_card.dart';
+import 'package:shots_studio/widgets/collections/add_collection_button.dart';
 
 class CollectionsSection extends StatelessWidget {
   final List<Collection> collections;
@@ -57,7 +57,7 @@ class CollectionsSection extends StatelessWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.arrow_forward_ios),
-                color: Colors.amber.shade200,
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
@@ -79,46 +79,47 @@ class CollectionsSection extends StatelessWidget {
         Container(
           height: 150,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Expanded(
-                child:
-                    collections.isEmpty
-                        ? _buildCreateFirstCollectionCard(context)
-                        : ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: collections.length,
-                          itemBuilder: (context, index) {
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 16.0),
-                              child: CollectionCard(
-                                collection: collections[index],
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) => CollectionDetailScreen(
-                                            collection: collections[index],
-                                            allScreenshots: screenshots,
-                                            onUpdateCollection:
-                                                onUpdateCollection,
-                                            onDeleteCollection:
-                                                onDeleteCollection,
-                                            onDeleteScreenshot:
-                                                onDeleteScreenshot,
-                                          ),
+          child:
+              collections.isEmpty
+                  ? ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      _buildCreateFirstCollectionCard(context),
+                      AddCollectionButton(
+                        onTap: () => _createCollection(context),
+                      ),
+                    ],
+                  )
+                  : ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: collections.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index < collections.length) {
+                        return CollectionCard(
+                          collection: collections[index],
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => CollectionDetailScreen(
+                                      collection: collections[index],
+                                      allScreenshots: screenshots,
+                                      onUpdateCollection: onUpdateCollection,
+                                      onDeleteCollection: onDeleteCollection,
+                                      onDeleteScreenshot: onDeleteScreenshot,
                                     ),
-                                  );
-                                },
                               ),
                             );
                           },
-                        ),
-              ),
-              const SizedBox(width: 16),
-              AddCollectionButton(onTap: () => _createCollection(context)),
-            ],
-          ),
+                        );
+                      } else {
+                        // Add collection button at the end
+                        return AddCollectionButton(
+                          onTap: () => _createCollection(context),
+                        );
+                      }
+                    },
+                  ),
         ),
       ],
     );
@@ -126,22 +127,28 @@ class CollectionsSection extends StatelessWidget {
 
   Widget _buildCreateFirstCollectionCard(BuildContext context) {
     return Card(
-      color: Colors.brown[800],
+      color: Theme.of(context).colorScheme.secondaryContainer,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
+          children: [
             Text(
               'Create your first collection to',
-              style: TextStyle(fontSize: 18, color: Colors.white70),
+              style: TextStyle(
+                fontSize: 18,
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
+              ),
             ),
             SizedBox(height: 4),
             Text(
               'organize your screenshots',
-              style: TextStyle(fontSize: 18, color: Colors.white70),
+              style: TextStyle(
+                fontSize: 18,
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
+              ),
             ),
           ],
         ),

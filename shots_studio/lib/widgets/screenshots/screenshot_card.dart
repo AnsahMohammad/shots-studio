@@ -19,7 +19,7 @@ class ScreenshotCard extends StatelessWidget {
       imageWidget = Image.file(
         File(screenshot.path!),
         fit: BoxFit.cover,
-        cacheWidth: 300, // cacheHeight is automatically calculated
+        cacheWidth: 300,
         frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
           if (wasSynchronouslyLoaded) return child;
           return AnimatedOpacity(
@@ -29,8 +29,11 @@ class ScreenshotCard extends StatelessWidget {
           );
         },
         errorBuilder: (context, error, stackTrace) {
-          return const Center(
-            child: Icon(Icons.broken_image, color: Colors.grey),
+          return Center(
+            child: Icon(
+              Icons.broken_image,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           );
         },
       );
@@ -38,7 +41,7 @@ class ScreenshotCard extends StatelessWidget {
       imageWidget = Image.memory(
         screenshot.bytes!,
         fit: BoxFit.cover,
-        cacheWidth: 300, // cacheHeight is automatically calculated
+        cacheWidth: 300,
         frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
           if (wasSynchronouslyLoaded) return child;
           return AnimatedOpacity(
@@ -48,8 +51,11 @@ class ScreenshotCard extends StatelessWidget {
           );
         },
         errorBuilder: (context, error, stackTrace) {
-          return const Center(
-            child: Icon(Icons.broken_image, color: Colors.grey),
+          return Center(
+            child: Icon(
+              Icons.broken_image,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           );
         },
       );
@@ -58,27 +64,35 @@ class ScreenshotCard extends StatelessWidget {
     }
 
     return RepaintBoundary(
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Stack(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [Expanded(child: imageWidget)],
-              ),
-              if (screenshot.aiProcessed)
-                Positioned(
-                  bottom: 4,
-                  right: 4,
-                  child: Icon(
-                    Icons.check_circle,
-                    color: Colors.amber.shade200,
-                    size: 20,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Theme.of(context).colorScheme.secondaryContainer,
+            width: 3.0,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Card(
+          margin: EdgeInsets.zero,
+          elevation: 0,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: Stack(
+              children: [
+                Positioned.fill(child: imageWidget),
+                if (screenshot.aiProcessed)
+                  Positioned(
+                    bottom: 4,
+                    right: 4,
+                    child: Icon(
+                      Icons.check_circle,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 20,
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

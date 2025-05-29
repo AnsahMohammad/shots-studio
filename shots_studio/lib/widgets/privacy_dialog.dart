@@ -25,7 +25,7 @@ class PrivacyAcknowledgementDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AlertDialog(
-      backgroundColor: theme.cardTheme.color ?? Colors.grey[900],
+      backgroundColor: theme.colorScheme.surface,
       title: Text(
         'Data Processing Acknowledgment',
         style: TextStyle(color: theme.colorScheme.primary),
@@ -36,7 +36,7 @@ class PrivacyAcknowledgementDialog extends StatelessWidget {
             Text(
               "By clicking 'Agree & Continue', you acknowledge and consent to the following:\n\n"
               "Shots Studio utilizes Google Gemini, a third-party cloud-based AI service, to process and analyze your images for features such as generating searchable text, suggesting tags, and organizing collections. For these features to function, your images will be transmitted to and processed by Google's servers.\n",
-              style: TextStyle(color: Colors.white70),
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 10),
             InkWell(
@@ -69,7 +69,7 @@ class PrivacyAcknowledgementDialog extends StatelessWidget {
               "\nShots Studio itself does not permanently store your original images on its own servers after they have been processed by Google Gemini for the aforementioned AI features.\n\n"
               "Please ensure you review and are comfortable with Google's terms and privacy practices before proceeding. If you do not agree, you may not be able to use the AI-powered features of this application.\n"
               "P.S. Don't worry, your cat memes are safe with us. 😺",
-              style: TextStyle(color: Colors.white70),
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -93,9 +93,9 @@ class PrivacyAcknowledgementDialog extends StatelessWidget {
           style: TextButton.styleFrom(
             backgroundColor: theme.colorScheme.primary,
           ),
-          child: const Text(
+          child: Text(
             'Agree & Continue',
-            style: TextStyle(color: Colors.black),
+            style: TextStyle(color: theme.colorScheme.onPrimary),
           ),
           onPressed: () {
             Navigator.of(context).pop();

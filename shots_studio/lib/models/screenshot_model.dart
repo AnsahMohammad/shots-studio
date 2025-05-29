@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:shots_studio/models/gemini_model.dart';
+import 'package:shots_studio/models/collection_model.dart';
 
 class Screenshot {
   String id;
@@ -14,6 +15,7 @@ class Screenshot {
   DateTime addedOn;
   AiMetaData? aiMetadata;
   int? fileSize;
+  bool isDeleted;
 
   Screenshot({
     required this.id,
@@ -27,6 +29,7 @@ class Screenshot {
     required this.addedOn,
     this.aiMetadata,
     this.fileSize,
+    this.isDeleted = false,
   }) : collectionIds = collectionIds ?? [];
 
   void addToCollections(List<String> collections) {
@@ -49,6 +52,7 @@ class Screenshot {
       'addedOn': addedOn.toIso8601String(),
       'aiMetadata': aiMetadata?.toJson(),
       'fileSize': fileSize,
+      'isDeleted': isDeleted,
     };
   }
 
@@ -70,6 +74,7 @@ class Screenshot {
               ? AiMetaData.fromJson(json['aiMetadata'] as Map<String, dynamic>)
               : null,
       fileSize: json['fileSize'] as int?,
+      isDeleted: json['isDeleted'] as bool? ?? false,
     );
   }
 }

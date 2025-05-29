@@ -6,8 +6,9 @@ import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/screens/full_screen_image_viewer.dart';
 import 'package:shots_studio/services/snackbar_service.dart';
-import 'package:shots_studio/widgets/tag_input_field.dart';
-import 'package:shots_studio/widgets/tag_chip.dart';
+import 'package:shots_studio/widgets/screenshots/tags/tag_input_field.dart';
+import 'package:shots_studio/widgets/screenshots/tags/tag_chip.dart';
+import 'package:shots_studio/widgets/screenshots/screenshot_collection_dialog.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shots_studio/utils/reminder_utils.dart';
 
@@ -16,6 +17,7 @@ class ScreenshotDetailScreen extends StatefulWidget {
   final List<Collection> allCollections;
   final Function(Collection) onUpdateCollection;
   final Function(String) onDeleteScreenshot;
+  final VoidCallback? onScreenshotUpdated;
 
   const ScreenshotDetailScreen({
     super.key,
@@ -23,6 +25,7 @@ class ScreenshotDetailScreen extends StatefulWidget {
     required this.allCollections,
     required this.onUpdateCollection,
     required this.onDeleteScreenshot,
+    this.onScreenshotUpdated,
   });
 
   @override
@@ -50,12 +53,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
   }
 
   void _updateScreenshotDetails() {
-    // This can be called when description or tags change and need to be persisted
-    // For now, tags are updated directly, description on change.
-    // If you had a separate save button, it would go here.
-    // For simplicity, we're updating the model directly.
-    // Potentially, you might want a callback to HomeScreen to update the main _screenshots list
-    // if Screenshot objects are not treated as mutable references throughout the app.
+    widget.onScreenshotUpdated?.call();
   }
 
   void _addTag(String tag) {
@@ -87,80 +85,14 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
   void _showAddToCollectionDialog() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Theme.of(context).colorScheme.surface,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
-            return Container(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'Add to Collection',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child:
-                        widget.allCollections.isEmpty
-                            ? const Center(
-                              child: Text(
-                                'No collections available.',
-                                style: TextStyle(color: Colors.white70),
-                              ),
-                            )
-                            : ListView.builder(
-                              itemCount: widget.allCollections.length,
-                              itemBuilder: (context, index) {
-                                final collection = widget.allCollections[index];
-                                final bool isAlreadyIn = collection
-                                    .screenshotIds
-                                    .contains(widget.screenshot.id);
-                                return ListTile(
-                                  title: Text(
-                                    collection.name ?? 'Untitled',
-                                    style: const TextStyle(color: Colors.white),
-                                  ),
-                                  trailing: Icon(
-                                    isAlreadyIn
-                                        ? Icons.check_circle
-                                        : Icons.add_circle_outline,
-                                    color:
-                                        isAlreadyIn
-                                            ? Colors.amber.shade200
-                                            : Theme.of(
-                                              context,
-                                            ).colorScheme.primary,
-                                  ),
-                                  onTap: () {
-                                    _toggleScreenshotInCollection(
-                                      collection,
-                                      setModalState,
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                  ),
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      child: const Text(
-                        'DONE',
-                        style: TextStyle(color: Colors.amber),
-                      ),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ),
-                ],
-              ),
+            return ScreenshotCollectionDialog(
+              collections: widget.allCollections,
+              screenshot: widget.screenshot,
+              onCollectionToggle: _toggleScreenshotInCollection,
             );
           },
         );
@@ -216,22 +148,33 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: Colors.grey[900],
-          title: const Text(
+          title: Text(
             'Delete Screenshot?',
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSecondaryContainer,
+            ),
           ),
-          content: const Text(
+          content: Text(
             'Are you sure you want to delete this screenshot? This action cannot be undone.',
-            style: TextStyle(color: Colors.white70),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onTertiaryContainer,
+            ),
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+                ),
+              ),
               onPressed: () => Navigator.of(context).pop(false),
             ),
             TextButton(
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+              child: Text(
+                'Delete',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
               onPressed: () => Navigator.of(context).pop(true),
             ),
           ],
@@ -241,9 +184,9 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
 
     if (confirm == true) {
       // Call the delete callback
+      widget.screenshot.isDeleted = true;
       widget.onDeleteScreenshot(widget.screenshot.id);
 
-      // Navigate back to the previous screen
       Navigator.of(context).pop();
 
       // Show confirmation message
@@ -269,23 +212,21 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
     if (widget.screenshot.path != null) {
       imageWidget = Image.file(
         File(widget.screenshot.path!),
-        fit: BoxFit.contain,
+        fit: BoxFit.cover,
       );
     } else if (widget.screenshot.bytes != null) {
-      imageWidget = Image.memory(widget.screenshot.bytes!, fit: BoxFit.contain);
+      imageWidget = Image.memory(widget.screenshot.bytes!, fit: BoxFit.cover);
     } else {
       imageWidget = const Center(child: Icon(Icons.broken_image));
       imageName = 'Invalid Image';
     }
 
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text(
           'Screenshot Detail',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
         ),
-        backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -305,11 +246,10 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
                 );
               },
               child: Container(
-                height: 300,
+                height: MediaQuery.of(context).size.height * 0.5,
                 width: double.infinity,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
-                  color: Colors.grey[900],
                 ),
                 margin: const EdgeInsets.all(16),
                 clipBehavior: Clip.antiAlias,
@@ -323,10 +263,10 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
                 children: [
                   Text(
                     imageName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -335,14 +275,20 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
                     DateFormat(
                       'MMM d, yyyy, hh:mm a',
                     ).format(widget.screenshot.addedOn),
-                    style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   if (widget.screenshot.fileSize != null &&
                       widget.screenshot.fileSize! > 0) ...[
                     const SizedBox(height: 4),
                     Text(
                       'Size: ${_formatFileSize(widget.screenshot.fileSize!)}',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                   const SizedBox(height: 16),
@@ -351,13 +297,16 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
                     decoration: InputDecoration(
                       hintText: 'Add a description...',
                       filled: true,
-                      fillColor: Colors.grey[900],
+                      fillColor:
+                          Theme.of(context).colorScheme.secondaryContainer,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
                     ),
-                    style: const TextStyle(color: Colors.white70),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+                    ),
                     maxLines: 3,
                     onChanged: (value) {
                       widget.screenshot.description = value;
@@ -370,12 +319,12 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
                     },
                   ),
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     'Tags',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -388,19 +337,19 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     'AI Details',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.grey[850],
+                      color: Theme.of(context).colorScheme.outlineVariant,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -409,11 +358,14 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'AI Analysis Status:',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Colors.white70,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSecondaryContainer,
                                 ),
                               ),
                               if (widget.screenshot.aiProcessed &&
@@ -422,14 +374,20 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
                                   'Model: ${widget.screenshot.aiMetadata!.modelName}',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.grey[400],
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onSecondaryContainer,
                                   ),
                                 ),
                                 Text(
                                   'Analyzed on: ${DateFormat('MMM d, yyyy HH:mm a').format(widget.screenshot.aiMetadata!.processingTime)}',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.grey[400],
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onSecondaryContainer,
                                   ),
                                 ),
                               ],
@@ -440,13 +398,13 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
                           widget.screenshot.aiProcessed
                               ? Icons.check_circle
                               : Icons.hourglass_empty,
-                          color: Colors.amber[200],
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                         if (widget.screenshot.aiProcessed)
                           IconButton(
                             icon: Icon(
                               Icons.refresh,
-                              color: Colors.orangeAccent,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                             tooltip: 'Clear AI analysis to re-process',
                             onPressed: _clearAndRequestAiReprocessing,
@@ -455,12 +413,12 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     'Collections',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -469,9 +427,13 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
                     runSpacing: 4,
                     children: [
                       if (widget.screenshot.collectionIds.isEmpty)
-                        const Text(
+                        Text(
                           "This isn’t in any collection yet. Hit the + button to give it a cozy home 😺",
-                          style: TextStyle(color: Colors.white70),
+                          style: TextStyle(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontStyle: FontStyle.italic,
+                          ),
                         )
                       else
                         ...widget.screenshot.collectionIds.map((collectionId) {
@@ -481,8 +443,16 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
 
                           return Chip(
                             label: Text(collection.name ?? 'Unnamed'),
-                            backgroundColor: Colors.blueGrey[700],
-                            labelStyle: const TextStyle(color: Colors.white),
+                            backgroundColor:
+                                Theme.of(
+                                  context,
+                                ).colorScheme.secondaryContainer,
+                            labelStyle: TextStyle(
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSecondaryContainer,
+                            ),
                           );
                         }),
                     ],
@@ -498,13 +468,16 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddToCollectionDialog,
         backgroundColor: Theme.of(context).colorScheme.primary,
-        child: const Icon(Icons.add, color: Colors.black),
+        child: Icon(
+          Icons.add,
+          color: Theme.of(context).colorScheme.primaryContainer,
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
         notchMargin: 8.0,
-        color: Colors.grey[900],
+        color: Theme.of(context).colorScheme.secondaryContainer.withAlpha(100),
         child: Row(
           children: <Widget>[
             IconButton(

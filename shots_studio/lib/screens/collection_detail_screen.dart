@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
-import 'package:shots_studio/widgets/screenshot_card.dart';
-import 'package:shots_studio/screens/create_collection_screen.dart';
+import 'package:shots_studio/widgets/screenshots/screenshot_card.dart';
+import 'package:shots_studio/screens/manage_collection_screenshots_screen.dart';
 import 'package:shots_studio/screens/screenshot_details_screen.dart';
+import 'package:shots_studio/screens/create_collection_screen.dart';
 
 class CollectionDetailScreen extends StatefulWidget {
   final Collection collection;
@@ -61,10 +62,44 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
     widget.onUpdateCollection(updatedCollection);
   }
 
+  Future<void> _editCollection() async {
+    final currentCollection = widget.collection.copyWith(
+      name: _nameController.text.trim(),
+      description: _descriptionController.text.trim(),
+      screenshotIds: _currentScreenshotIds,
+      isAutoAddEnabled: _isAutoAddEnabled,
+    );
+
+    final Collection? updatedCollection = await Navigator.of(
+      context,
+    ).push<Collection>(
+      MaterialPageRoute(
+        builder:
+            (context) => CreateCollectionScreen(
+              availableScreenshots: widget.allScreenshots,
+              initialSelectedIds: Set.from(_currentScreenshotIds),
+              existingCollection: currentCollection,
+            ),
+      ),
+    );
+
+    if (updatedCollection != null) {
+      setState(() {
+        _nameController.text = updatedCollection.name ?? '';
+        _descriptionController.text = updatedCollection.description ?? '';
+        _currentScreenshotIds = List.from(updatedCollection.screenshotIds);
+        _isAutoAddEnabled = updatedCollection.isAutoAddEnabled;
+      });
+
+      widget.onUpdateCollection(updatedCollection);
+    }
+  }
+
   Future<void> _confirmDelete() async {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
+        final theme = Theme.of(context);
         return AlertDialog(
           title: const Text('Delete Collection?'),
           content: const Text(
@@ -76,7 +111,10 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
               onPressed: () => Navigator.of(context).pop(false),
             ),
             TextButton(
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+              child: Text(
+                'Delete',
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
               onPressed: () => Navigator.of(context).pop(true),
             ),
           ],
@@ -91,19 +129,16 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
   }
 
   Future<void> _addOrManageScreenshots() async {
-    final Set<String> previousScreenshotIds = Set.from(
-      _currentScreenshotIds,
-    ); // Store current state
+    final Set<String> previousScreenshotIds = Set.from(_currentScreenshotIds);
 
     final List<String>? newScreenshotIdsList = await Navigator.of(
       context,
     ).push<List<String>>(
       MaterialPageRoute(
         builder:
-            (context) => CreateCollectionScreen(
+            (context) => ManageCollectionScreenshotsScreen(
               availableScreenshots: widget.allScreenshots,
               initialSelectedIds: Set.from(_currentScreenshotIds),
-              isEditMode: true,
             ),
       ),
     );
@@ -151,24 +186,29 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final screenshotsInCollection =
         widget.allScreenshots
             .where((s) => _currentScreenshotIds.contains(s.id))
             .toList();
 
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text(
           _nameController.text.isEmpty
               ? 'Collection Details'
               : _nameController.text,
         ),
-        backgroundColor: Colors.transparent,
+        backgroundColor: theme.colorScheme.surface,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: _editCollection,
+            tooltip: 'Edit Collection',
+          ),
+          IconButton(
+            icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
             onPressed: _confirmDelete,
           ),
         ],
@@ -178,31 +218,30 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: _nameController,
-              style: const TextStyle(
+            Text(
+              _nameController.text.isEmpty
+                  ? 'Collection Name'
+                  : _nameController.text,
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
               ),
-              decoration: const InputDecoration(
-                hintText: 'Collection Name',
-                hintStyle: TextStyle(color: Colors.grey),
-                border: InputBorder.none,
-              ),
-              onChanged: (value) => setState(() {}),
-              onEditingComplete: _saveChanges,
             ),
-            const SizedBox(height: 8),
-            TextField(
+            const SizedBox(height: 16),
+            TextFormField(
               controller: _descriptionController,
-              style: const TextStyle(color: Colors.white70),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
+              ),
               decoration: InputDecoration(
                 hintText: 'Collection description',
-                hintStyle: TextStyle(color: Colors.grey[600]),
+                hintStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
                 border: InputBorder.none,
                 filled: true,
-                fillColor: Colors.grey[900],
+                fillColor: Theme.of(context).colorScheme.secondaryContainer,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
@@ -220,33 +259,39 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                 ),
               ),
               maxLines: 3,
-              onEditingComplete: _saveChanges,
+              readOnly: true,
+              enableInteractiveSelection: true,
             ),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Tooltip(
-                  message:
-                      'When enabled, AI will automatically add relevant screenshots to this collection',
-                  child: Row(
-                    children: [
-                      const Text(
-                        'Enable Auto-Add Screenshots (AI)',
-                        style: TextStyle(fontSize: 16, color: Colors.white),
-                      ),
-                      const SizedBox(width: 6),
-                      Icon(
-                        Icons.info_outline,
-                        size: 16,
-                        color: Colors.amber.shade200,
-                      ),
-                    ],
+                Expanded(
+                  child: Tooltip(
+                    message:
+                        'When enabled, AI will automatically add relevant screenshots to this collection',
+                    child: Row(
+                      children: [
+                        const Flexible(
+                          child: Text(
+                            'Enable Auto-Add Screenshots (AI)',
+                            style: TextStyle(fontSize: 16),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 Switch(
                   value: _isAutoAddEnabled,
-                  activeColor: Colors.amber.shade200,
+                  activeColor: Theme.of(context).colorScheme.primary,
                   onChanged: (bool value) {
                     setState(() {
                       _isAutoAddEnabled = value;
@@ -261,10 +306,14 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                 margin: const EdgeInsets.only(top: 8),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.1),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.tertiaryContainer.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: Colors.amber.withOpacity(0.3),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.tertiary.withValues(alpha: 0.3),
                     width: 0.5,
                   ),
                 ),
@@ -273,7 +322,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                     Icon(
                       Icons.auto_awesome,
                       size: 16,
-                      color: Colors.amber.shade200,
+                      color: Theme.of(context).colorScheme.tertiary,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -281,7 +330,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                         'Gemini AI will automatically categorize new screenshots into this collection based on content analysis',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.amber.shade100,
+                          color:
+                              Theme.of(context).colorScheme.onTertiaryContainer,
                         ),
                       ),
                     ),
@@ -292,12 +342,12 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Screenshots in Collection',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSecondaryContainer,
                   ),
                 ),
                 IconButton(
@@ -317,7 +367,10 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                       ? Center(
                         child: Text(
                           'No screenshots in this collection. Tap + to add.',
-                          style: TextStyle(color: Colors.grey[600]),
+                          style: TextStyle(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       )
@@ -348,6 +401,9 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                                                 widget.onUpdateCollection,
                                             onDeleteScreenshot:
                                                 widget.onDeleteScreenshot,
+                                            onScreenshotUpdated: () {
+                                              setState(() {});
+                                            },
                                           ),
                                     ),
                                   );
@@ -357,9 +413,9 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                                 top: 0,
                                 right: 0,
                                 child: IconButton(
-                                  icon: const Icon(
+                                  icon: Icon(
                                     Icons.remove_circle,
-                                    color: Colors.redAccent,
+                                    color: theme.colorScheme.error,
                                   ),
                                   onPressed:
                                       () => _removeScreenshotFromCollection(

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:shots_studio/screens/screenshot_details_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shots_studio/widgets/home_app_bar.dart';
-import 'package:shots_studio/widgets/collections_section.dart';
-import 'package:shots_studio/widgets/screenshots_section.dart';
+import 'package:shots_studio/widgets/collections/collections_section.dart';
+import 'package:shots_studio/widgets/screenshots/screenshots_section.dart';
 import 'package:shots_studio/screens/app_drawer_screen.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/models/collection_model.dart';
@@ -20,6 +20,7 @@ import 'dart:convert';
 import 'package:shots_studio/services/notification_service.dart';
 import 'package:shots_studio/services/snackbar_service.dart';
 import 'package:shots_studio/utils/memory_utils.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,23 +37,92 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Shots Studio',
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: Colors.black,
-        colorScheme: ColorScheme.dark(
-          primary: Colors.amber.shade200,
-          secondary: Colors.amber.shade100,
-          surface: Colors.black,
-        ),
-        cardTheme: CardThemeData(
-          color: Colors.grey[900],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+    return DynamicColorBuilder(
+      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+        ColorScheme lightScheme;
+        ColorScheme darkScheme;
+
+        if (lightDynamic != null && darkDynamic != null) {
+          // Use dynamic colors if available (Material You)
+          lightScheme = lightDynamic.harmonized();
+          darkScheme = darkDynamic.harmonized();
+        } else {
+          // Fallback to custom color schemes if dynamic colors are not available
+          lightScheme = ColorScheme.fromSeed(
+            seedColor: Colors.amber,
+            brightness: Brightness.light,
+          );
+          darkScheme = ColorScheme.fromSeed(
+            seedColor: Colors.amber,
+            brightness: Brightness.dark,
+          );
+        }
+
+        return MaterialApp(
+          title: 'Shots Studio',
+          theme: ThemeData(
+            useMaterial3: true,
+            colorScheme: lightScheme,
+            cardTheme: CardThemeData(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            filledButtonTheme: FilledButtonThemeData(
+              style: FilledButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            floatingActionButtonTheme: FloatingActionButtonThemeData(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
           ),
-        ),
-      ),
-      home: const HomeScreen(),
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            colorScheme: darkScheme,
+            cardTheme: CardThemeData(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            filledButtonTheme: FilledButtonThemeData(
+              style: FilledButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            floatingActionButtonTheme: FloatingActionButtonThemeData(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
+          themeMode:
+              ThemeMode.system, // Automatically switch between light and dark
+          home: const HomeScreen(),
+        );
+      },
     );
   }
 }
@@ -83,6 +153,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   String _selectedModelName = 'gemini-2.0-flash';
   int _screenshotLimit = 120;
   int _maxParallelAI = 4;
+
+  // update screenshots
+  List<Screenshot> get _activeScreenshots {
+    final activeScreenshots =
+        _screenshots.where((screenshot) => !screenshot.isDeleted).toList();
+    // Sort by addedOn date in descending order (newest first)
+    activeScreenshots.sort((a, b) => b.addedOn.compareTo(a.addedOn));
+    return activeScreenshots;
+  }
 
   @override
   void initState() {
@@ -218,7 +297,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     // Filter unprocessed screenshots
     final unprocessedScreenshots =
-        _screenshots.where((s) => !s.aiProcessed).toList();
+        _activeScreenshots.where((s) => !s.aiProcessed).toList();
 
     if (unprocessedScreenshots.isEmpty) {
       SnackbarService().showSnackbar(
@@ -341,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     // Count how many screenshots were auto-categorized
     int autoCategorizedCount = 0;
-    for (var screenshot in _screenshots.where((s) => s.aiProcessed)) {
+    for (var screenshot in _activeScreenshots.where((s) => s.aiProcessed)) {
       if (screenshot.collectionIds.isNotEmpty) {
         autoCategorizedCount++;
       }
@@ -563,7 +642,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           // Skip very large files to prevent memory issues
           if (fileSize > 50 * 1024 * 1024) {
             // Skip files larger than 50MB
-            print('Skipping large file: ${file.path} (${fileSize} bytes)');
+            print('Skipping large file: ${file.path} ($fileSize bytes)');
             setState(() {
               _loadingProgress++;
             });
@@ -674,8 +753,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _deleteScreenshot(String screenshotId) {
     setState(() {
-      // Remove screenshot from the main list
-      _screenshots.removeWhere((s) => s.id == screenshotId);
+      // Mark screenshot as deleted instead of removing it
+      final screenshotIndex = _screenshots.indexWhere(
+        (s) => s.id == screenshotId,
+      );
+      if (screenshotIndex != -1) {
+        _screenshots[screenshotIndex].isDeleted = true;
+      }
 
       // Remove screenshot from all collections
       for (var collection in _collections) {
@@ -693,7 +777,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       MaterialPageRoute(
         builder:
             (context) => SearchScreen(
-              allScreenshots: _screenshots,
+              allScreenshots: _activeScreenshots,
               allCollections: _collections,
               onUpdateCollection: _updateCollection,
               onDeleteScreenshot: _deleteScreenshot,
@@ -728,7 +812,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           // Show options for selecting screenshots
           showModalBottomSheet(
             context: context,
-            backgroundColor: Colors.grey[900],
+            backgroundColor: Theme.of(context).colorScheme.surface,
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
@@ -770,7 +854,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           );
         },
         backgroundColor: Theme.of(context).colorScheme.primary,
-        child: const Icon(Icons.add_a_photo, color: Colors.black),
+        child: Icon(
+          Icons.add_a_photo,
+          color: Theme.of(context).colorScheme.onPrimary,
+        ),
       ),
       body:
           _isLoading
@@ -795,28 +882,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   ],
                 ),
               )
-              : CustomScrollView(
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: CollectionsSection(
-                      collections: _collections,
-                      screenshots: _screenshots,
-                      onCollectionAdded: _addCollection,
-                      onUpdateCollection: _updateCollection,
-                      onDeleteCollection: _deleteCollection,
-                      onDeleteScreenshot: _deleteScreenshot,
+              : NestedScrollView(
+                headerSliverBuilder: (context, innerBoxIsScrolled) {
+                  return [
+                    SliverToBoxAdapter(
+                      child: CollectionsSection(
+                        collections: _collections,
+                        screenshots: _activeScreenshots,
+                        onCollectionAdded: _addCollection,
+                        onUpdateCollection: _updateCollection,
+                        onDeleteCollection: _deleteCollection,
+                        onDeleteScreenshot: _deleteScreenshot,
+                      ),
                     ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: ScreenshotsSection(
-                      screenshots: _screenshots,
-                      onScreenshotTap: _showScreenshotDetail,
-                    ),
-                  ),
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: 80), // Space for FAB
-                  ),
-                ],
+                  ];
+                },
+                body: ScreenshotsSection(
+                  screenshots: _activeScreenshots,
+                  onScreenshotTap: _showScreenshotDetail,
+                ),
               ),
     );
   }
@@ -833,6 +917,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     _updateCollection(updatedCollection);
                   },
                   onDeleteScreenshot: _deleteScreenshot,
+                  onScreenshotUpdated: () {
+                    setState(() {});
+                  },
                 ),
           ),
         )

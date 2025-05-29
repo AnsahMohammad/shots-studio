@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:shots_studio/services/snackbar_service.dart';
 import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
-import 'package:shots_studio/widgets/screenshot_card.dart';
+import 'package:shots_studio/widgets/screenshots/screenshot_card.dart';
 import 'package:uuid/uuid.dart';
 
 class CreateCollectionScreen extends StatefulWidget {
   final List<Screenshot> availableScreenshots;
   final Set<String>? initialSelectedIds;
-  final bool isEditMode;
+  final Collection? existingCollection;
 
   const CreateCollectionScreen({
     super.key,
     required this.availableScreenshots,
     this.initialSelectedIds,
-    this.isEditMode = false,
+    this.existingCollection,
   });
 
   @override
@@ -26,29 +26,34 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   late Set<String> _selectedScreenshotIds;
   final Uuid _uuid = const Uuid();
-  bool _isAutoAddEnabled = false; // Added state for Auto-Add
+  bool _isAutoAddEnabled = false;
 
   @override
   void initState() {
     super.initState();
+
+    // If editing an existing collection, populate the fields
+    if (widget.existingCollection != null) {
+      _titleController.text = widget.existingCollection!.name ?? '';
+      _descriptionController.text =
+          widget.existingCollection!.description ?? '';
+      _isAutoAddEnabled = widget.existingCollection!.isAutoAddEnabled;
+    }
+
     _selectedScreenshotIds =
         widget.initialSelectedIds != null
             ? Set.from(widget.initialSelectedIds!)
             : {};
-    // Add listener to update button state based on title content
+
     _titleController.addListener(() {
-      if (!widget.isEditMode) {
-        setState(() {}); // Rebuild to enable/disable save button
-      }
+      setState(() {});
     });
   }
 
   @override
   void dispose() {
     _titleController.removeListener(() {
-      if (!widget.isEditMode) {
-        setState(() {});
-      }
+      setState(() {});
     });
     _titleController.dispose();
     _descriptionController.dispose();
@@ -68,7 +73,7 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
   void _save() {
     final String title = _titleController.text.trim();
 
-    if (title.isEmpty && !widget.isEditMode) {
+    if (title.isEmpty) {
       SnackbarService().showError(
         context,
         'Please enter a title for your collection',
@@ -76,10 +81,20 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
       return;
     }
 
-    if (widget.isEditMode) {
-      Navigator.of(context).pop(_selectedScreenshotIds.toList());
+    final Collection collection;
+    if (widget.existingCollection != null) {
+      // Update existing collection
+      collection = widget.existingCollection!.copyWith(
+        name: title,
+        description: _descriptionController.text.trim(),
+        screenshotIds: _selectedScreenshotIds.toList(),
+        lastModified: DateTime.now(),
+        screenshotCount: _selectedScreenshotIds.length,
+        isAutoAddEnabled: _isAutoAddEnabled,
+      );
     } else {
-      final Collection newCollection = Collection(
+      // Create new collection
+      collection = Collection(
         id: _uuid.v4(),
         name: title,
         description: _descriptionController.text.trim(),
@@ -88,23 +103,23 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
         screenshotCount: _selectedScreenshotIds.length,
         isAutoAddEnabled: _isAutoAddEnabled,
       );
-      Navigator.of(context).pop(newCollection);
     }
+    Navigator.of(context).pop(collection);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          widget.isEditMode ? 'Manage Screenshots' : 'Create Collection',
+          widget.existingCollection != null
+              ? 'Edit Collection'
+              : 'Create Collection',
         ),
         actions: [
           IconButton(
@@ -119,118 +134,125 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Conditionally show Title and Description fields only if not in edit mode
-            if (!widget.isEditMode) ...[
-              TextField(
-                controller: _titleController,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+            TextField(
+              controller: _titleController,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Collection Title',
+                hintStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.onSecondaryContainer,
                 ),
-                decoration: const InputDecoration(
-                  hintText: 'Collection Title',
-                  hintStyle: TextStyle(color: Colors.grey),
-                  border: InputBorder.none,
+                border: InputBorder.none,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _descriptionController,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Add a description...',
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.secondaryContainer,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _descriptionController,
-                style: const TextStyle(color: Colors.white70),
-                decoration: InputDecoration(
-                  hintText: 'Add a description...',
-                  filled: true,
-                  fillColor: Colors.grey[900],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Tooltip(
-                      message:
-                          'When enabled, AI will automatically add relevant screenshots to this collection',
-                      child: Row(
-                        children: [
-                          const Flexible(
-                            child: Text(
-                              'Enable Auto-Add Screenshots (AI)',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
+              maxLines: 3,
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Tooltip(
+                    message:
+                        'When enabled, AI will automatically add relevant screenshots to this collection',
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            'Enable Auto-Add Screenshots',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSecondaryContainer,
                             ),
                           ),
-                          const SizedBox(width: 6),
-                          Icon(
-                            Icons.info_outline,
-                            size: 16,
-                            color: Colors.amber.shade200,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Switch(
-                    value: _isAutoAddEnabled,
-                    activeColor: Colors.amber.shade200,
-                    onChanged: (bool value) {
-                      setState(() {
-                        _isAutoAddEnabled = value;
-                      });
-                    },
-                  ),
-                ],
-              ),
-              if (_isAutoAddEnabled)
-                Container(
-                  margin: const EdgeInsets.only(top: 8, bottom: 16),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Colors.amber.withOpacity(0.3),
-                      width: 0.5,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.auto_awesome,
-                        size: 16,
-                        color: Colors.amber.shade200,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Gemini AI will automatically categorize new screenshots into this collection based on content analysis.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.amber.shade100,
-                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              const SizedBox(height: 8),
-            ],
+                Switch(
+                  value: _isAutoAddEnabled,
+                  activeColor: Theme.of(context).colorScheme.primary,
+                  onChanged: (bool value) {
+                    setState(() {
+                      _isAutoAddEnabled = value;
+                    });
+                  },
+                ),
+              ],
+            ),
+            if (_isAutoAddEnabled)
+              Container(
+                margin: const EdgeInsets.only(top: 8, bottom: 16),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.tertiaryContainer.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.tertiary.withValues(alpha: 0.3),
+                    width: 0.5,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.auto_awesome,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.tertiary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Gemini AI will automatically categorize new screenshots into this collection based on content analysis.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color:
+                              Theme.of(context).colorScheme.onTertiaryContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 8),
             Text(
-              widget.isEditMode
-                  ? 'Select screenshots to include'
-                  : 'Select Screenshots',
-              style: const TextStyle(
+              'Select Screenshots',
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
               ),
             ),
             const SizedBox(height: 16),
@@ -239,10 +261,13 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
             Expanded(
               child:
                   widget.availableScreenshots.isEmpty
-                      ? const Center(
+                      ? Center(
                         child: Text(
                           'No screenshots available',
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       )
                       : GridView.builder(
@@ -278,7 +303,10 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
                                 if (isSelected)
                                   Container(
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.5),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .surface
+                                          .withValues(alpha: 0.7),
                                       border: Border.all(
                                         color:
                                             Theme.of(

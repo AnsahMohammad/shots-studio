@@ -19,7 +19,6 @@ class _AddCollectionButtonState extends State<AddCollectionButton> {
       onExit: (_) => setState(() => isHovered = false),
       child: Card(
         child: Material(
-          color: Colors.transparent,
           child: InkWell(
             onTap: widget.onTap,
             borderRadius: BorderRadius.circular(16),
@@ -31,13 +30,17 @@ class _AddCollectionButtonState extends State<AddCollectionButton> {
                 borderRadius: BorderRadius.circular(16),
                 color:
                     isHovered
-                        ? const Color.fromARGB(255, 255, 236, 179)
-                        : const Color.fromARGB(255, 252, 224, 140),
+                        ? Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.8)
+                        : Theme.of(context).colorScheme.primary,
               ),
               child: Icon(
                 Icons.add,
                 size: isHovered ? 38 : 32,
-                color: Colors.black.withOpacity(isHovered ? 0.8 : 1),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onPrimary.withValues(alpha: isHovered ? 0.8 : 1),
               ),
             ),
           ),

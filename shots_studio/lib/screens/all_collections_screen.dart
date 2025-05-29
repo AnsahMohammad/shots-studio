@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/screens/collection_detail_screen.dart';
-import 'package:shots_studio/widgets/collection_card.dart';
+import 'package:shots_studio/widgets/collections/collection_list_item.dart';
 
 class AllCollectionsScreen extends StatelessWidget {
   final List<Collection> collections;
@@ -23,14 +23,11 @@ class AllCollectionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Collections'),
-        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios),
-          color: Colors.amber.shade200,
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -39,7 +36,10 @@ class AllCollectionsScreen extends StatelessWidget {
               ? Center(
                 child: Text(
                   'No collections yet. Create one from the home screen!',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 16,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               )
@@ -50,7 +50,7 @@ class AllCollectionsScreen extends StatelessWidget {
                   final collection = collections[index];
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16.0),
-                    child: CollectionCard(
+                    child: CollectionListItem(
                       collection: collection,
                       onTap: () {
                         Navigator.of(context).push(
