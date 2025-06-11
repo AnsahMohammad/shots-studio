@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:io';
@@ -205,7 +205,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool _isScreenshotLimitEnabled = false;
   bool _devMode = false;
   bool _autoProcessEnabled = true;
-  bool _analyticsEnabled = true;
+  bool _analyticsEnabled =
+      !kDebugMode; // Default to false in debug mode, true in production
 
   // update screenshots
   List<Screenshot> get _activeScreenshots {
@@ -510,7 +511,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _isScreenshotLimitEnabled = prefs.getBool('limit_enabled') ?? false;
       _devMode = prefs.getBool('dev_mode') ?? false;
       _autoProcessEnabled = prefs.getBool('auto_process_enabled') ?? true;
-      _analyticsEnabled = prefs.getBool('analytics_consent_enabled') ?? true;
+      _analyticsEnabled =
+          prefs.getBool('analytics_consent_enabled') ?? !kDebugMode;
     });
   }
 
@@ -1182,7 +1184,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     });
     _saveDataToPrefs();
 
-    // Log analytics for collection reordering
     AnalyticsService().logFeatureUsed('collections_bulk_updated');
   }
 

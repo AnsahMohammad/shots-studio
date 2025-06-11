@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shots_studio/services/analytics_service.dart';
 
@@ -40,7 +41,8 @@ class _AdvancedSettingsSectionState extends State<AdvancedSettingsSection> {
   late TextEditingController _maxParallelController;
   bool _isLimitEnabled = true;
   bool _devMode = false;
-  bool _analyticsEnabled = true;
+  bool _analyticsEnabled =
+      !kDebugMode; // Default to false in debug mode, true in production
 
   static const String _limitPrefKey = 'limit';
   static const String _maxParallelPrefKey = 'maxParallel';

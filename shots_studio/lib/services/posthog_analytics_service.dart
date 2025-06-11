@@ -11,7 +11,8 @@ class PostHogAnalyticsService {
   PostHogAnalyticsService._internal();
 
   bool _initialized = false;
-  bool _analyticsEnabled = true; // Default to true (opt-out model)
+  bool _analyticsEnabled =
+      !kDebugMode; // Default to false in debug mode, true in production
   static const String _analyticsConsentKey = 'analytics_consent_enabled';
 
   // Initialize analytics
@@ -45,7 +46,7 @@ class PostHogAnalyticsService {
     final prefs = await SharedPreferences.getInstance();
     _analyticsEnabled =
         prefs.getBool(_analyticsConsentKey) ??
-        true; // Default to true (opt-out)
+        !kDebugMode; // Default to false in debug mode, true in production
   }
 
   // Save analytics consent to SharedPreferences
