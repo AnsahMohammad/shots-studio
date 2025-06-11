@@ -502,6 +502,20 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
           file,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
+            // Automatically delete corrupt images
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              widget.screenshot.isDeleted = true;
+              widget.onDeleteScreenshot(widget.screenshot.id);
+              SnackbarService().showInfo(
+                context,
+                'Corrupt image deleted automatically',
+              );
+              AnalyticsService().logFeatureUsed(
+                'corrupt_screenshot_auto_deleted',
+              );
+              Navigator.of(context).pop();
+            });
+
             return Container(
               color: Theme.of(context).colorScheme.surface,
               child: Column(
@@ -514,7 +528,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Image could not be loaded',
+                    'Deleting corrupt image...',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -525,6 +539,10 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
           },
         );
       } else {
+        // Mark as AI processed to prevent AI analysis of invalid images
+        widget.screenshot.aiProcessed = true;
+        _updateScreenshotDetails();
+
         imageWidget = Container(
           color: Theme.of(context).colorScheme.surface,
           child: Column(
@@ -563,6 +581,20 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
         widget.screenshot.bytes!,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
+          // Automatically delete corrupt images
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            widget.screenshot.isDeleted = true;
+            widget.onDeleteScreenshot(widget.screenshot.id);
+            SnackbarService().showInfo(
+              context,
+              'Corrupt image deleted automatically',
+            );
+            AnalyticsService().logFeatureUsed(
+              'corrupt_screenshot_auto_deleted',
+            );
+            Navigator.of(context).pop();
+          });
+
           return Container(
             color: Theme.of(context).colorScheme.surface,
             child: Column(
@@ -575,7 +607,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Image could not be loaded',
+                  'Deleting corrupt image...',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -586,6 +618,10 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen> {
         },
       );
     } else {
+      // Mark as AI processed to prevent AI analysis of invalid images
+      widget.screenshot.aiProcessed = true;
+      _updateScreenshotDetails();
+
       imageWidget = Container(
         color: Theme.of(context).colorScheme.surface,
         child: Column(
