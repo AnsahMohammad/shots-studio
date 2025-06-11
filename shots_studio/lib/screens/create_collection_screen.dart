@@ -116,6 +116,9 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
         lastModified: DateTime.now(),
         screenshotCount: _selectedScreenshotIds.length,
         isAutoAddEnabled: _isAutoAddEnabled,
+        displayOrder:
+            DateTime.now()
+                .millisecondsSinceEpoch, // Use timestamp for new collections
       );
     }
     Navigator.of(context).pop(collection);

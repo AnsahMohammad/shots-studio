@@ -1175,6 +1175,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
+  void _updateCollections(List<Collection> updatedCollections) {
+    setState(() {
+      _collections.clear();
+      _collections.addAll(updatedCollections);
+    });
+    _saveDataToPrefs();
+
+    // Log analytics for collection reordering
+    AnalyticsService().logFeatureUsed('collections_bulk_updated');
+  }
+
   void _deleteCollection(String collectionId) {
     setState(() {
       _collections.removeWhere((c) => c.id == collectionId);
@@ -1613,6 +1624,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             screenshots: _activeScreenshots,
                             onCollectionAdded: _addCollection,
                             onUpdateCollection: _updateCollection,
+                            onUpdateCollections: _updateCollections,
                             onDeleteCollection: _deleteCollection,
                             onDeleteScreenshot: _deleteScreenshot,
                           ),

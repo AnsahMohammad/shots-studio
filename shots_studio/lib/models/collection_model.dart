@@ -10,6 +10,7 @@ class Collection {
   final int autoCategorizedCount;
   final Map<String, dynamic> categorizationMetadata;
   final Set<String> scannedSet;
+  final int displayOrder;
 
   Collection({
     required this.id,
@@ -23,6 +24,7 @@ class Collection {
     this.autoCategorizedCount = 0,
     this.categorizationMetadata = const {},
     this.scannedSet = const {},
+    this.displayOrder = 0,
   });
 
   Collection addScreenshot(
@@ -105,6 +107,7 @@ class Collection {
     int? autoCategorizedCount,
     Map<String, dynamic>? categorizationMetadata,
     Set<String>? scannedSet,
+    int? displayOrder,
   }) {
     return Collection(
       id: id ?? this.id,
@@ -119,6 +122,7 @@ class Collection {
       categorizationMetadata:
           categorizationMetadata ?? this.categorizationMetadata,
       scannedSet: scannedSet ?? this.scannedSet,
+      displayOrder: displayOrder ?? this.displayOrder,
     );
   }
 
@@ -136,6 +140,7 @@ class Collection {
       'autoCategorizedCount': autoCategorizedCount,
       'categorizationMetadata': categorizationMetadata,
       'scannedSet': scannedSet.toList(),
+      'displayOrder': displayOrder,
     };
   }
 
@@ -160,6 +165,7 @@ class Collection {
           json['scannedSet'] != null
               ? Set<String>.from(json['scannedSet'] as List<dynamic>)
               : {},
+      displayOrder: json['displayOrder'] as int? ?? 0,
     );
   }
 }

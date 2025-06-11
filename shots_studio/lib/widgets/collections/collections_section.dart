@@ -12,6 +12,7 @@ class CollectionsSection extends StatelessWidget {
   final List<Screenshot> screenshots;
   final Function(Collection) onCollectionAdded;
   final Function(Collection) onUpdateCollection;
+  final Function(List<Collection>) onUpdateCollections;
   final Function(String) onDeleteCollection;
   final Function(String) onDeleteScreenshot;
 
@@ -21,6 +22,7 @@ class CollectionsSection extends StatelessWidget {
     required this.screenshots,
     required this.onCollectionAdded,
     required this.onUpdateCollection,
+    required this.onUpdateCollections,
     required this.onDeleteCollection,
     required this.onDeleteScreenshot,
   });
@@ -43,6 +45,10 @@ class CollectionsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Sort collections by displayOrder for consistent display
+    final sortedCollections = List<Collection>.from(collections)
+      ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -63,9 +69,10 @@ class CollectionsSection extends StatelessWidget {
                     MaterialPageRoute(
                       builder:
                           (context) => AllCollectionsScreen(
-                            collections: collections,
+                            collections: sortedCollections,
                             allScreenshots: screenshots,
                             onUpdateCollection: onUpdateCollection,
+                            onUpdateCollections: onUpdateCollections,
                             onDeleteCollection: onDeleteCollection,
                             onDeleteScreenshot: onDeleteScreenshot,
                           ),
@@ -80,7 +87,7 @@ class CollectionsSection extends StatelessWidget {
           height: 150,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child:
-              collections.isEmpty
+              sortedCollections.isEmpty
                   ? ListView(
                     scrollDirection: Axis.horizontal,
                     children: [
@@ -92,19 +99,19 @@ class CollectionsSection extends StatelessWidget {
                   )
                   : ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    itemCount: collections.length + 1,
+                    itemCount: sortedCollections.length + 1,
                     itemBuilder: (context, index) {
-                      if (index < collections.length) {
+                      if (index < sortedCollections.length) {
                         return CollectionCard(
-                          collection: collections[index],
+                          collection: sortedCollections[index],
                           screenshots: screenshots,
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder:
                                     (context) => CollectionDetailScreen(
-                                      collection: collections[index],
-                                      allCollections: collections,
+                                      collection: sortedCollections[index],
+                                      allCollections: sortedCollections,
                                       allScreenshots: screenshots,
                                       onUpdateCollection: onUpdateCollection,
                                       onDeleteCollection: onDeleteCollection,
