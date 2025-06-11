@@ -4,6 +4,44 @@ document.addEventListener('DOMContentLoaded', function() {
     const navMenu = document.querySelector('.nav-menu');
     const navLinks = document.querySelectorAll('.nav-link');
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+    
+    // PostHog Analytics Helper Functions
+    function trackEvent(eventName, properties = {}) {
+        if (typeof posthog !== 'undefined') {
+            posthog.capture(eventName, {
+                page: currentPage,
+                timestamp: new Date().toISOString(),
+                ...properties
+            });
+        }
+    }
+
+    function trackPageView() {
+        if (typeof posthog !== 'undefined') {
+            posthog.capture('$pageview', {
+                page: currentPage,
+                page_title: document.title,
+                url: window.location.href
+            });
+        }
+    }
+
+    // Track page view
+    trackPageView();
+
+    // Track navigation clicks
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            const linkText = this.textContent.trim();
+            const linkHref = this.getAttribute('href');
+            
+            trackEvent('navigation_click', {
+                link_text: linkText,
+                link_href: linkHref,
+                is_cta: this.classList.contains('cta-button')
+            });
+        });
+    });
 
     // Set active state for current page navigation
     navLinks.forEach(link => {
@@ -92,6 +130,82 @@ document.addEventListener('DOMContentLoaded', function() {
         observer.observe(el);
     });
 
+    // Track button clicks and important interactions
+    document.addEventListener('click', function(e) {
+        const target = e.target.closest('a, button');
+        if (!target) return;
+
+        const buttonText = target.textContent.trim();
+        const buttonHref = target.getAttribute('href');
+        const buttonClass = target.className;
+
+        // Track download buttons
+        if (buttonClass.includes('btn-primary') || buttonClass.includes('btn-secondary')) {
+            let eventName = 'button_click';
+            let properties = {
+                button_text: buttonText,
+                button_class: buttonClass
+            };
+
+            // Special tracking for download buttons
+            if (buttonText.includes('Download') || buttonHref?.includes('releases')) {
+                eventName = 'download_clicked';
+                properties.download_type = buttonText.includes('Android') ? 'android' : 'generic';
+            }
+            // Track GitHub buttons
+            else if (buttonText.includes('GitHub') || buttonHref?.includes('github.com')) {
+                eventName = 'github_clicked';
+                properties.github_action = buttonText.includes('Star') ? 'star' : 'view_repo';
+            }
+            // Track donation buttons
+            else if (buttonText.includes('Donate') || buttonHref?.includes('donation')) {
+                eventName = 'donation_clicked';
+            }
+            // Track documentation buttons
+            else if (buttonText.includes('Documentation') || buttonHref?.includes('documentation')) {
+                eventName = 'documentation_clicked';
+            }
+
+            if (buttonHref) {
+                properties.button_href = buttonHref;
+            }
+
+            trackEvent(eventName, properties);
+        }
+
+        // Track external links
+        if (buttonHref && (buttonHref.startsWith('http') || buttonHref.includes('github.com'))) {
+            trackEvent('external_link_click', {
+                link_text: buttonText,
+                link_url: buttonHref,
+                is_github: buttonHref.includes('github.com'),
+                is_api_key_link: buttonHref.includes('aistudio.google.com')
+            });
+        }
+    });
+
+    // Track section views using Intersection Observer
+    const sectionObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const sectionId = entry.target.id || entry.target.className.split(' ')[0];
+                trackEvent('section_viewed', {
+                    section: sectionId,
+                    section_title: entry.target.querySelector('h1, h2, h3')?.textContent?.trim() || sectionId
+                });
+            }
+        });
+    }, {
+        threshold: 0.5,
+        rootMargin: '0px 0px -100px 0px'
+    });
+
+    // Observe main sections
+    const sections = document.querySelectorAll('section[id], .hero, .features, .pricing, .about, .download, .contact');
+    sections.forEach(section => {
+        sectionObserver.observe(section);
+    });
+
     // Form handling
     const contactForm = document.querySelector('.form');
     if (contactForm) {
@@ -103,6 +217,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = {};
             formData.forEach((value, key) => {
                 data[key] = value;
+            });
+
+            // Track form submission
+            trackEvent('contact_form_submitted', {
+                form_fields: Object.keys(data),
+                subject: data.subject || 'No subject',
+                message_length: data.message ? data.message.length : 0
             });
 
             // Show success message (you can integrate with a real form handler)
@@ -395,4 +516,98 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize multi-carousel
     multiCarouselSetup();
+
+    // Advanced Analytics Features
+    
+    // Track scroll depth
+    let maxScrollDepth = 0;
+    let scrollTimer;
+    
+    window.addEventListener('scroll', function() {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const scrollPercent = Math.round((scrollTop / docHeight) * 100);
+        
+        if (scrollPercent > maxScrollDepth) {
+            maxScrollDepth = scrollPercent;
+        }
+        
+        // Debounced scroll tracking
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => {
+            if (maxScrollDepth > 0 && maxScrollDepth % 25 === 0 && maxScrollDepth <= 100) {
+                trackEvent('scroll_depth', {
+                    scroll_depth_percent: maxScrollDepth,
+                    page_height: docHeight
+                });
+            }
+        }, 500);
+    });
+    
+    // Track time on page
+    const startTime = Date.now();
+    
+    // Track when user leaves the page
+    window.addEventListener('beforeunload', function() {
+        const timeOnPage = Math.round((Date.now() - startTime) / 1000); // in seconds
+        
+        trackEvent('time_on_page', {
+            time_seconds: timeOnPage,
+            time_minutes: Math.round(timeOnPage / 60),
+            max_scroll_depth: maxScrollDepth
+        });
+    });
+    
+    // Track page visibility changes (when user switches tabs)
+    let visibilityStartTime = Date.now();
+    let totalVisibleTime = 0;
+    
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            totalVisibleTime += Date.now() - visibilityStartTime;
+            trackEvent('page_visibility', {
+                action: 'hidden',
+                visible_time_seconds: Math.round(totalVisibleTime / 1000)
+            });
+        } else {
+            visibilityStartTime = Date.now();
+            trackEvent('page_visibility', {
+                action: 'visible'
+            });
+        }
+    });
+    
+    // Track user engagement - clicks, keyboard interactions, etc.
+    let userInteractions = 0;
+    
+    ['click', 'keydown', 'scroll', 'mousemove'].forEach(eventType => {
+        document.addEventListener(eventType, function() {
+            userInteractions++;
+        }, { passive: true });
+    });
+    
+    // Send engagement data every 30 seconds
+    setInterval(() => {
+        if (userInteractions > 0) {
+            trackEvent('user_engagement', {
+                interactions_count: userInteractions,
+                interactions_per_minute: Math.round((userInteractions * 60) / ((Date.now() - startTime) / 1000))
+            });
+            userInteractions = 0; // Reset counter
+        }
+    }, 30000);
+    
+    // Track device and browser info (once per session)
+    trackEvent('device_info', {
+        user_agent: navigator.userAgent,
+        screen_width: screen.width,
+        screen_height: screen.height,
+        viewport_width: window.innerWidth,
+        viewport_height: window.innerHeight,
+        device_pixel_ratio: window.devicePixelRatio,
+        language: navigator.language,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        referrer: document.referrer || 'direct'
+    });
+
 });
