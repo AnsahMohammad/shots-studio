@@ -27,9 +27,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:shots_studio/widgets/ai_processing_container.dart';
 import 'package:shots_studio/services/background_service.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:shots_studio/services/analytics_service.dart';
-import 'firebase_options.dart';
 import 'package:shots_studio/services/file_watcher_service.dart';
 import 'package:shots_studio/services/update_checker_service.dart';
 import 'package:shots_studio/widgets/update_dialog.dart';
@@ -37,10 +35,7 @@ import 'package:shots_studio/widgets/update_dialog.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // Initialize Analytics
+  // Initialize Analytics (PostHog)
   await AnalyticsService().initialize();
 
   // Optimize image cache for better memory management

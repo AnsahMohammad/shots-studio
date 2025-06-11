@@ -1,125 +1,30 @@
-import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:flutter/foundation.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:io';
+// This is a compatibility wrapper that maintains the same interface as the Firebase AnalyticsService
+// but uses PostHog underneath. This allows for a seamless migration without changing existing code.
+
+import 'posthog_analytics_service.dart';
 
 class AnalyticsService {
   static final AnalyticsService _instance = AnalyticsService._internal();
   factory AnalyticsService() => _instance;
   AnalyticsService._internal();
 
-  late FirebaseAnalytics _analytics;
-  late FirebaseCrashlytics _crashlytics;
-  bool _initialized = false;
-  bool _analyticsEnabled = true; // Default to true (opt-out model)
-  static const String _analyticsConsentKey = 'analytics_consent_enabled';
+  final PostHogAnalyticsService _postHogService = PostHogAnalyticsService();
 
   // Initialize analytics
   Future<void> initialize() async {
-    if (_initialized) return;
-
-    _analytics = FirebaseAnalytics.instance;
-    _crashlytics = FirebaseCrashlytics.instance;
-
-    // Load consent preference
-    await _loadAnalyticsConsent();
-
-    // Set analytics collection based on consent
-    await _analytics.setAnalyticsCollectionEnabled(_analyticsEnabled);
-    await _analytics.setConsent(
-      adStorageConsentGranted: _analyticsEnabled,
-      analyticsStorageConsentGranted: _analyticsEnabled,
-    );
-
-    // Pass all uncaught errors from the framework to Crashlytics only if consent is given
-    if (_analyticsEnabled) {
-      FlutterError.onError =
-          FirebaseCrashlytics.instance.recordFlutterFatalError;
-
-      // Pass all uncaught asynchronous errors to Crashlytics
-      PlatformDispatcher.instance.onError = (error, stack) {
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-        return true;
-      };
-    }
-
-    _initialized = true;
-
-    // Log app startup only if consent is given
-    if (_analyticsEnabled) {
-      await logAppStartup();
-    }
+    await _postHogService.initialize();
   }
 
-  // Load analytics consent from SharedPreferences
-  Future<void> _loadAnalyticsConsent() async {
-    final prefs = await SharedPreferences.getInstance();
-    _analyticsEnabled =
-        prefs.getBool(_analyticsConsentKey) ??
-        true; // Default to true (opt-out)
-  }
-
-  // Save analytics consent to SharedPreferences
-  Future<void> _saveAnalyticsConsent(bool enabled) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_analyticsConsentKey, enabled);
-  }
-
-  bool get analyticsEnabled => _analyticsEnabled;
+  bool get analyticsEnabled => _postHogService.analyticsEnabled;
 
   // Enable analytics and telemetry
   Future<void> enableAnalytics() async {
-    _analyticsEnabled = true;
-    await _saveAnalyticsConsent(true);
-
-    if (_initialized) {
-      await _analytics.setAnalyticsCollectionEnabled(true);
-      await _analytics.setConsent(
-        adStorageConsentGranted: true,
-        analyticsStorageConsentGranted: true,
-      );
-
-      // Re-enable crash reporting
-      FlutterError.onError =
-          FirebaseCrashlytics.instance.recordFlutterFatalError;
-      PlatformDispatcher.instance.onError = (error, stack) {
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-        return true;
-      };
-
-      // Log that analytics was re-enabled
-      await logFeatureUsed('analytics_enabled');
-    }
+    await _postHogService.enableAnalytics();
   }
 
   // Disable analytics and telemetry
   Future<void> disableAnalytics() async {
-    // Log that analytics is being disabled before we actually disable it
-    if (_analyticsEnabled && _initialized) {
-      await logFeatureUsed('analytics_disabled');
-    }
-
-    _analyticsEnabled = false;
-    await _saveAnalyticsConsent(false);
-
-    if (_initialized) {
-      await _analytics.setAnalyticsCollectionEnabled(false);
-      await _analytics.setConsent(
-        adStorageConsentGranted: false,
-        analyticsStorageConsentGranted: false,
-      );
-
-      // Disable crash reporting
-      FlutterError.onError = null;
-      PlatformDispatcher.instance.onError = null;
-    }
-  }
-
-  // Helper method to check if analytics should be logged
-  bool _shouldLog() {
-    return _initialized && _analyticsEnabled;
+    await _postHogService.disableAnalytics();
   }
 
   // Screenshot Processing Analytics
@@ -127,55 +32,24 @@ class AnalyticsService {
     int processingTimeMs,
     int screenshotCount,
   ) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'batch_processing_time',
-      parameters: {
-        'processing_time_ms': processingTimeMs,
-        'screenshot_count': screenshotCount,
-        'avg_time_per_screenshot': processingTimeMs / screenshotCount,
-      },
-    );
+    await _postHogService.logBatchProcessingTime(processingTimeMs, screenshotCount);
   }
 
   Future<void> logAIProcessingSuccess(int screenshotCount) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'ai_processing_success',
-      parameters: {'screenshot_count': screenshotCount},
-    );
+    await _postHogService.logAIProcessingSuccess(screenshotCount);
   }
 
   Future<void> logAIProcessingFailure(String error, int screenshotCount) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'ai_processing_failure',
-      parameters: {'error': error, 'screenshot_count': screenshotCount},
-    );
-
-    // Also log to Crashlytics
-    await _crashlytics.recordError(
-      'AI Processing Failed',
-      StackTrace.current,
-      reason: error,
-      fatal: false,
-    );
+    await _postHogService.logAIProcessingFailure(error, screenshotCount);
   }
 
   // Collection Management
   Future<void> logCollectionCreated() async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(name: 'collection_created');
+    await _postHogService.logCollectionCreated();
   }
 
   Future<void> logCollectionDeleted() async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(name: 'collection_deleted');
+    await _postHogService.logCollectionDeleted();
   }
 
   Future<void> logCollectionStats(
@@ -184,203 +58,90 @@ class AnalyticsService {
     int minScreenshots,
     int maxScreenshots,
   ) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'collection_screenshot_stats',
-      parameters: {
-        'total_collections': totalCollections,
-        'avg_screenshots_per_collection': avgScreenshots,
-        'min_screenshots_per_collection': minScreenshots,
-        'max_screenshots_per_collection': maxScreenshots,
-      },
+    await _postHogService.logCollectionStats(
+      totalCollections,
+      avgScreenshots,
+      minScreenshots,
+      maxScreenshots,
     );
   }
 
   // User Interaction
   Future<void> logScreenView(String screenName) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logScreenView(screenName: screenName);
+    await _postHogService.logScreenView(screenName);
   }
 
   Future<void> logFeatureUsed(String featureName) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'feature_used',
-      parameters: {'feature_name': featureName},
-    );
+    await _postHogService.logFeatureUsed(featureName);
   }
 
   Future<void> logUserPath(String fromScreen, String toScreen) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'user_path',
-      parameters: {'from_screen': fromScreen, 'to_screen': toScreen},
-    );
+    await _postHogService.logUserPath(fromScreen, toScreen);
   }
 
   // Performance Metrics
   Future<void> logAppStartup() async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'app_startup',
-      parameters: {'timestamp': DateTime.now().millisecondsSinceEpoch},
-    );
+    await _postHogService.logAppStartup();
   }
 
   Future<void> logImageLoadTime(int loadTimeMs, String imageSource) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'image_load_time',
-      parameters: {
-        'load_time_ms': loadTimeMs,
-        'image_source': imageSource, // 'gallery', 'camera', 'device'
-      },
-    );
+    await _postHogService.logImageLoadTime(loadTimeMs, imageSource);
   }
 
   // Error Tracking
   Future<void> logNetworkError(String error, String context) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'network_error',
-      parameters: {'error': error, 'context': context},
-    );
-
-    await _crashlytics.recordError(
-      'Network Error',
-      StackTrace.current,
-      reason: '$context: $error',
-      fatal: false,
-    );
+    await _postHogService.logNetworkError(error, context);
   }
 
   // User Engagement
   Future<void> logActiveDay() async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'active_day',
-      parameters: {'date': DateTime.now().toIso8601String().split('T')[0]},
-    );
+    await _postHogService.logActiveDay();
   }
 
   Future<void> logFeatureAdopted(String featureName) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'feature_adopted',
-      parameters: {'feature_name': featureName},
-    );
+    await _postHogService.logFeatureAdopted(featureName);
   }
 
   Future<void> logReturnUser(int daysSinceLastOpen) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'return_user',
-      parameters: {'days_since_last_open': daysSinceLastOpen},
-    );
+    await _postHogService.logReturnUser(daysSinceLastOpen);
   }
 
   Future<void> logUsageTime(String timeOfDay) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'usage_time',
-      parameters: {'time_of_day': timeOfDay},
-    );
+    await _postHogService.logUsageTime(timeOfDay);
   }
 
   // Search and Discovery
   Future<void> logSearchQuery(String query, int resultsCount) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'search_query',
-      parameters: {
-        'query_length': query.length,
-        'results_count': resultsCount,
-        'has_results': resultsCount > 0,
-      },
-    );
+    await _postHogService.logSearchQuery(query, resultsCount);
   }
 
   Future<void> logSearchTimeToResult(int timeMs, bool successful) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'search_time_to_result',
-      parameters: {'time_ms': timeMs, 'successful': successful},
-    );
+    await _postHogService.logSearchTimeToResult(timeMs, successful);
   }
 
   Future<void> logSearchSuccess(String query, int timeMs) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'search_success',
-      parameters: {'query_length': query.length, 'time_to_success_ms': timeMs},
-    );
+    await _postHogService.logSearchSuccess(query, timeMs);
   }
 
   // Storage and Resources
   Future<void> logStorageUsage(int totalSizeBytes, int screenshotCount) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'storage_usage',
-      parameters: {
-        'total_size_bytes': totalSizeBytes,
-        'screenshot_count': screenshotCount,
-        'avg_size_per_screenshot': totalSizeBytes / screenshotCount,
-      },
-    );
+    await _postHogService.logStorageUsage(totalSizeBytes, screenshotCount);
   }
 
   Future<void> logBackgroundResourceUsage(
     int processingTimeMs,
     int memoryUsageMB,
   ) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'background_resource_usage',
-      parameters: {
-        'processing_time_ms': processingTimeMs,
-        'memory_usage_mb': memoryUsageMB,
-      },
-    );
+    await _postHogService.logBackgroundResourceUsage(processingTimeMs, memoryUsageMB);
   }
 
   // App Health
   Future<void> logBatteryImpact(String level) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'battery_impact',
-      parameters: {
-        'impact_level': level, // 'low', 'medium', 'high'
-      },
-    );
+    await _postHogService.logBatteryImpact(level);
   }
 
   Future<void> logNetworkUsage(int bytesUsed, String operation) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'network_usage',
-      parameters: {
-        'bytes_used': bytesUsed,
-        'operation': operation, // 'ai_processing', 'image_upload', etc.
-      },
-    );
+    await _postHogService.logNetworkUsage(bytesUsed, operation);
   }
 
   Future<void> logBackgroundTaskCompleted(
@@ -388,115 +149,70 @@ class AnalyticsService {
     bool successful,
     int durationMs,
   ) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'background_task_completed',
-      parameters: {
-        'task_name': taskName,
-        'successful': successful,
-        'duration_ms': durationMs,
-      },
-    );
+    await _postHogService.logBackgroundTaskCompleted(taskName, successful, durationMs);
   }
 
   // Statistics (Very Important)
   Future<void> logTotalScreenshotsProcessed(int count) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'total_screenshots_processed',
-      parameters: {'count': count},
-    );
+    await _postHogService.logTotalScreenshotsProcessed(count);
   }
 
   Future<void> logTotalCollections(int count) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'total_collections',
-      parameters: {'count': count},
-    );
+    await _postHogService.logTotalCollections(count);
   }
 
   Future<void> logScreenshotsInCollection(
     int collectionId,
     int screenshotCount,
   ) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'screenshots_in_collection',
-      parameters: {'collection_screenshot_count': screenshotCount},
-    );
+    await _postHogService.logScreenshotsInCollection(collectionId, screenshotCount);
   }
 
   Future<void> logScreenshotsAutoCategorized(int count) async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(
-      name: 'screenshots_auto_categorized',
-      parameters: {'count': count},
-    );
+    await _postHogService.logScreenshotsAutoCategorized(count);
   }
 
   Future<void> logReminderSet() async {
-    if (!_shouldLog()) return;
-
-    await _analytics.logEvent(name: 'reminder_set');
+    await _postHogService.logReminderSet();
   }
 
   Future<void> logInstallInfo() async {
-    if (!_shouldLog()) return;
-
-    try {
-      final packageInfo = await PackageInfo.fromPlatform();
-
-      String platform = 'unknown';
-      String osVersion = 'unknown';
-
-      if (!kIsWeb) {
-        if (Platform.isAndroid) {
-          platform = 'android';
-        } else if (Platform.isIOS) {
-          platform = 'ios';
-        } else if (Platform.isLinux) {
-          platform = 'linux';
-        } else if (Platform.isWindows) {
-          platform = 'windows';
-        } else if (Platform.isMacOS) {
-          platform = 'macos';
-        }
-      } else {
-        platform = 'web';
-      }
-
-      await _analytics.logEvent(
-        name: 'install_info',
-        parameters: {
-          'install_date': DateTime.now().toIso8601String(),
-          'app_version': packageInfo.version,
-          'build_number': packageInfo.buildNumber,
-          'platform': platform,
-          'os_version': osVersion,
-        },
-      );
-    } catch (e) {
-      print('Error logging install info: $e');
-    }
+    await _postHogService.logInstallInfo();
   }
 
-  // Helper method to calculate time of day
-  String _getTimeOfDay() {
-    final hour = DateTime.now().hour;
-    if (hour >= 5 && hour < 12) return 'morning';
-    if (hour >= 12 && hour < 17) return 'afternoon';
-    if (hour >= 17 && hour < 21) return 'evening';
-    return 'night';
-  }
-
-  // Log current usage time
   Future<void> logCurrentUsageTime() async {
-    await logUsageTime(_getTimeOfDay());
+    await _postHogService.logCurrentUsageTime();
+  }
+
+  // Additional PostHog-specific methods (optional to use)
+  
+  /// Identify a user (useful for authenticated users)
+  Future<void> identifyUser(String userId, [Map<String, dynamic>? properties]) async {
+    await _postHogService.identifyUser(userId, properties);
+  }
+
+  /// Set person properties for better user analytics
+  Future<void> setPersonProperties(Map<String, dynamic> properties) async {
+    await _postHogService.setPersonProperties(properties);
+  }
+
+  /// Reset user session (useful for logout)
+  Future<void> reset() async {
+    await _postHogService.reset();
+  }
+
+  /// Check if a feature flag is enabled
+  Future<bool> isFeatureEnabled(String featureKey) async {
+    return await _postHogService.isFeatureEnabled(featureKey);
+  }
+
+  /// Alias user (link anonymous user to identified user)
+  Future<void> alias(String alias) async {
+    await _postHogService.alias(alias);
+  }
+
+  /// Group analytics (for organization-level analytics)
+  Future<void> group(String groupType, String groupKey, [Map<String, dynamic>? properties]) async {
+    await _postHogService.group(groupType, groupKey, properties);
   }
 }
