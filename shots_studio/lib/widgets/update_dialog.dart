@@ -128,6 +128,7 @@ class UpdateDialog extends StatelessWidget {
         const SizedBox(height: 8),
         Container(
           width: double.infinity,
+          height: 150, // Fixed height to make it scrollable
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -136,11 +137,13 @@ class UpdateDialog extends StatelessWidget {
               color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
             ),
           ),
-          child: Text(
-            _formatReleaseNotes(updateInfo.releaseNotes),
-            style: Theme.of(context).textTheme.bodySmall,
-            maxLines: 10,
-            overflow: TextOverflow.ellipsis,
+          child: Scrollbar(
+            child: SingleChildScrollView(
+              child: Text(
+                _formatReleaseNotes(updateInfo.releaseNotes),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
           ),
         ),
       ],
@@ -148,12 +151,62 @@ class UpdateDialog extends StatelessWidget {
   }
 
   String _formatReleaseNotes(String notes) {
+    // Try to extract content from "## What's New" section
+    String extractedContent = _extractWhatsNewSection(notes);
+
+    // If no "What's New" section found, use the full notes
+    if (extractedContent.isEmpty) {
+      extractedContent = notes;
+    }
+
     // Clean up common markdown formatting for better display
-    return notes
+    return extractedContent
         .replaceAll('**', '')
         .replaceAll('##', '')
         .replaceAll('- ', '• ')
         .trim();
+  }
+
+  String _extractWhatsNewSection(String notes) {
+    // Look for "## What's New" section (case insensitive)
+    final RegExp whatsNewRegex = RegExp(
+      r'##\s*what.?s\s+new\s*(?:\n|$)(.*?)(?=##|\Z)',
+      caseSensitive: false,
+      multiLine: true,
+      dotAll: true,
+    );
+
+    final match = whatsNewRegex.firstMatch(notes);
+    if (match != null && match.group(1) != null) {
+      return match.group(1)!.trim();
+    }
+
+    // Alternative: Look for content after the first heading that contains "new"
+    final lines = notes.split('\n');
+    int startIndex = -1;
+    int endIndex = lines.length;
+
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i].toLowerCase();
+      if (line.startsWith('##') && line.contains('new')) {
+        startIndex = i + 1;
+        break;
+      }
+    }
+
+    if (startIndex != -1) {
+      // Find the next heading to stop at
+      for (int i = startIndex; i < lines.length; i++) {
+        if (lines[i].startsWith('##')) {
+          endIndex = i;
+          break;
+        }
+      }
+
+      return lines.sublist(startIndex, endIndex).join('\n').trim();
+    }
+
+    return '';
   }
 
   void _openUpdatePage(BuildContext context) async {
