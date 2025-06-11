@@ -161,11 +161,17 @@ class _CollectionCardState extends State<CollectionCard> {
                 right: kDefaultOuterOffset,
                 bottom: kDefaultOuterOffset,
                 child: Container(
-                  width: kIconContainerSize,
-                  height: kIconContainerSize,
+                  constraints: BoxConstraints(
+                    minWidth: kIconContainerSize,
+                    minHeight: kIconContainerSize,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.primary,
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
                     child: Text(
