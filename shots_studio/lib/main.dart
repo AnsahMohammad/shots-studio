@@ -31,6 +31,7 @@ import 'package:shots_studio/services/analytics_service.dart';
 import 'package:shots_studio/services/file_watcher_service.dart';
 import 'package:shots_studio/services/update_checker_service.dart';
 import 'package:shots_studio/widgets/update_dialog.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,11 +50,15 @@ void main() async {
     // Set up notification channel for background service
     await _setupBackgroundServiceNotificationChannel();
     // Don't initialize service at app startup - we'll do it when needed
-    // This prevents unnecessary background service running when not needed
-    print("Main: Background service will be initialized when needed");
   }
 
-  runApp(const MyApp());
+  await SentryFlutter.init((options) {
+    options.dsn =
+        'https://6f96d22977b283fc325e038ac45e6e5e@o4509484018958336.ingest.us.sentry.io/4509484020072448';
+
+    options.tracesSampleRate =
+        kDebugMode ? 1.0 : 0.5; // 100% in debug, 50% in production
+  }, appRunner: () => runApp(SentryWidget(child: const MyApp())));
 }
 
 // Set up notification channel for background service
