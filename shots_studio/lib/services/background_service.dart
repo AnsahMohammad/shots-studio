@@ -6,8 +6,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
+import 'package:shots_studio/services/ai_service_manager.dart';
 import 'package:shots_studio/services/ai_service.dart';
-import 'package:shots_studio/services/screenshot_analysis_service.dart';
 
 @pragma('vm:entry-point')
 class BackgroundProcessingService {
@@ -280,10 +280,11 @@ class BackgroundProcessingService {
         maxParallel: maxParallel,
       );
 
-      final analysisService = ScreenshotAnalysisService(config);
+      final aiServiceManager = AIServiceManager();
+      aiServiceManager.initialize(config);
 
       // Process screenshots
-      final result = await analysisService.analyzeScreenshots(
+      final result = await aiServiceManager.analyzeScreenshots(
         screenshots: screenshots,
         onBatchProcessed: (batch, response) {
           // Check if we should continue processing
@@ -293,7 +294,7 @@ class BackgroundProcessingService {
 
           try {
             // Process batch results
-            final updatedScreenshots = analysisService
+            final updatedScreenshots = aiServiceManager
                 .parseAndUpdateScreenshots(batch, response);
             processedCount += updatedScreenshots.length;
 

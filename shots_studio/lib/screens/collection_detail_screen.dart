@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
-import 'package:shots_studio/services/ai_categorization_service.dart';
+import 'package:shots_studio/services/ai_autocategorization_service.dart';
 import 'package:shots_studio/services/analytics_service.dart';
 import 'package:shots_studio/widgets/screenshots/screenshot_card.dart';
 import 'package:shots_studio/screens/manage_collection_screenshots_screen.dart';
