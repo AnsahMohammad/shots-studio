@@ -7,13 +7,6 @@ class ThemeUtils {
       // Primary surfaces - pure black for AMOLED
       surface: Colors.black,
       onSurface: Colors.white,
-
-      // Background (deprecated but still used in some places)
-      background: Colors.black,
-      onBackground: Colors.white,
-
-      // Surface variants with very dark grays
-      surfaceVariant: const Color(0xFF111111),
       onSurfaceVariant: Colors.white70,
 
       // Surface containers with different levels of darkness

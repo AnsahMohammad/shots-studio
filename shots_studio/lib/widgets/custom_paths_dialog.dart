@@ -339,6 +339,9 @@ class _CustomPathsDialogState extends State<CustomPathsDialog> {
               label: const Text('Browse for Directory'),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                foregroundColor:
+                    Theme.of(context).colorScheme.onPrimaryContainer,
               ),
             ),
           ),
@@ -369,7 +372,7 @@ class _CustomPathsDialogState extends State<CustomPathsDialog> {
         width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
@@ -378,7 +381,7 @@ class _CustomPathsDialogState extends State<CustomPathsDialog> {
               : 'No custom paths added yet.\nTap "Browse for Directory" above to get started.',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            color: Theme.of(context).colorScheme.onSecondaryContainer,
           ),
         ),
       );
@@ -391,6 +394,7 @@ class _CustomPathsDialogState extends State<CustomPathsDialog> {
       itemBuilder: (context, index) {
         final path = _customPaths[index];
         return Card(
+          color: Theme.of(context).colorScheme.surfaceVariant,
           margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
             leading: const Icon(Icons.folder_outlined),
