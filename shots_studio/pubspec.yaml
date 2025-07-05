@@ -5,7 +5,7 @@ publish_to: 'none'
 
 # The patch version numbering is automatically incremented by the git hook. 
 # Only update major and minor versions manually. 
-version: 1.8.84+1
+version: 1.8.85+1
 
 environment:
   sdk: ^3.7.2
@@ -40,6 +40,7 @@ dependencies:
   animations: ^2.0.11
   flutter_background_service: ^5.0.5
   flutter_background_service_android: ^6.3.0
+  flutter_gemma: ^0.9.0
   posthog_flutter: ^4.0.0
   file_picker: ^8.1.5
 

@@ -27,13 +27,17 @@ class AppInitializationHelper {
       // Don't initialize service at app startup - we'll do it when needed
     }
 
-    await SentryFlutter.init((options) {
-      options.dsn =
-          'https://6f96d22977b283fc325e038ac45e6e5e@o4509484018958336.ingest.us.sentry.io/4509484020072448';
-
-      options.tracesSampleRate =
-          kDebugMode ? 0 : 0.1; // 30% in debug, 10% in production
-    }, appRunner: () => runApp(SentryWidget(child: app)));
+    // Skip Sentry in debug mode for faster startup
+    if (kDebugMode) {
+      print("Debug mode: Skipping Sentry initialization");
+      runApp(app);
+    } else {
+      await SentryFlutter.init((options) {
+        options.dsn =
+            'https://6f96d22977b283fc325e038ac45e6e5e@o4509484018958336.ingest.us.sentry.io/4509484020072448';
+        options.tracesSampleRate = 0.1; // 10% in production
+      }, appRunner: () => runApp(SentryWidget(child: app)));
+    }
   }
 
   /// Set up notification channel for background service

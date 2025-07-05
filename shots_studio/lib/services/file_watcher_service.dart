@@ -147,7 +147,7 @@ class FileWatcherService {
       }
 
       print(
-        'FileWatcher: Found new unprocessed image: ${file.path} (${fileSize} bytes)',
+        'FileWatcher: Found new unprocessed image: ${file.path} ($fileSize bytes)',
       );
 
       // Use centralized factory method for screenshot creation
@@ -392,9 +392,9 @@ class FileWatcherService {
   /// Debug method to check current state and paths
   Future<void> debugWatcherState() async {
     print('FileWatcher: === DEBUG STATE ===');
-    print('FileWatcher: Is watching: ${isWatching}');
-    print('FileWatcher: Active watchers: ${activeWatchersCount}');
-    print('FileWatcher: Processed files count: ${processedFilesCount}');
+    print('FileWatcher: Is watching: $isWatching');
+    print('FileWatcher: Active watchers: $activeWatchersCount');
+    print('FileWatcher: Processed files count: $processedFilesCount');
 
     final paths = await _getScreenshotPaths();
     print('FileWatcher: Screenshot paths to watch (${paths.length}):');

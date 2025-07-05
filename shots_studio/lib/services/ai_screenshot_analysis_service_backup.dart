@@ -111,7 +111,6 @@ class ScreenshotAnalysisService extends AIService {
       File? imageFile;
 
       // Get the image file
-
       if (image.path != null && image.path!.isNotEmpty) {
         imageFile = File(image.path!);
         if (!await imageFile.exists()) {
@@ -131,7 +130,8 @@ class ScreenshotAnalysisService extends AIService {
       return {
         'isLocalModel': true,
         'prompt':
-            '${_getAnalysisPrompt(autoAddCollections: autoAddCollections)}\n\nAnalyzing image: ${image.id}',
+            _getAnalysisPrompt(autoAddCollections: autoAddCollections) +
+            '\n\nAnalyzing image: ${image.id}',
         'imageFile': imageFile,
         'imageId': image.id,
       };
@@ -230,7 +230,11 @@ class ScreenshotAnalysisService extends AIService {
       // Update last successful request time
       _lastSuccessfulRequestTime = DateTime.now();
 
-      return {'data': localResponse, 'statusCode': 200};
+      return {
+        'data': localResponse,
+        'statusCode': 200,
+        'source': 'local_gemma',
+      };
     } catch (e) {
       return {'error': 'Local model error: ${e.toString()}', 'statusCode': 500};
     }

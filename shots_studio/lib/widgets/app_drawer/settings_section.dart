@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shots_studio/services/analytics_service.dart';
 import 'package:shots_studio/utils/theme_manager.dart';
+import 'package:shots_studio/services/gemma_service.dart';
+import 'package:file_picker/file_picker.dart';
 
 class SettingsSection extends StatefulWidget {
   final String? currentApiKey;
@@ -44,6 +46,12 @@ class _SettingsSectionState extends State<SettingsSection> {
   bool _amoledModeEnabled = false;
   String _selectedTheme = 'Dynamic Theme';
 
+  // Gemma service state
+  final GemmaService _gemmaService = GemmaService();
+  String _localModelName = 'No Model Loaded';
+  bool _isLoadingLocalModel = false;
+  bool _isTestingLocalModel = false;
+
   static const String _apiKeyPrefKey = 'apiKey';
   static const String _modelNamePrefKey = 'modelName';
   static const String _autoProcessEnabledPrefKey = 'auto_process_enabled';
@@ -80,6 +88,9 @@ class _SettingsSectionState extends State<SettingsSection> {
       _loadThemePref();
     }
 
+    // Load local model preference
+    _loadLocalModelPref();
+
     // Request focus on the API key field when it's empty
     if (widget.currentApiKey?.isEmpty ?? true) {
       // Request focus on the next frame
@@ -108,6 +119,30 @@ class _SettingsSectionState extends State<SettingsSection> {
     setState(() {
       _selectedTheme = selectedTheme;
     });
+  }
+
+  void _loadLocalModelPref() async {
+    try {
+      // Use centralized method to load from preferences
+      await _gemmaService.ensureModelReady();
+
+      // Update UI state based on loaded model
+      final modelPath = await _gemmaService.getSavedModelPath();
+      if (modelPath != null && _gemmaService.isModelLoaded) {
+        setState(() {
+          _localModelName = _gemmaService.modelName ?? 'Unknown Model';
+        });
+      } else {
+        setState(() {
+          _localModelName = 'No Model Loaded';
+        });
+      }
+    } catch (e) {
+      print('Error loading local model preference: $e');
+      setState(() {
+        _localModelName = 'No Model Loaded';
+      });
+    }
   }
 
   @override
@@ -162,6 +197,154 @@ class _SettingsSectionState extends State<SettingsSection> {
 
   Future<void> _saveSelectedTheme(String value) async {
     await ThemeManager.setSelectedTheme(value);
+  }
+
+  Future<void> _pickAndLoadLocalModel() async {
+    setState(() {
+      _isLoadingLocalModel = true;
+    });
+
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['task', 'bin'],
+        dialogTitle: 'Select Gemma Model File',
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final modelPath = result.files.single.path!;
+        final modelName = modelPath.split('/').last;
+
+        // Load the model (this will automatically save to preferences)
+        final success = await _gemmaService.loadModel(modelPath);
+
+        if (success) {
+          setState(() {
+            _localModelName = _gemmaService.modelName ?? modelName;
+          });
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Model loaded successfully: $_localModelName'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading model: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoadingLocalModel = false;
+      });
+    }
+  }
+
+  Future<void> _testLocalModel() async {
+    if (!_gemmaService.isModelLoaded) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please load a model first'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isTestingLocalModel = true;
+    });
+
+    try {
+      final testPrompts = [
+        'Tell me a short joke.',
+        'What is the capital of France?',
+        'Explain what AI is in one sentence.',
+        'Write a haiku about technology.',
+        'What is 2+2?',
+      ];
+
+      final randomPrompt =
+          testPrompts[DateTime.now().millisecondsSinceEpoch %
+              testPrompts.length];
+
+      final response = await _gemmaService.generateResponse(
+        prompt: randomPrompt,
+        temperature: 0.8,
+      );
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: const Text('Local Model Test'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Prompt:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    Text(randomPrompt),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Response:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color:
+                            Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(response),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Test failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isTestingLocalModel = false;
+      });
+    }
   }
 
   @override
@@ -469,6 +652,163 @@ class _SettingsSectionState extends State<SettingsSection> {
           },
         ),
 
+        // Local Gemma Model Section
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Text(
+            'Local AI Model',
+            style: TextStyle(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // Local Model Status Card
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        _gemmaService.isModelLoaded
+                            ? Icons.check_circle
+                            : Icons.radio_button_unchecked,
+                        color:
+                            _gemmaService.isModelLoaded
+                                ? Colors.green
+                                : theme.colorScheme.outline,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Local Model Status',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.onSecondaryContainer,
+                              ),
+                            ),
+                            Text(
+                              _localModelName,
+                              style: TextStyle(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed:
+                              _isLoadingLocalModel
+                                  ? null
+                                  : _pickAndLoadLocalModel,
+                          icon:
+                              _isLoadingLocalModel
+                                  ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                  : const Icon(Icons.file_open),
+                          label: Text(
+                            _isLoadingLocalModel ? 'Loading...' : 'Load Model',
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.primaryContainer,
+                            foregroundColor:
+                                theme.colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed:
+                              (_isTestingLocalModel ||
+                                      !_gemmaService.isModelLoaded)
+                                  ? null
+                                  : _testLocalModel,
+                          icon:
+                              _isTestingLocalModel
+                                  ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                  : const Icon(Icons.play_arrow),
+                          label: Text(
+                            _isTestingLocalModel ? 'Testing...' : 'Test',
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                theme.colorScheme.secondaryContainer,
+                            foregroundColor:
+                                theme.colorScheme.onSecondaryContainer,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_gemmaService.isModelLoaded) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: Colors.green.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 16,
+                            color: Colors.green[700],
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Model loaded and ready for local inference',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.green[700],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Row(
@@ -564,6 +904,7 @@ class _SettingsSectionState extends State<SettingsSection> {
   void dispose() {
     _apiKeyController.dispose();
     _apiKeyFocusNode.dispose();
+    _gemmaService.dispose();
     super.dispose();
   }
 }

@@ -394,7 +394,7 @@ class _CustomPathsDialogState extends State<CustomPathsDialog> {
       itemBuilder: (context, index) {
         final path = _customPaths[index];
         return Card(
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
             leading: const Icon(Icons.folder_outlined),
