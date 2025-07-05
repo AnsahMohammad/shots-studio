@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:shots_studio/screens/screenshot_details_screen.dart';
@@ -13,88 +13,21 @@ import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/screens/search_screen.dart';
 import 'package:shots_studio/widgets/privacy_dialog.dart';
 import 'package:shots_studio/widgets/onboarding/api_key_guide_dialog.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import 'package:shots_studio/services/notification_service.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:shots_studio/services/snackbar_service.dart';
-import 'package:shots_studio/utils/memory_utils.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:shots_studio/widgets/ai_processing_container.dart';
-import 'package:shots_studio/services/background_service.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:shots_studio/services/analytics_service.dart';
-import 'package:shots_studio/services/file_watcher_service.dart';
-import 'package:shots_studio/services/update_checker_service.dart';
-import 'package:shots_studio/widgets/update_dialog.dart';
-import 'package:shots_studio/widgets/server_message_dialog.dart';
 import 'package:shots_studio/utils/theme_utils.dart';
 import 'package:shots_studio/utils/theme_manager.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
-import 'package:shots_studio/services/image_loader_service.dart';
-import 'package:shots_studio/services/custom_path_service.dart';
+import 'package:shots_studio/utils/memory_utils.dart';
 import 'package:shots_studio/widgets/custom_paths_dialog.dart';
+import 'package:shots_studio/services/snackbar_service.dart';
+import 'package:shots_studio/services/home_screen_service.dart';
+import 'package:shots_studio/utils/auto_categorization_helper.dart';
+import 'package:shots_studio/utils/collection_helper.dart';
+import 'package:shots_studio/utils/app_initialization_helper.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize Analytics (PostHog)
-  await AnalyticsService().initialize();
-
-  // Optimize image cache for better memory management
-  MemoryUtils.optimizeImageCache();
-
-  await NotificationService().init();
-
-  // Initialize background service for AI processing only on non-web platforms
-  if (!kIsWeb) {
-    print("Main: Initial background service setup");
-    // Set up notification channel for background service
-    await _setupBackgroundServiceNotificationChannel();
-    // Don't initialize service at app startup - we'll do it when needed
-  }
-
-  await SentryFlutter.init((options) {
-    options.dsn =
-        'https://6f96d22977b283fc325e038ac45e6e5e@o4509484018958336.ingest.us.sentry.io/4509484020072448';
-
-    options.tracesSampleRate =
-        kDebugMode ? 0 : 0.1; // 30% in debug, 10% in production
-  }, appRunner: () => runApp(SentryWidget(child: const MyApp())));
-}
-
-// Set up notification channel for background service
-Future<void> _setupBackgroundServiceNotificationChannel() async {
-  const AndroidNotificationChannel
-  aiProcessingChannel = AndroidNotificationChannel(
-    'ai_processing_channel', // id - matches BackgroundProcessingService.notificationChannelId
-    'AI Processing Service',
-    description: 'Channel for AI screenshot processing notifications',
-    importance: Importance.low,
-  );
-
-  const AndroidNotificationChannel serverMessagesChannel =
-      AndroidNotificationChannel(
-        'server_messages_channel',
-        'Server Messages',
-        description: 'Channel for server messages and announcements',
-        importance: Importance.high,
-      );
-
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
-
-  await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin
-      >()
-      ?.createNotificationChannel(aiProcessingChannel);
-
-  await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin
-      >()
-      ?.createNotificationChannel(serverMessagesChannel);
+  await AppInitializationHelper.initializeApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
@@ -173,43 +106,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final List<Screenshot> _screenshots = [];
   final List<Collection> _collections = [];
-  final ImageLoaderService _imageLoaderService = ImageLoaderService();
-  bool _isLoading = false;
-  bool _isProcessingAI = false;
-  int _aiProcessedCount = 0;
-  int _aiTotalToProcess = 0;
+  final HomeScreenService _homeScreenService = HomeScreenService();
 
   // Add a global key for the API key text field
   final GlobalKey<State> _apiKeyFieldKey = GlobalKey();
-
-  // File watcher service for seamless autoscanning
-  final FileWatcherService _fileWatcher = FileWatcherService();
-  StreamSubscription<List<Screenshot>>? _fileWatcherSubscription;
-
-  // Add loading progress tracking
-  int _loadingProgress = 0;
-  int _totalToLoad = 0;
-
-  String? _apiKey;
-  String _selectedModelName = 'gemini-2.0-flash';
-  int _screenshotLimit = 1200;
-  int _maxParallelAI = 4;
-  bool _isScreenshotLimitEnabled = false;
-  bool _devMode = false;
-  bool _autoProcessEnabled = true;
-  bool _analyticsEnabled =
-      !kDebugMode; // Default to false in debug mode, true in production
-  bool _amoledModeEnabled = false;
-  String _selectedTheme = 'Dynamic Theme';
-
-  // update screenshots
-  List<Screenshot> get _activeScreenshots {
-    final activeScreenshots =
-        _screenshots.where((screenshot) => !screenshot.isDeleted).toList();
-    // Sort by addedOn date in descending order (newest first)
-    activeScreenshots.sort((a, b) => b.addedOn.compareTo(a.addedOn));
-    return activeScreenshots;
-  }
 
   @override
   void initState() {
@@ -220,210 +120,66 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     AnalyticsService().logScreenView('home_screen');
     AnalyticsService().logCurrentUsageTime();
 
-    _loadDataFromPrefs();
-    _loadSettings();
+    _initializeHomeScreen();
+  }
+
+  Future<void> _initializeHomeScreen() async {
+    await _homeScreenService.initialize();
+    await _loadDataFromService();
+
     if (!kIsWeb) {
-      _loadAndroidScreenshotsIfNeeded().then((_) {
-        // Setup FileWatcher only AFTER initial loading is complete
-        // This ensures no duplicates from initial scan
-        _setupFileWatcher();
-      });
+      await _loadAndroidScreenshotsIfNeeded();
+      _setupFileWatcher();
       _setupBackgroundServiceListeners();
     }
+
     // Show privacy dialog after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Show privacy dialog and only proceed to API key guide if accepted
       bool privacyAccepted = await showPrivacyDialogIfNeeded(context);
       if (privacyAccepted && context.mounted) {
-        // Log install info when onboarding is completed
         AnalyticsService().logInstallInfo();
-
-        // API key guide will only show after privacy is accepted
-        await showApiKeyGuideIfNeeded(context, _apiKey, _updateApiKey);
-
-        _checkForUpdates();
-        _checkForServerMessages();
+        await showApiKeyGuideIfNeeded(
+          context,
+          _homeScreenService.apiKey,
+          _updateApiKey,
+        );
+        _homeScreenService.checkForUpdates(context);
+        _homeScreenService.checkForServerMessages(context);
         _autoProcessWithGemini();
       }
+    });
+  }
+
+  // Helper getters for clean UI access
+  List<Screenshot> get _activeScreenshots {
+    final activeScreenshots =
+        _screenshots.where((screenshot) => !screenshot.isDeleted).toList();
+    activeScreenshots.sort((a, b) => b.addedOn.compareTo(a.addedOn));
+    return activeScreenshots;
+  }
+
+  Future<void> _loadDataFromService() async {
+    final (screenshots, collections) =
+        await _homeScreenService.loadDataFromPrefs();
+    setState(() {
+      _screenshots.clear();
+      _screenshots.addAll(screenshots);
+      _collections.clear();
+      _collections.addAll(collections);
     });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-
-    // Clean up file watcher
-    _fileWatcherSubscription?.cancel();
+    _homeScreenService.dispose();
     super.dispose();
-  }
-
-  /// Setup listeners for background service events
-  void _setupBackgroundServiceListeners() {
-    print("Setting up background service listeners...");
-
-    final service = FlutterBackgroundService();
-
-    // Listen for batch processing updates with the new channel name
-    service.on('batch_processed').listen((event) {
-      try {
-        if (event != null && mounted) {
-          final data = Map<String, dynamic>.from(event);
-          final updatedScreenshotsJson = data['updatedScreenshots'] as String?;
-          final responseJson = data['response'] as String?;
-          final processedCount = data['processedCount'] as int? ?? 0;
-          final totalCount = data['totalCount'] as int? ?? 0;
-
-          print(
-            "Main app: Processing batch update - $processedCount/$totalCount",
-          );
-
-          if (updatedScreenshotsJson != null) {
-            final List<dynamic> updatedScreenshotsList = jsonDecode(
-              updatedScreenshotsJson,
-            );
-            final List<Screenshot> updatedScreenshots =
-                updatedScreenshotsList
-                    .map(
-                      (json) =>
-                          Screenshot.fromJson(json as Map<String, dynamic>),
-                    )
-                    .toList();
-
-            // Process auto-categorization if response data is available
-            Map<String, dynamic>? response;
-            if (responseJson != null) {
-              try {
-                response = jsonDecode(responseJson) as Map<String, dynamic>;
-              } catch (e) {
-                print("Main app: Error parsing response JSON: $e");
-              }
-            }
-
-            setState(() {
-              _aiProcessedCount = processedCount;
-              _aiTotalToProcess = totalCount;
-
-              // Update screenshots in our list and handle auto-categorization
-              for (var updatedScreenshot in updatedScreenshots) {
-                final index = _screenshots.indexWhere(
-                  (s) => s.id == updatedScreenshot.id,
-                );
-                if (index != -1) {
-                  _screenshots[index] = updatedScreenshot;
-                  print("Main app: Updated screenshot ${updatedScreenshot.id}");
-
-                  // Handle auto-categorization for this screenshot
-                  if (response != null &&
-                      response['suggestedCollections'] != null) {
-                    _handleAutoCategorization(updatedScreenshot, response);
-                  }
-                }
-              }
-            });
-
-            // Log AI processing success analytics
-            AnalyticsService().logAIProcessingSuccess(
-              updatedScreenshots.length,
-            );
-            AnalyticsService().logTotalScreenshotsProcessed(
-              _screenshots.where((s) => s.aiProcessed).length,
-            );
-
-            // Save updated data
-            _saveDataToPrefs();
-          }
-        }
-      } catch (e) {
-        print("Main app: Error processing batch update: $e");
-      }
-    });
-
-    // Listen for processing completion with the new channel name
-    service.on('processing_completed').listen((event) {
-      print("Main app: Received processing completed event: $event");
-
-      try {
-        if (event != null && mounted) {
-          final data = Map<String, dynamic>.from(event);
-          final success = data['success'] as bool? ?? false;
-          final processedCount = data['processedCount'] as int? ?? 0;
-          final totalCount = data['totalCount'] as int? ?? 0;
-          final error = data['error'] as String?;
-          final cancelled = data['cancelled'] as bool? ?? false;
-
-          print(
-            "Main app: Processing completed - Success: $success, Processed: $processedCount/$totalCount",
-          );
-
-          setState(() {
-            _isProcessingAI = false;
-            _aiProcessedCount = 0;
-            _aiTotalToProcess = 0;
-          });
-
-          if (cancelled) {
-            SnackbarService().showWarning(
-              context,
-              'Processing cancelled. Processed $processedCount of $totalCount screenshots.',
-            );
-          } else if (success) {
-            SnackbarService().showSuccess(
-              context,
-              'Completed processing $processedCount of $totalCount screenshots.',
-            );
-          } else {
-            SnackbarService().showError(
-              context,
-              error ?? 'Failed to process screenshots',
-            );
-          }
-
-          // Save final data
-          _saveDataToPrefs();
-        }
-      } catch (e) {
-        print("Main app: Error processing completion event: $e");
-      }
-    });
-
-    // Listen for processing errors with the new channel name
-    service.on('processing_error').listen((event) {
-      print("Main app: Received processing error event: $event");
-
-      try {
-        if (event != null && mounted) {
-          final data = Map<String, dynamic>.from(event);
-          final error = data['error'] as String? ?? 'Unknown error';
-
-          print("Main app: Processing error: $error");
-
-          setState(() {
-            _isProcessingAI = false;
-            _aiProcessedCount = 0;
-            _aiTotalToProcess = 0;
-          });
-
-          SnackbarService().showError(context, 'Processing error: $error');
-
-          // Save data even on error
-          _saveDataToPrefs();
-        }
-      } catch (e) {
-        print("Main app: Error handling processing error event: $e");
-      }
-    });
-
-    // Listen for initialization confirmation
-    service.on('initialize').listen((event) {
-      print("Main app: Received service initialization event: $event");
-    });
-
-    print("Background service listeners setup complete");
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
+
     // Only clear cache when app is completely detached to preserve collection thumbnails
     if (state == AppLifecycleState.detached) {
       MemoryUtils.clearImageCache();
@@ -432,408 +188,434 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     // Manage file watcher based on app lifecycle
     if (!kIsWeb) {
       if (state == AppLifecycleState.resumed) {
-        // Start file watching when app comes to foreground
-        _fileWatcher.startWatching();
+        _homeScreenService.startFileWatcher();
       } else if (state == AppLifecycleState.paused) {
-        // Stop file watching when app goes to background to save resources
-        _fileWatcher.stopWatching();
+        _homeScreenService.stopFileWatcher();
       }
     }
 
     // Auto-process unprocessed screenshots when the app comes to foreground
     if (state == AppLifecycleState.resumed) {
-      // Add a small delay to ensure the UI is ready
       Future.delayed(const Duration(milliseconds: 500), () {
         _autoProcessWithGemini();
       });
 
       Future.delayed(const Duration(seconds: 2), () {
-        _checkForServerMessages();
+        _homeScreenService.checkForServerMessages(context);
       });
     }
+  }
+
+  /// Setup background service listeners
+  void _setupBackgroundServiceListeners() {
+    _homeScreenService.setupBackgroundServiceListeners(
+      onProcessingUpdate: (processedCount, totalCount) {
+        // Handle processing updates in UI
+        setState(() {
+          // Update progress indicators
+        });
+      },
+      onProcessingCompleted: (
+        success,
+        processedCount,
+        totalCount,
+        error,
+        cancelled,
+      ) {
+        setState(() {
+          // Reset processing state
+        });
+
+        if (cancelled) {
+          SnackbarService().showWarning(
+            context,
+            'Processing cancelled. Processed $processedCount of $totalCount screenshots.',
+          );
+        } else if (success) {
+          SnackbarService().showSuccess(
+            context,
+            'Completed processing $processedCount of $totalCount screenshots.',
+          );
+        } else {
+          SnackbarService().showError(
+            context,
+            error ?? 'Failed to process screenshots',
+          );
+        }
+        _saveDataToPrefs();
+      },
+      onProcessingError: (error) {
+        setState(() {
+          // Reset processing state
+        });
+        SnackbarService().showError(context, 'Processing error: $error');
+        _saveDataToPrefs();
+      },
+      onBatchProcessed: (updatedScreenshots, response) {
+        setState(() {
+          // Update screenshots in our list
+          for (var updatedScreenshot in updatedScreenshots) {
+            final index = _screenshots.indexWhere(
+              (s) => s.id == updatedScreenshot.id,
+            );
+            if (index != -1) {
+              _screenshots[index] = updatedScreenshot;
+
+              // Handle auto-categorization for this screenshot
+              if (response != null) {
+                AutoCategorizationHelper.handleAutoCategorization(
+                  updatedScreenshot,
+                  response,
+                  _collections,
+                  _updateCollection,
+                );
+              }
+            }
+          }
+        });
+
+        AnalyticsService().logAIProcessingSuccess(updatedScreenshots.length);
+        AnalyticsService().logTotalScreenshotsProcessed(
+          _screenshots.where((s) => s.aiProcessed).length,
+        );
+        _saveDataToPrefs();
+      },
+    );
   }
 
   Future<void> _saveDataToPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String encodedScreenshots = jsonEncode(
-      _screenshots.map((s) => s.toJson()).toList(),
-    );
-    await prefs.setString('screenshots', encodedScreenshots);
-
-    final String encodedCollections = jsonEncode(
-      _collections.map((c) => c.toJson()).toList(),
-    );
-    await prefs.setString('collections', encodedCollections);
-    print("Data saved to SharedPreferences");
+    await _homeScreenService.saveDataToPrefs(_screenshots, _collections);
   }
 
-  Future<void> _loadDataFromPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final String? storedScreenshots = prefs.getString('screenshots');
-    if (storedScreenshots != null && storedScreenshots.isNotEmpty) {
-      final List<dynamic> decodedScreenshots = jsonDecode(storedScreenshots);
-      setState(() {
-        _screenshots.clear();
-        _screenshots.addAll(
-          decodedScreenshots.map(
-            (json) => Screenshot.fromJson(json as Map<String, dynamic>),
-          ),
-        );
-      });
-    }
-
-    final String? storedCollections = prefs.getString('collections');
-    if (storedCollections != null && storedCollections.isNotEmpty) {
-      final List<dynamic> decodedCollections = jsonDecode(storedCollections);
-      setState(() {
-        _collections.clear();
-        _collections.addAll(
-          decodedCollections.map(
-            (json) => Collection.fromJson(json as Map<String, dynamic>),
-          ),
-        );
-      });
-    }
-    print("Data loaded from SharedPreferences");
-  }
-
-  Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _apiKey = prefs.getString('apiKey');
-      _selectedModelName = prefs.getString('modelName') ?? 'gemini-2.0-flash';
-      _screenshotLimit = prefs.getInt('limit') ?? 1200;
-      _maxParallelAI = prefs.getInt('maxParallel') ?? 4;
-      _isScreenshotLimitEnabled = prefs.getBool('limit_enabled') ?? false;
-      _devMode = prefs.getBool('dev_mode') ?? false;
-      _autoProcessEnabled = prefs.getBool('auto_process_enabled') ?? true;
-      _analyticsEnabled =
-          prefs.getBool('analytics_consent_enabled') ?? !kDebugMode;
-      _amoledModeEnabled = prefs.getBool('amoled_mode_enabled') ?? false;
-      _selectedTheme = prefs.getString('selected_theme') ?? 'Dynamic Theme';
-    });
-  }
-
+  /// API key and settings update methods
   void _updateApiKey(String newApiKey) {
-    setState(() {
-      _apiKey = newApiKey;
-    });
-    // Save to SharedPreferences
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.setString('apiKey', newApiKey);
-    });
+    _homeScreenService.updateApiKey(newApiKey);
   }
 
   void _updateModelName(String newModelName) {
-    setState(() {
-      _selectedModelName = newModelName;
-    });
+    _homeScreenService.updateModelName(newModelName);
   }
 
   void _updateScreenshotLimit(int newLimit) {
-    setState(() {
-      _screenshotLimit = newLimit;
-    });
+    _homeScreenService.updateScreenshotLimit(newLimit);
   }
 
   void _updateScreenshotLimitEnabled(bool enabled) {
-    setState(() {
-      _isScreenshotLimitEnabled = enabled;
-    });
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.setBool('limit_enabled', enabled);
-    });
+    _homeScreenService.updateScreenshotLimitEnabled(enabled);
   }
 
   void _updateMaxParallelAI(int newMaxParallel) {
-    setState(() {
-      _maxParallelAI = newMaxParallel;
-    });
+    _homeScreenService.updateMaxParallelAI(newMaxParallel);
   }
 
   void _updateDevMode(bool value) {
-    setState(() {
-      _devMode = value;
-    });
-    // Save to SharedPreferences
-    _saveDevMode(value);
+    _homeScreenService.updateDevMode(value);
   }
 
   void _updateAutoProcessEnabled(bool enabled) {
-    setState(() {
-      _autoProcessEnabled = enabled;
-    });
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.setBool('auto_process_enabled', enabled);
-    });
+    _homeScreenService.updateAutoProcessEnabled(enabled);
   }
 
   void _updateAnalyticsEnabled(bool enabled) {
-    setState(() {
-      _analyticsEnabled = enabled;
-    });
-    // Analytics consent is handled by the AnalyticsService directly
-    // The service saves the preference and manages the consent state
+    _homeScreenService.updateAnalyticsEnabled(enabled);
   }
 
   void _updateAmoledModeEnabled(bool enabled) {
-    setState(() {
-      _amoledModeEnabled = enabled;
-    });
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.setBool('amoled_mode_enabled', enabled);
-    });
-    // Notify the parent MyApp to rebuild with new theme
+    _homeScreenService.updateAmoledModeEnabled(enabled);
     if (widget.onAmoledModeChanged != null) {
       widget.onAmoledModeChanged!(enabled);
     }
   }
 
   void _updateThemeSelection(String themeName) {
-    setState(() {
-      _selectedTheme = themeName;
-    });
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.setString('selected_theme', themeName);
-    });
-    // Notify the parent MyApp to rebuild with new theme
+    _homeScreenService.updateThemeSelection(themeName);
     if (widget.onThemeChanged != null) {
       widget.onThemeChanged!(themeName);
     }
   }
 
-  Future<void> _saveDevMode(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('dev_mode', value);
-  }
+  /// Load Android screenshots only if we don't already have screenshots loaded from preferences
+  Future<void> _loadAndroidScreenshotsIfNeeded() async {
+    await Future.delayed(const Duration(milliseconds: 100));
 
-  /// Check for app updates from GitHub releases
-  Future<void> _checkForUpdates() async {
-    try {
-      final updateInfo = await UpdateCheckerService.checkForUpdates();
-
-      if (updateInfo != null && mounted) {
-        // Show update dialog
-        showDialog(
-          context: context,
-          builder: (context) => UpdateDialog(updateInfo: updateInfo),
-        );
-
-        AnalyticsService().logFeatureUsed('update_available');
-      } else if (updateInfo == null) {
-        print('MainApp: No update available');
-      } else if (!mounted) {
-        print('MainApp: Widget not mounted, cannot show dialog');
-      }
-    } catch (e) {
-      // as this is a background feature and errors shouldn't interrupt user flow
-      print('MainApp: Update check failed: $e');
-
-      // Log analytics for update check failures
-      AnalyticsService().logFeatureUsed('update_check_failed');
+    if (_screenshots.isEmpty) {
+      print(
+        "No screenshots found in preferences, loading from Android device...",
+      );
+      await _loadAndroidScreenshots();
+    } else {
+      print(
+        "Screenshots already loaded from preferences (${_screenshots.length} screenshots)",
+      );
     }
   }
 
-  /// Check for server messages and notifications
-  Future<void> _checkForServerMessages() async {
-    try {
-      print("MainApp: Checking for server messages...");
-      await Future.delayed(const Duration(milliseconds: 500));
+  Future<void> _loadAndroidScreenshots({bool forceReload = false}) async {
+    if (kIsWeb) return;
 
-      if (mounted) {
-        await ServerMessageDialog.showServerMessageDialogIfAvailable(context);
+    if (!forceReload && _screenshots.isNotEmpty) {
+      print("Screenshots already loaded, skipping Android screenshot loading");
+      return;
+    }
+
+    final newScreenshots = await _homeScreenService.loadAndroidScreenshots(
+      existingScreenshots: _screenshots,
+      forceReload: forceReload,
+      onProgress: (current, total) {
+        setState(() {
+          // Progress tracking handled in service
+        });
+      },
+    );
+
+    if (newScreenshots.isNotEmpty) {
+      setState(() {
+        _screenshots.insertAll(0, newScreenshots);
+      });
+
+      await _saveDataToPrefs();
+      _autoProcessWithGemini();
+    }
+  }
+
+  /// Setup file watcher for seamless autoscanning
+  void _setupFileWatcher() {
+    _homeScreenService.setupFileWatcher(
+      existingScreenshots: _screenshots,
+      onNewScreenshots: (newScreenshots) {
+        setState(() {
+          _screenshots.addAll(newScreenshots);
+        });
+
+        _saveDataToPrefs();
+
+        if (_homeScreenService.autoProcessEnabled) {
+          _autoProcessWithGemini();
+        }
+
+        if (mounted && context.mounted) {
+          SnackbarService().showInfo(
+            context,
+            'Found ${newScreenshots.length} new screenshot${newScreenshots.length == 1 ? '' : 's'}',
+          );
+        }
+      },
+    );
+  }
+
+  Future<void> _takeScreenshot(ImageSource source) async {
+    final newScreenshots = await _homeScreenService.takeScreenshot(
+      source,
+      _screenshots,
+    );
+
+    if (newScreenshots.isNotEmpty) {
+      setState(() {
+        _screenshots.addAll(newScreenshots);
+      });
+
+      await _saveDataToPrefs();
+      AnalyticsService().logTotalScreenshotsProcessed(_screenshots.length);
+      _autoProcessWithGemini();
+    }
+  }
+
+  /// Helper method to check and auto-process screenshots
+  Future<void> _autoProcessWithGemini() async {
+    if (_homeScreenService.autoProcessEnabled &&
+        _homeScreenService.apiKey != null &&
+        _homeScreenService.apiKey!.isNotEmpty &&
+        !_homeScreenService.isProcessingAI) {
+      final unprocessedScreenshots =
+          _activeScreenshots.where((s) => !s.aiProcessed).toList();
+      if (unprocessedScreenshots.isNotEmpty) {
+        await Future.delayed(const Duration(milliseconds: 300));
+        await _processWithGemini();
       }
-    } catch (e) {
-      print('MainApp: Server message check failed: $e');
-
-      // Log analytics for server message check failures
-      AnalyticsService().logFeatureUsed('server_message_check_failed');
     }
   }
 
   Future<void> _processWithGemini() async {
-    print("Main app: _processWithGemini called");
-
-    // Check for API key
-    if (_apiKey == null || _apiKey!.isEmpty) {
-      print("Main app: No API key configured");
-      SnackbarService().showError(
-        context,
-        'Gemini API key not configured. Please check app settings.',
-      );
-      return;
-    }
-
-    // Get unprocessed screenshots
     final unprocessedScreenshots =
         _activeScreenshots.where((s) => !s.aiProcessed).toList();
-
-    if (unprocessedScreenshots.isEmpty) {
-      print("Main app: No unprocessed screenshots found");
-      SnackbarService().showInfo(
-        context,
-        'All screenshots have already been processed.',
-      );
-      return;
-    }
-
-    print(
-      "Main app: Starting background processing for ${unprocessedScreenshots.length} screenshots",
+    final success = await _homeScreenService.startAIProcessing(
+      context: context,
+      unprocessedScreenshots: unprocessedScreenshots,
+      collections: _collections,
     );
 
-    // Update UI to show processing state
-    setState(() {
-      _isProcessingAI = true;
-      _aiProcessedCount = 0;
-      _aiTotalToProcess = unprocessedScreenshots.length;
-    });
-
-    // Get list of collections that have auto-add enabled
-    final autoAddCollections =
-        _collections
-            .where((collection) => collection.isAutoAddEnabled)
-            .map(
-              (collection) => {
-                'name': collection.name,
-                'description': collection.description,
-                'id': collection.id,
-              },
-            )
-            .toList();
-
-    print("Main app: Auto-add collections count: ${autoAddCollections.length}");
-
-    try {
-      // Use the background processing approach
-      final backgroundService = BackgroundProcessingService();
-
-      print("Main app: Initializing background service...");
-
-      // Simple service initialization
-      final serviceInitialized = await backgroundService.initializeService();
-
-      if (!serviceInitialized) {
-        print("Main app: Service initialization failed");
-        setState(() {
-          _isProcessingAI = false;
-          _aiProcessedCount = 0;
-          _aiTotalToProcess = 0;
-        });
-
-        SnackbarService().showError(
-          context,
-          'Failed to initialize background service. Please try again.',
-        );
-        return;
-      }
-
-      print("Main app: Background service initialized, starting processing...");
-
-      // Start the processing with the initialized service
-      print(
-        "Main app: Calling startBackgroundProcessing with ${unprocessedScreenshots.length} screenshots",
-      );
-      final success = await backgroundService.startBackgroundProcessing(
-        screenshots: unprocessedScreenshots,
-        apiKey: _apiKey!,
-        modelName: _selectedModelName,
-        maxParallel: _maxParallelAI,
-        autoAddCollections: autoAddCollections,
-      );
-      print("Main app: startBackgroundProcessing returned: $success");
-
-      if (success) {
-        print("Main app: Background processing started successfully");
-        SnackbarService().showInfo(
-          context,
-          'Processing started for ${unprocessedScreenshots.length} screenshots.',
-        );
-      } else {
-        print("Main app: Failed to start background processing");
-        setState(() {
-          _isProcessingAI = false;
-          _aiProcessedCount = 0;
-          _aiTotalToProcess = 0;
-        });
-
-        SnackbarService().showError(
-          context,
-          'Failed to start background processing. Please try again.',
-        );
-      }
-    } catch (e) {
-      print("Main app: Error starting background processing: $e");
-
+    if (success) {
       setState(() {
-        _isProcessingAI = false;
-        _aiProcessedCount = 0;
-        _aiTotalToProcess = 0;
+        // Processing state managed by service
       });
-
-      // Show error notification
-      SnackbarService().showError(
-        context,
-        'Error starting background processing: $e',
-      );
     }
   }
 
   Future<void> _stopProcessingAI() async {
-    if (_isProcessingAI) {
-      print("Main app: Stopping background processing...");
+    await _homeScreenService.stopAIProcessing();
+    await _saveDataToPrefs();
+    setState(() {
+      // State reset handled by service
+    });
+  }
 
-      // Update UI immediately to reflect stopping state
-      setState(() {
-        _aiTotalToProcess = 0;
-      });
+  /// Collection management methods
+  void _addCollection(Collection collection) {
+    setState(() {
+      _collections.add(collection);
+      CollectionHelper.addCollectionRelationships(collection, _screenshots);
+    });
 
-      try {
-        // Use the new stopBackgroundProcessing method that doesn't shut down the service
-        final backgroundService = BackgroundProcessingService();
-        await backgroundService.stopBackgroundProcessing();
-        print("Main app: Background processing stop requested");
+    _saveDataToPrefs();
 
-        // No need to show notification here, the service will report back with a cancelled status
-        // and the listener will handle showing the notification
-      } catch (e) {
-        print("Main app: Error stopping background processing: $e");
+    // Log analytics
+    AnalyticsService().logCollectionCreated();
+    AnalyticsService().logTotalCollections(_collections.length);
+    CollectionHelper.logCollectionStats(_collections);
 
-        // Show error notification only if an exception occurred during the stop request
-        SnackbarService().showWarning(
-          context,
-          'Error stopping AI processing: $e',
+    // Handle auto-add enabled collections
+    if (collection.isAutoAddEnabled) {
+      AnalyticsService().logFeatureUsed('auto_add_collection_created');
+      if (_homeScreenService.isProcessingAI) {
+        AnalyticsService().logFeatureUsed(
+          'auto_add_collection_restart_processing',
         );
+        _restartProcessingForNewAutoAddCollection();
+      } else {
+        AnalyticsService().logFeatureUsed(
+          'auto_add_collection_start_processing',
+        );
+        _autoProcessWithGemini();
       }
-
-      await _saveDataToPrefs();
-      setState(() {
-        _isProcessingAI = false;
-      });
     }
   }
 
-  /// Restart AI processing when a new auto-add enabled collection is created or enabled
-  /// This ensures seamless operation by including the new collection in the processing workflow
+  void _updateCollection(Collection updatedCollection) {
+    bool wasAutoAddJustEnabled = false;
+    final index = _collections.indexWhere((c) => c.id == updatedCollection.id);
+
+    Collection? oldCollection;
+    if (index != -1) {
+      oldCollection = _collections[index];
+      wasAutoAddJustEnabled =
+          !oldCollection.isAutoAddEnabled && updatedCollection.isAutoAddEnabled;
+    }
+
+    setState(() {
+      if (index != -1) {
+        _collections[index] = updatedCollection;
+        CollectionHelper.updateCollectionRelationships(
+          updatedCollection,
+          oldCollection,
+          _screenshots,
+        );
+      }
+    });
+
+    _saveDataToPrefs();
+    CollectionHelper.logCollectionStats(_collections);
+
+    // Handle auto-add enabled collections
+    if (wasAutoAddJustEnabled) {
+      AnalyticsService().logFeatureUsed('auto_add_collection_enabled');
+      if (_homeScreenService.isProcessingAI) {
+        AnalyticsService().logFeatureUsed(
+          'auto_add_enabled_restart_processing',
+        );
+        _restartProcessingForNewAutoAddCollection();
+      } else {
+        AnalyticsService().logFeatureUsed('auto_add_enabled_start_processing');
+        _autoProcessWithGemini();
+      }
+    }
+  }
+
+  void _updateCollections(List<Collection> updatedCollections) {
+    setState(() {
+      _collections.clear();
+      _collections.addAll(updatedCollections);
+    });
+    _saveDataToPrefs();
+    AnalyticsService().logFeatureUsed('collections_bulk_updated');
+  }
+
+  void _deleteCollection(String collectionId) {
+    setState(() {
+      _collections.removeWhere((c) => c.id == collectionId);
+      CollectionHelper.removeCollectionRelationships(
+        collectionId,
+        _screenshots,
+      );
+    });
+    _saveDataToPrefs();
+
+    AnalyticsService().logCollectionDeleted();
+    AnalyticsService().logTotalCollections(_collections.length);
+    CollectionHelper.logCollectionStats(_collections);
+  }
+
+  /// Screenshot management methods
+  void _deleteScreenshot(String screenshotId) {
+    setState(() {
+      final screenshotIndex = _screenshots.indexWhere(
+        (s) => s.id == screenshotId,
+      );
+      if (screenshotIndex != -1) {
+        _screenshots[screenshotIndex].isDeleted = true;
+      }
+
+      for (var collection in _collections) {
+        if (collection.screenshotIds.contains(screenshotId)) {
+          final updatedCollection = collection.removeScreenshot(screenshotId);
+          _updateCollection(updatedCollection);
+        }
+      }
+    });
+    _saveDataToPrefs();
+  }
+
+  void _bulkDeleteScreenshots(List<String> screenshotIds) {
+    if (screenshotIds.isEmpty) return;
+
+    AnalyticsService().logFeatureUsed('bulk_delete_screenshots');
+
+    setState(() {
+      for (String screenshotId in screenshotIds) {
+        final screenshotIndex = _screenshots.indexWhere(
+          (s) => s.id == screenshotId,
+        );
+        if (screenshotIndex != -1) {
+          _screenshots[screenshotIndex].isDeleted = true;
+        }
+
+        for (var collection in _collections) {
+          if (collection.screenshotIds.contains(screenshotId)) {
+            final updatedCollection = collection.removeScreenshot(screenshotId);
+            _updateCollection(updatedCollection);
+          }
+        }
+      }
+    });
+
+    _saveDataToPrefs();
+    AnalyticsService().logFeatureUsed(
+      'bulk_delete_count_${screenshotIds.length}',
+    );
+  }
+
+  /// Helper methods
   Future<void> _restartProcessingForNewAutoAddCollection() async {
     print("Main app: Restarting processing for new auto-add collection...");
-
-    // Log analytics for restart operation
     AnalyticsService().logFeatureUsed('auto_add_processing_restart_initiated');
 
     try {
-      // Stop current processing
       await _stopProcessingAI();
-
-      // Wait a moment for the stop to complete
       await Future.delayed(const Duration(milliseconds: 500));
 
-      // Check if there are any unprocessed screenshots to restart processing
       final unprocessedScreenshots =
           _activeScreenshots.where((s) => !s.aiProcessed).toList();
 
       if (unprocessedScreenshots.isNotEmpty) {
-        // Restart processing with the updated collection list (including new auto-add collection)
         print(
           "Main app: Restarting processing with ${unprocessedScreenshots.length} unprocessed screenshots",
         );
@@ -859,377 +641,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _takeScreenshot(ImageSource source) async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final result = await _imageLoaderService.loadFromImagePicker(
-        source: source,
-        existingScreenshots: _screenshots,
-      );
-
-      if (result.success) {
-        setState(() {
-          _screenshots.addAll(result.screenshots);
-          _isLoading = false;
-          _loadingProgress = 0;
-          _totalToLoad = 0;
-        });
-
-        await _saveDataToPrefs();
-
-        // Log total screenshots analytics
-        AnalyticsService().logTotalScreenshotsProcessed(_screenshots.length);
-
-        // Auto-process the newly added screenshots
-        if (result.screenshots.isNotEmpty) {
-          _autoProcessWithGemini();
-        }
-      } else {
-        setState(() {
-          _isLoading = false;
-          _loadingProgress = 0;
-          _totalToLoad = 0;
-        });
-
-        if (result.errorMessage != null) {
-          print('Error taking screenshot: ${result.errorMessage}');
-        }
-      }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _loadingProgress = 0;
-        _totalToLoad = 0;
-      });
-      print('Unexpected error taking screenshot: $e');
-    }
-  }
-
-  Future<void> _loadAndroidScreenshots({bool forceReload = false}) async {
-    if (kIsWeb) return;
-
-    // Skip loading if we already have screenshots and it's not a forced reload
-    // This prevents unnecessary reloading when the app restarts
-    if (!forceReload && _screenshots.isNotEmpty) {
-      print("Screenshots already loaded, skipping Android screenshot loading");
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-      _loadingProgress = 0;
-      _totalToLoad = 0;
-    });
-
-    try {
-      // Get custom paths from preferences
-      final customPaths = await CustomPathService.getCustomPaths();
-
-      final result = await _imageLoaderService.loadAndroidScreenshots(
-        existingScreenshots: _screenshots,
-        isLimitEnabled: _isScreenshotLimitEnabled,
-        screenshotLimit: _screenshotLimit,
-        customPaths: customPaths,
-        onProgress: (current, total) {
-          setState(() {
-            _loadingProgress = current;
-            _totalToLoad = total;
-          });
-        },
-      );
-
-      if (result.success) {
-        setState(() {
-          _screenshots.insertAll(0, result.screenshots);
-          _isLoading = false;
-          _loadingProgress = 0;
-          _totalToLoad = 0;
-        });
-
-        await _saveDataToPrefs();
-
-        // Auto-process newly loaded screenshots
-        if (result.screenshots.isNotEmpty) {
-          _autoProcessWithGemini();
-        }
-      } else {
-        setState(() {
-          _isLoading = false;
-          _loadingProgress = 0;
-          _totalToLoad = 0;
-        });
-
-        if (result.errorMessage != null) {
-          SnackbarService().showError(context, result.errorMessage!);
-        }
-      }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _loadingProgress = 0;
-        _totalToLoad = 0;
-      });
-      print('Unexpected error loading Android screenshots: $e');
-    }
-  }
-
-  /// Load Android screenshots only if we don't already have screenshots loaded from preferences
-  Future<void> _loadAndroidScreenshotsIfNeeded() async {
-    // Wait a bit for _loadDataFromPrefs to complete
-    await Future.delayed(const Duration(milliseconds: 100));
-
-    // Only load if we don't have screenshots already
-    if (_screenshots.isEmpty) {
-      print(
-        "No screenshots found in preferences, loading from Android device...",
-      );
-      await _loadAndroidScreenshots();
-    } else {
-      print(
-        "Screenshots already loaded from preferences (${_screenshots.length} screenshots)",
-      );
-    }
-  }
-
-  void _addCollection(Collection collection) {
-    setState(() {
-      _collections.add(collection);
-
-      // Update screenshots' collectionIds to maintain bidirectional relationship
-      for (String screenshotId in collection.screenshotIds) {
-        final screenshotIndex = _screenshots.indexWhere(
-          (s) => s.id == screenshotId,
-        );
-        if (screenshotIndex != -1) {
-          final screenshot = _screenshots[screenshotIndex];
-          if (!screenshot.collectionIds.contains(collection.id)) {
-            screenshot.collectionIds.add(collection.id);
-          }
-        }
-      }
-    });
-
-    // Force immediate save to ensure consistency
-    _saveDataToPrefs();
-
-    // Log analytics
-    AnalyticsService().logCollectionCreated();
-    AnalyticsService().logTotalCollections(_collections.length);
-    _logCollectionStats();
-
-    // If the new collection has autoAddEnabled, ensure processing starts/restarts
-    // to include the new auto-add enabled collection
-    if (collection.isAutoAddEnabled) {
-      // Log analytics for auto-add collection creation
-      AnalyticsService().logFeatureUsed('auto_add_collection_created');
-
-      if (_isProcessingAI) {
-        // If already processing, restart to include the new collection
-        AnalyticsService().logFeatureUsed(
-          'auto_add_collection_restart_processing',
-        );
-        _restartProcessingForNewAutoAddCollection();
-      } else {
-        // If not processing, start processing to handle the new auto-add collection
-        AnalyticsService().logFeatureUsed(
-          'auto_add_collection_start_processing',
-        );
-        _autoProcessWithGemini();
-      }
-    }
-  }
-
-  void _updateCollection(Collection updatedCollection) {
-    // Check if autoAddEnabled was just turned on
-    bool wasAutoAddJustEnabled = false;
-    final index = _collections.indexWhere((c) => c.id == updatedCollection.id);
-
-    Collection? oldCollection;
-    if (index != -1) {
-      oldCollection = _collections[index];
-      wasAutoAddJustEnabled =
-          !oldCollection.isAutoAddEnabled && updatedCollection.isAutoAddEnabled;
-    }
-
-    setState(() {
-      if (index != -1) {
-        _collections[index] = updatedCollection;
-
-        // Maintain bidirectional relationship between screenshots and collections
-        if (oldCollection != null) {
-          // Find screenshots that were added to the collection
-          final addedScreenshots =
-              updatedCollection.screenshotIds
-                  .where((id) => !oldCollection!.screenshotIds.contains(id))
-                  .toList();
-
-          // Find screenshots that were removed from the collection
-          final removedScreenshots =
-              oldCollection.screenshotIds
-                  .where((id) => !updatedCollection.screenshotIds.contains(id))
-                  .toList();
-
-          // Update added screenshots' collectionIds
-          for (String screenshotId in addedScreenshots) {
-            final screenshotIndex = _screenshots.indexWhere(
-              (s) => s.id == screenshotId,
-            );
-            if (screenshotIndex != -1) {
-              final screenshot = _screenshots[screenshotIndex];
-              if (!screenshot.collectionIds.contains(updatedCollection.id)) {
-                screenshot.collectionIds.add(updatedCollection.id);
-              }
-            }
-          }
-
-          // Update removed screenshots' collectionIds
-          for (String screenshotId in removedScreenshots) {
-            final screenshotIndex = _screenshots.indexWhere(
-              (s) => s.id == screenshotId,
-            );
-            if (screenshotIndex != -1) {
-              final screenshot = _screenshots[screenshotIndex];
-              screenshot.collectionIds.remove(updatedCollection.id);
-            }
-          }
-        }
-      }
-    });
-
-    // Force immediate save to prevent data loss and ensure consistency
-    _saveDataToPrefs();
-
-    // Log collection stats after update
-    _logCollectionStats();
-
-    // If autoAddEnabled was just turned on, ensure processing starts/restarts
-    // to include the newly auto-add enabled collection
-    if (wasAutoAddJustEnabled) {
-      // Log analytics for auto-add being enabled on existing collection
-      AnalyticsService().logFeatureUsed('auto_add_collection_enabled');
-
-      if (_isProcessingAI) {
-        // If already processing, restart to include the updated collection
-        AnalyticsService().logFeatureUsed(
-          'auto_add_enabled_restart_processing',
-        );
-        _restartProcessingForNewAutoAddCollection();
-      } else {
-        // If not processing, start processing to handle the newly enabled auto-add collection
-        AnalyticsService().logFeatureUsed('auto_add_enabled_start_processing');
-        _autoProcessWithGemini();
-      }
-    }
-  }
-
-  void _updateCollections(List<Collection> updatedCollections) {
-    setState(() {
-      _collections.clear();
-      _collections.addAll(updatedCollections);
-    });
-    _saveDataToPrefs();
-
-    AnalyticsService().logFeatureUsed('collections_bulk_updated');
-  }
-
-  void _deleteCollection(String collectionId) {
-    setState(() {
-      _collections.removeWhere((c) => c.id == collectionId);
-      for (var screenshot in _screenshots) {
-        screenshot.collectionIds.remove(collectionId);
-      }
-    });
-    _saveDataToPrefs();
-
-    // Log analytics
-    AnalyticsService().logCollectionDeleted();
-    AnalyticsService().logTotalCollections(_collections.length);
-    _logCollectionStats();
-  }
-
-  void _logCollectionStats() {
-    if (_collections.isEmpty) return;
-
-    // Calculate collection statistics
-    final screenshotCounts =
-        _collections.map((c) => c.screenshotIds.length).toList();
-    final totalScreenshots = screenshotCounts.fold(
-      0,
-      (sum, count) => sum + count,
-    );
-    final avgScreenshots = totalScreenshots / _collections.length;
-    final minScreenshots = screenshotCounts.reduce((a, b) => a < b ? a : b);
-    final maxScreenshots = screenshotCounts.reduce((a, b) => a > b ? a : b);
-
-    // Log collection statistics
-    AnalyticsService().logCollectionStats(
-      _collections.length,
-      avgScreenshots.round(),
-      minScreenshots,
-      maxScreenshots,
-    );
-  }
-
-  void _deleteScreenshot(String screenshotId) {
-    setState(() {
-      // Mark screenshot as deleted instead of removing it
-      final screenshotIndex = _screenshots.indexWhere(
-        (s) => s.id == screenshotId,
-      );
-      if (screenshotIndex != -1) {
-        _screenshots[screenshotIndex].isDeleted = true;
-      }
-
-      // Remove screenshot from all collections
-      for (var collection in _collections) {
-        if (collection.screenshotIds.contains(screenshotId)) {
-          final updatedCollection = collection.removeScreenshot(screenshotId);
-          _updateCollection(updatedCollection);
-        }
-      }
-    });
-    _saveDataToPrefs();
-  }
-
-  void _bulkDeleteScreenshots(List<String> screenshotIds) {
-    if (screenshotIds.isEmpty) return;
-
-    // Log bulk delete analytics
-    AnalyticsService().logFeatureUsed('bulk_delete_screenshots');
-
-    setState(() {
-      // Mark all screenshots as deleted
-      for (String screenshotId in screenshotIds) {
-        final screenshotIndex = _screenshots.indexWhere(
-          (s) => s.id == screenshotId,
-        );
-        if (screenshotIndex != -1) {
-          _screenshots[screenshotIndex].isDeleted = true;
-        }
-
-        // Remove screenshot from all collections
-        for (var collection in _collections) {
-          if (collection.screenshotIds.contains(screenshotId)) {
-            final updatedCollection = collection.removeScreenshot(screenshotId);
-            _updateCollection(updatedCollection);
-          }
-        }
-      }
-    });
-
-    _saveDataToPrefs();
-
-    // Log analytics for the number of screenshots deleted
-    AnalyticsService().logFeatureUsed(
-      'bulk_delete_count_${screenshotIds.length}',
-    );
-  }
-
+  /// Navigation methods
   void _navigateToSearchScreen() {
-    // Log navigation analytics
     AnalyticsService().logScreenView('search_screen');
     AnalyticsService().logUserPath('home_screen', 'search_screen');
     AnalyticsService().logFeatureUsed('search');
@@ -1247,195 +660,37 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  /// Handle auto-categorization for a screenshot based on AI suggestions
-  void _handleAutoCategorization(
-    Screenshot screenshot,
-    Map<String, dynamic> response,
-  ) {
-    try {
-      Map<dynamic, dynamic>? suggestionsMap;
-      if (response['suggestedCollections'] is Map<String, List<String>>) {
-        suggestionsMap =
-            response['suggestedCollections'] as Map<String, List<String>>;
-      } else if (response['suggestedCollections'] is Map<dynamic, dynamic>) {
-        suggestionsMap =
-            response['suggestedCollections'] as Map<dynamic, dynamic>;
-      }
+  void _showScreenshotDetail(Screenshot screenshot) {
+    AnalyticsService().logScreenView('screenshot_detail_screen');
+    AnalyticsService().logUserPath('home_screen', 'screenshot_detail_screen');
+    AnalyticsService().logFeatureUsed('screenshot_detail_view');
 
-      List<String> suggestedCollections = [];
-      if (suggestionsMap != null && suggestionsMap.containsKey(screenshot.id)) {
-        final suggestions = suggestionsMap[screenshot.id];
-        if (suggestions is List) {
-          suggestedCollections = List<String>.from(
-            suggestions.whereType<String>(),
-          );
-        } else if (suggestions is String) {
-          suggestedCollections = [suggestions];
-        }
-      }
-
-      if (suggestedCollections.isNotEmpty) {
-        int autoAddedCount = 0;
-        for (var collection in _collections) {
-          if (collection.isAutoAddEnabled &&
-              suggestedCollections.contains(collection.name) &&
-              !screenshot.collectionIds.contains(collection.id) &&
-              !collection.screenshotIds.contains(screenshot.id)) {
-            // Auto-add screenshot to this collection
-            final updatedCollection = collection.addScreenshot(
-              screenshot.id,
-              isAutoCategorized: true,
-            );
-            _updateCollection(updatedCollection);
-            autoAddedCount++;
-          }
-        }
-
-        if (autoAddedCount > 0) {
-          print(
-            "Main app: Auto-categorized screenshot ${screenshot.id} into $autoAddedCount collection(s)",
-          );
-
-          // Log auto-categorization analytics
-          AnalyticsService().logScreenshotsAutoCategorized(autoAddedCount);
-          AnalyticsService().logFeatureUsed('auto_categorization');
-        }
-      }
-    } catch (e) {
-      print('Main app: Error handling auto-categorization: $e');
-    }
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(
+            builder:
+                (context) => ScreenshotDetailScreen(
+                  screenshot: screenshot,
+                  allCollections: _collections,
+                  allScreenshots: _screenshots,
+                  onUpdateCollection: (updatedCollection) {
+                    _updateCollection(updatedCollection);
+                  },
+                  onDeleteScreenshot: _deleteScreenshot,
+                  onScreenshotUpdated: () {
+                    setState(() {});
+                    _saveDataToPrefs();
+                  },
+                ),
+          ),
+        )
+        .then((_) {
+          setState(() {});
+          _saveDataToPrefs();
+        });
   }
 
-  // Helper method to check and auto-process screenshots
-  Future<void> _autoProcessWithGemini() async {
-    // Only auto-process if enabled, we have an API key, we're not already processing,
-    if (_autoProcessEnabled &&
-        _apiKey != null &&
-        _apiKey!.isNotEmpty &&
-        !_isProcessingAI) {
-      // Check if there are any unprocessed screenshots
-      final unprocessedScreenshots =
-          _activeScreenshots.where((s) => !s.aiProcessed).toList();
-      if (unprocessedScreenshots.isNotEmpty) {
-        // Add a small delay to allow UI to update before processing starts
-        await Future.delayed(const Duration(milliseconds: 300));
-
-        await _processWithGemini();
-      }
-    }
-  }
-
-  /// Setup file watcher for seamless autoscanning
-  void _setupFileWatcher() {
-    print("📡 Setting up file watcher for seamless autoscanning...");
-    print(
-      "📊 Current screenshots count at watcher setup: ${_screenshots.length}",
-    );
-
-    // Cancel existing subscription if any
-    _fileWatcherSubscription?.cancel();
-
-    // Sync file watcher with existing screenshots to avoid conflicts
-    final existingPaths =
-        _screenshots.map((s) => s.path).whereType<String>().toList();
-    print(
-      "🔄 Syncing FileWatcher with ${existingPaths.length} existing screenshots",
-    );
-    _fileWatcher.syncWithExistingScreenshots(existingPaths);
-
-    // Listen to new screenshots from file watcher
-    _fileWatcherSubscription = _fileWatcher.newScreenshotsStream.listen(
-      (newScreenshots) {
-        print(
-          "FileWatcher: STREAM EVENT RECEIVED! Detected ${newScreenshots.length} new screenshots",
-        );
-
-        if (newScreenshots.isNotEmpty && mounted) {
-          print(
-            "FileWatcher: Current screenshots count: ${_screenshots.length}",
-          );
-
-          // Filter out screenshots we already have
-          final uniqueScreenshots = <Screenshot>[];
-          for (final screenshot in newScreenshots) {
-            final exists = _screenshots.any((s) => s.path == screenshot.path);
-            print("FileWatcher: Checking ${screenshot.path} - exists: $exists");
-            if (!exists) {
-              uniqueScreenshots.add(screenshot);
-              print("FileWatcher: Added unique screenshot: ${screenshot.path}");
-            } else {
-              print(
-                "FileWatcher: Skipped duplicate screenshot: ${screenshot.path}",
-              );
-            }
-          }
-
-          print(
-            "FileWatcher: Found ${uniqueScreenshots.length} unique screenshots",
-          );
-
-          if (uniqueScreenshots.isNotEmpty) {
-            print(
-              "FileWatcher: Adding ${uniqueScreenshots.length} screenshots to state...",
-            );
-            setState(() {
-              _screenshots.addAll(uniqueScreenshots);
-            });
-
-            // Save data and auto-process the new screenshots
-            _saveDataToPrefs();
-
-            print(
-              "FileWatcher: Successfully added ${uniqueScreenshots.length} new screenshots",
-            );
-
-            // Auto-process newly detected screenshots if enabled
-            if (_autoProcessEnabled) {
-              print(
-                "FileWatcher: Auto-processing enabled, starting AI processing...",
-              );
-              _autoProcessWithGemini();
-            } else {
-              print("FileWatcher: Auto-processing disabled");
-            }
-
-            // Show a subtle notification
-            if (mounted && context.mounted) {
-              print("FileWatcher: Showing notification to user...");
-              SnackbarService().showInfo(
-                context,
-                'Found ${uniqueScreenshots.length} new screenshot${uniqueScreenshots.length == 1 ? '' : 's'}',
-              );
-            }
-          } else {
-            print("FileWatcher: No unique screenshots to add");
-          }
-        } else {
-          if (newScreenshots.isEmpty) {
-            print("FileWatcher: No new screenshots in the event");
-          }
-          if (!mounted) {
-            print("FileWatcher: Widget not mounted, ignoring event");
-          }
-        }
-      },
-      onError: (error) {
-        print("FileWatcher: Stream error: $error");
-      },
-      onDone: () {
-        print("FileWatcher: Stream closed");
-      },
-    );
-
-    // Start watching for files
-    print("FileWatcher: Starting file watching...");
-    _fileWatcher.startWatching();
-    print("FileWatcher: Setup complete");
-  }
-
-  /// Reset AI processing status for all screenshots
   Future<void> _resetAiMetaData() async {
-    // Show confirmation dialog
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -1475,33 +730,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
 
     if (confirmed == true) {
-      // Reset aiProcessed status for all screenshots
+      await _homeScreenService.resetAiMetadata(_screenshots, _collections);
       setState(() {
-        for (var screenshot in _screenshots) {
-          screenshot.aiProcessed = false;
-          screenshot.aiMetadata = null;
-          // Optionally clear AI-generated data
-          // screenshot.title = null;
-          // screenshot.description = null;
-          // screenshot.tags.clear();
-        }
-
-        // clear scannedSet from collections
-        for (var collection in _collections) {
-          collection.scannedSet.clear();
-        }
+        // UI refresh after reset
       });
-
-      // Save the updated data
       await _saveDataToPrefs();
-
-      AnalyticsService().logFeatureUsed('ai_processing_reset');
-
       SnackbarService().showSuccess(context, 'AI processing status reset');
     }
   }
 
-  /// Show dialog for managing custom screenshot paths
   void _showCustomPathsDialog() {
     showDialog(
       context: context,
@@ -1511,14 +748,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               print(
                 '📂 Custom path added, reloading images and restarting file watcher...',
               );
-
-              // Restart file watcher with updated paths
-              await _fileWatcher.restart();
-
-              // Perform manual scan to pick up any existing files in the new path
-              await _fileWatcher.manualScan();
-
-              // Also reload images from all paths (including new custom path)
+              await _homeScreenService.restartFileWatcher();
+              await _homeScreenService.manualScanFileWatcher();
               await _loadAndroidScreenshots();
             },
           ),
@@ -1529,35 +760,36 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: HomeAppBar(
-        onProcessWithAI: _isProcessingAI ? null : _processWithGemini,
-        isProcessingAI: _isProcessingAI,
-        aiProcessedCount: _aiProcessedCount,
-        aiTotalToProcess: _aiTotalToProcess,
+        onProcessWithAI:
+            _homeScreenService.isProcessingAI ? null : _processWithGemini,
+        isProcessingAI: _homeScreenService.isProcessingAI,
+        aiProcessedCount: _homeScreenService.aiProcessedCount,
+        aiTotalToProcess: _homeScreenService.aiTotalToProcess,
         onSearchPressed: _navigateToSearchScreen,
         onStopProcessingAI: _stopProcessingAI,
-        devMode: _devMode,
-        autoProcessEnabled: _autoProcessEnabled,
+        devMode: _homeScreenService.devMode,
+        autoProcessEnabled: _homeScreenService.autoProcessEnabled,
       ),
       drawer: AppDrawer(
-        currentApiKey: _apiKey,
-        currentModelName: _selectedModelName,
+        currentApiKey: _homeScreenService.apiKey,
+        currentModelName: _homeScreenService.selectedModelName,
         onApiKeyChanged: _updateApiKey,
         onModelChanged: _updateModelName,
-        currentLimit: _screenshotLimit,
+        currentLimit: _homeScreenService.screenshotLimit,
         onLimitChanged: _updateScreenshotLimit,
-        currentMaxParallel: _maxParallelAI,
+        currentMaxParallel: _homeScreenService.maxParallelAI,
         onMaxParallelChanged: _updateMaxParallelAI,
-        currentLimitEnabled: _isScreenshotLimitEnabled,
+        currentLimitEnabled: _homeScreenService.isScreenshotLimitEnabled,
         onLimitEnabledChanged: _updateScreenshotLimitEnabled,
-        currentDevMode: _devMode,
+        currentDevMode: _homeScreenService.devMode,
         onDevModeChanged: _updateDevMode,
-        currentAutoProcessEnabled: _autoProcessEnabled,
+        currentAutoProcessEnabled: _homeScreenService.autoProcessEnabled,
         onAutoProcessEnabledChanged: _updateAutoProcessEnabled,
-        currentAnalyticsEnabled: _analyticsEnabled,
+        currentAnalyticsEnabled: _homeScreenService.analyticsEnabled,
         onAnalyticsEnabledChanged: _updateAnalyticsEnabled,
-        currentAmoledModeEnabled: _amoledModeEnabled,
+        currentAmoledModeEnabled: _homeScreenService.amoledModeEnabled,
         onAmoledModeChanged: _updateAmoledModeEnabled,
-        currentSelectedTheme: _selectedTheme,
+        currentSelectedTheme: _homeScreenService.selectedTheme,
         onThemeChanged: _updateThemeSelection,
         apiKeyFieldKey: _apiKeyFieldKey,
         onResetAiProcessing: _resetAiMetaData,
@@ -1604,13 +836,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               _,
                             ) {
                               // Re-sync FileWatcher with newly loaded screenshots
-                              final existingPaths =
-                                  _screenshots
-                                      .map((s) => s.path)
-                                      .whereType<String>()
-                                      .toList();
-                              _fileWatcher.syncWithExistingScreenshots(
-                                existingPaths,
+                              _homeScreenService.syncFileWatcherWithScreenshots(
+                                _screenshots,
                               );
                             });
                           },
@@ -1636,7 +863,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
       ),
       body:
-          _isLoading
+          _homeScreenService.isLoading
               ? Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1644,14 +871,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     const CircularProgressIndicator(),
                     const SizedBox(height: 16),
                     Text('Loading screenshots...'),
-                    if (_totalToLoad > 0) ...[
+                    if (_homeScreenService.totalToLoad > 0) ...[
                       const SizedBox(height: 8),
-                      Text('$_loadingProgress / $_totalToLoad'),
+                      Text(
+                        '${_homeScreenService.loadingProgress} / ${_homeScreenService.totalToLoad}',
+                      ),
                       const SizedBox(height: 8),
                       LinearProgressIndicator(
                         value:
-                            _totalToLoad > 0
-                                ? _loadingProgress / _totalToLoad
+                            _homeScreenService.totalToLoad > 0
+                                ? _homeScreenService.loadingProgress /
+                                    _homeScreenService.totalToLoad
                                 : 0,
                       ),
                     ],
@@ -1666,9 +896,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         children: [
                           // AI Processing Container
                           AIProcessingContainer(
-                            isProcessing: _isProcessingAI,
-                            processedCount: _aiProcessedCount,
-                            totalCount: _aiTotalToProcess,
+                            isProcessing: _homeScreenService.isProcessingAI,
+                            processedCount: _homeScreenService.aiProcessedCount,
+                            totalCount: _homeScreenService.aiTotalToProcess,
                           ),
                           // Collections Section
                           CollectionsSection(
@@ -1710,39 +940,5 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
               ),
     );
-  }
-
-  void _showScreenshotDetail(Screenshot screenshot) {
-    // Log navigation analytics
-    AnalyticsService().logScreenView('screenshot_detail_screen');
-    AnalyticsService().logUserPath('home_screen', 'screenshot_detail_screen');
-    AnalyticsService().logFeatureUsed('screenshot_detail_view');
-
-    Navigator.of(context)
-        .push(
-          MaterialPageRoute(
-            builder:
-                (context) => ScreenshotDetailScreen(
-                  screenshot: screenshot,
-                  allCollections: _collections,
-                  allScreenshots: _screenshots,
-                  onUpdateCollection: (updatedCollection) {
-                    _updateCollection(updatedCollection);
-                  },
-                  onDeleteScreenshot: _deleteScreenshot,
-                  onScreenshotUpdated: () {
-                    setState(() {});
-                    // Force save when screenshot is updated
-                    _saveDataToPrefs();
-                  },
-                ),
-          ),
-        )
-        .then((_) {
-          // Force save and refresh when returning from screenshot detail
-          setState(() {});
-          _saveDataToPrefs();
-          // Don't clear cache to preserve collection thumbnails
-        });
   }
 }
