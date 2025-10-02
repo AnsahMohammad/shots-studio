@@ -7,8 +7,9 @@ import 'package:shots_studio/services/analytics/analytics_service.dart';
 
 class CustomPathsDialog extends StatefulWidget {
   final VoidCallback? onPathAdded;
+  final Function(String)? onPathRemoved;
 
-  const CustomPathsDialog({super.key, this.onPathAdded});
+  const CustomPathsDialog({super.key, this.onPathAdded, this.onPathRemoved});
 
   @override
   State<CustomPathsDialog> createState() => _CustomPathsDialogState();
@@ -182,6 +183,9 @@ class _CustomPathsDialogState extends State<CustomPathsDialog> {
 
         await _loadCustomPaths();
         SnackbarService().showSuccess(context, 'Custom path removed');
+
+        // Notify parent that a path was removed
+        widget.onPathRemoved?.call(path);
       } else {
         setState(() {
           _isLoading = false;
@@ -352,6 +356,7 @@ class _CustomPathsDialogState extends State<CustomPathsDialog> {
               label: const Text('Browse for Directory'),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
               ),
             ),
           ),
@@ -405,6 +410,7 @@ class _CustomPathsDialogState extends State<CustomPathsDialog> {
         final path = _customPaths[index];
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
+          color: Theme.of(context).colorScheme.secondaryContainer,
           child: ListTile(
             leading: const Icon(Icons.folder_outlined),
             title: Text(

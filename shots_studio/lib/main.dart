@@ -1420,6 +1420,69 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+  /// Remove screenshots that belong to a specific custom path
+  void _removeScreenshotsFromPath(String removedPath) {
+    print('🗑️ Removing screenshots from removed path: $removedPath');
+
+    // Find all screenshots that belong to the removed path
+    final screenshotsToRemove =
+        _screenshots.where((screenshot) {
+          final screenshotPath = screenshot.path;
+          if (screenshotPath == null) return false;
+
+          // Check if the screenshot's path starts with the removed path
+          return screenshotPath.startsWith(removedPath);
+        }).toList();
+
+    print(
+      '🗑️ Found ${screenshotsToRemove.length} screenshots to remove from path',
+    );
+
+    if (screenshotsToRemove.isEmpty) {
+      print('🗑️ No screenshots to remove from the removed path');
+      return;
+    }
+
+    setState(() {
+      // Remove screenshots from collections first
+      for (final screenshot in screenshotsToRemove) {
+        // Remove from all collections
+        for (var collection in _collections) {
+          if (collection.screenshotIds.contains(screenshot.id)) {
+            final updatedCollection = collection.removeScreenshot(
+              screenshot.id,
+            );
+            _updateCollection(updatedCollection);
+          }
+        }
+      }
+
+      // Actually remove the screenshots from the main list
+      _screenshots.removeWhere((screenshot) {
+        final screenshotPath = screenshot.path;
+        if (screenshotPath == null) return false;
+
+        final shouldRemove = screenshotPath.startsWith(removedPath);
+        if (shouldRemove) {
+          print('🗑️ Removed screenshot record: ${screenshot.path}');
+        }
+        return shouldRemove;
+      });
+    });
+
+    // Save changes
+    _saveDataToPrefs();
+
+    // Log analytics
+    AnalyticsService().logFeatureUsed(
+      'custom_path_screenshots_removed_count_${screenshotsToRemove.length}',
+    );
+
+    print(
+      'Successfully removed ${screenshotsToRemove.length} screenshot records from removed path',
+    );
+  }
+
   void _navigateToSearchScreen() {
     // Log navigation analytics
     AnalyticsService().logScreenView('search_screen');
@@ -1809,6 +1872,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
               // Also reload images from all paths (including new custom path)
               await _loadAndroidScreenshots();
+            },
+            onPathRemoved: (String removedPath) async {
+              print(
+                '📂 Custom path removed: $removedPath, cleaning up screenshots and restarting file watcher...',
+              );
+
+              // Remove screenshots that belong to the removed path
+              _removeScreenshotsFromPath(removedPath);
+
+              // Restart file watcher with updated paths (this will stop watching the removed path)
+              await _fileWatcher.restart();
+
+              // Sync file watcher with remaining screenshots to avoid conflicts
+              final existingPaths =
+                  _screenshots
+                      .where((s) => !s.isDeleted && s.path != null)
+                      .map((s) => s.path!)
+                      .toList();
+              _fileWatcher.syncWithExistingScreenshots(existingPaths);
+
+              print('📂 Custom path cleanup completed');
             },
           ),
     );
