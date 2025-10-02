@@ -402,7 +402,7 @@ class ScreenshotAnalysisService extends AIService {
 
     basePrompt += """
 
-      Additionally, extract any clickable information from the screenshot such as:
+      Additionally, extract any clickable information from the screenshot that you can see on the image (if useful) such as:
       - Phone numbers (format them properly with country codes when possible)
       - Email addresses
       - Website URLs/links
