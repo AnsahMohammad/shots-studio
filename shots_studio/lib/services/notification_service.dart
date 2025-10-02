@@ -45,14 +45,11 @@ class NotificationService {
     // Create notification channels explicitly
     await _createNotificationChannels();
 
-    // Request notification permissions
+    // Request notification permissions (but not exact alarm permission yet)
     final permissionResult = await requestNotificationPermissions();
-    final alarmPermissionResult = await _checkExactAlarmPermission();
 
     if (kDebugMode) {
-      print(
-        'Notification permissions: $permissionResult, Exact alarm: $alarmPermissionResult',
-      );
+      print('Notification permissions: $permissionResult');
     }
   }
 
@@ -162,8 +159,17 @@ class NotificationService {
       return;
     }
 
-    // Ensure we have the necessary permissions
-    await _checkExactAlarmPermission();
+    // Check exact alarm permission only when actually scheduling a reminder
+    final hasPermission = await hasExactAlarmPermission();
+    if (!hasPermission) {
+      if (kDebugMode) {
+        print(
+          'Exact alarm permission not granted - notification may not work reliably',
+        );
+      }
+      // Continue with scheduling anyway, but it may not be as reliable
+      // The permission request should be handled at the UI level when user sets a reminder
+    }
 
     try {
       // Cancel any existing notification with the same ID
@@ -515,7 +521,8 @@ class NotificationService {
     await flutterLocalNotificationsPlugin.cancel(id);
   }
 
-  Future<bool> checkExactAlarmPermission() async {
+  /// Check if exact alarm permission is granted (without requesting it)
+  Future<bool> hasExactAlarmPermission() async {
     try {
       final androidImplementation =
           flutterLocalNotificationsPlugin
@@ -527,7 +534,30 @@ class NotificationService {
         return false;
       }
 
-      // Check for SCHEDULE_EXACT_ALARM permission
+      // Just check the permission status without requesting
+      return await Permission.scheduleExactAlarm.isGranted;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error checking exact alarm permission: $e');
+      }
+      return false;
+    }
+  }
+
+  /// Request exact alarm permission and return the result
+  Future<bool> requestExactAlarmPermission() async {
+    try {
+      final androidImplementation =
+          flutterLocalNotificationsPlugin
+              .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin
+              >();
+
+      if (androidImplementation == null) {
+        return false;
+      }
+
+      // Check current status first
       final hasExactAlarmPermission =
           await Permission.scheduleExactAlarm.isGranted;
 
@@ -540,13 +570,14 @@ class NotificationService {
       return await Permission.scheduleExactAlarm.isGranted;
     } catch (e) {
       if (kDebugMode) {
-        print('Error checking exact alarm permission: $e');
+        print('Error requesting exact alarm permission: $e');
       }
       return false;
     }
   }
 
-  Future<bool> _checkExactAlarmPermission() async {
-    return await checkExactAlarmPermission();
+  /// Check exact alarm permission and request if needed (legacy method for compatibility)
+  Future<bool> checkExactAlarmPermission() async {
+    return await requestExactAlarmPermission();
   }
 }

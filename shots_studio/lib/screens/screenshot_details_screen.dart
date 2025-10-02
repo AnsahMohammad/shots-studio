@@ -257,7 +257,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
                                 AnalyticsService().logFeatureUsed(
                                   'reminder_set',
                                 );
-                                ReminderUtils.setReminder(
+                                await ReminderUtils.setReminder(
                                   context,
                                   widget.screenshot,
                                   result['reminderTime'],

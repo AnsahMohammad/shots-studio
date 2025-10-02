@@ -54,14 +54,39 @@ class ReminderUtils {
     return null;
   }
 
-  static void setReminder(
+  static Future<void> setReminder(
     BuildContext context,
     Screenshot screenshot,
     DateTime? selectedReminderTime, {
     String? customMessage,
-  }) {
+  }) async {
     if (selectedReminderTime != null &&
         selectedReminderTime.isAfter(DateTime.now())) {
+      // Check if exact alarm permission is granted
+      final notificationService = NotificationService();
+      final hasPermission = await notificationService.hasExactAlarmPermission();
+
+      if (!hasPermission) {
+        // Show permission dialog
+        if (!context.mounted) return;
+        final shouldProceed = await _showExactAlarmPermissionDialog(context);
+        if (!shouldProceed) {
+          return; // User cancelled
+        }
+
+        // Request permission
+        final permissionGranted =
+            await notificationService.requestExactAlarmPermission();
+        if (!permissionGranted) {
+          if (!context.mounted) return;
+          SnackbarService().showError(
+            context,
+            'Exact alarm permission is required for reliable reminders. You can enable it in system settings.',
+          );
+          return;
+        }
+      }
+
       final reminderMessage =
           customMessage?.isNotEmpty == true
               ? customMessage!
@@ -77,6 +102,7 @@ class ReminderUtils {
         imageBytes: screenshot.bytes, // Pass the image bytes for web
       );
 
+      if (!context.mounted) return;
       SnackbarService().showSuccess(
         context,
         'Reminder set for ${DateFormat('MMM d, yyyy, hh:mm a').format(selectedReminderTime)}',
@@ -115,5 +141,34 @@ class ReminderUtils {
 
   static Future<void> testNotificationInMinute() async {
     await NotificationService().testScheduleNotificationInMinute();
+  }
+
+  /// Show a dialog asking user for exact alarm permission
+  static Future<bool> _showExactAlarmPermissionDialog(
+    BuildContext context,
+  ) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Reminder Permission'),
+              content: const Text(
+                'To ensure your reminders work reliably, this app needs permission to schedule exact alarms.\n\n'
+                'Without this permission, reminders may be delayed or not work when the device is in battery optimization mode.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Allow'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
   }
 }

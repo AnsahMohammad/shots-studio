@@ -127,7 +127,7 @@ class _RemindersScreenState extends State<RemindersScreen>
       });
 
       if (result['reminderTime'] != null) {
-        ReminderUtils.setReminder(
+        await ReminderUtils.setReminder(
           context,
           screenshot,
           result['reminderTime'],
