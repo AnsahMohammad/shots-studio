@@ -96,8 +96,12 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     // Check for expired reminders after the frame is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkExpiredReminders();
-      // Start simple bounce animation
-      _animationController.forward();
+      // Delay the bounce animation slightly to avoid conflicts with page transitions
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          _animationController.forward();
+        }
+      });
     });
 
     // Load hard delete setting

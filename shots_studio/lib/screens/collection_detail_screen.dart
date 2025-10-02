@@ -910,86 +910,81 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                         screenshot.id,
                       );
 
-                      return GestureDetector(
-                        onTap: () async {
-                          if (_isSelectionMode) {
-                            _toggleScreenshotSelection(screenshot.id);
-                          } else {
-                            final int initialIndex = screenshotsInCollection
-                                .indexWhere((s) => s.id == screenshot.id);
-
-                            await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => ScreenshotSwipeDetailScreen(
-                                      screenshots: List.from(
-                                        screenshotsInCollection,
-                                      ),
-                                      initialIndex:
-                                          initialIndex >= 0 ? initialIndex : 0,
-                                      allCollections: widget.allCollections,
-                                      allScreenshots: widget.allScreenshots,
-                                      onUpdateCollection:
-                                          widget.onUpdateCollection,
-                                      onDeleteScreenshot:
-                                          widget.onDeleteScreenshot,
-                                      onScreenshotUpdated: () {
-                                        // This callback is called from the detail screen
-                                        // We don't need to do anything here as we'll handle
-                                        // cleanup when we return
-                                      },
-                                    ),
-                              ),
-                            );
-
-                            // When we return from the detail screen, clean up deleted screenshots
-                            if (mounted) {
-                              final originalCount =
-                                  _currentScreenshotIds.length;
-                              _currentScreenshotIds.removeWhere((id) {
-                                final screenshot = widget.allScreenshots
-                                    .firstWhere(
-                                      (s) => s.id == id,
-                                      orElse:
-                                          () => Screenshot(
-                                            id: '',
-                                            path: null,
-                                            addedOn: DateTime.now(),
-                                            collectionIds: [],
-                                            tags: [],
-                                            links: [],
-                                            aiProcessed: false,
-                                            isDeleted: true,
-                                          ),
-                                    );
-                                return screenshot.isDeleted;
-                              });
-
-                              // Only update if something was actually removed
-                              if (_currentScreenshotIds.length !=
-                                  originalCount) {
-                                setState(() {});
-                                await _saveChanges();
-                              }
-                            }
-                          }
+                      return ScreenshotCard(
+                        screenshot: screenshot,
+                        isSelectionMode: _isSelectionMode,
+                        isSelected: isSelected,
+                        onLongPress: () => _enterSelectionMode(screenshot.id),
+                        onSelectionToggle:
+                            () => _toggleScreenshotSelection(screenshot.id),
+                        onCorruptionDetected: () {
+                          setState(() {});
                         },
-                        child: ScreenshotCard(
-                          screenshot: screenshot,
-                          isSelectionMode: _isSelectionMode,
-                          isSelected: isSelected,
-                          onLongPress: () => _enterSelectionMode(screenshot.id),
-                          onSelectionToggle:
-                              () => _toggleScreenshotSelection(screenshot.id),
-                          onCorruptionDetected: () {
-                            setState(() {});
-                          },
-                          onTap:
-                              _isSelectionMode
-                                  ? () =>
-                                      _toggleScreenshotSelection(screenshot.id)
-                                  : null,
-                        ),
+                        destinationBuilder:
+                            !_isSelectionMode
+                                ? (context) {
+                                  final int initialIndex =
+                                      screenshotsInCollection.indexWhere(
+                                        (s) => s.id == screenshot.id,
+                                      );
+
+                                  return ScreenshotSwipeDetailScreen(
+                                    screenshots: List.from(
+                                      screenshotsInCollection,
+                                    ),
+                                    initialIndex:
+                                        initialIndex >= 0 ? initialIndex : 0,
+                                    allCollections: widget.allCollections,
+                                    allScreenshots: widget.allScreenshots,
+                                    onUpdateCollection:
+                                        widget.onUpdateCollection,
+                                    onDeleteScreenshot: (screenshotId) {
+                                      widget.onDeleteScreenshot(screenshotId);
+                                      // Clean up deleted screenshots from current collection
+                                      if (mounted) {
+                                        final originalCount =
+                                            _currentScreenshotIds.length;
+                                        _currentScreenshotIds.removeWhere((id) {
+                                          final screenshot = widget
+                                              .allScreenshots
+                                              .firstWhere(
+                                                (s) => s.id == id,
+                                                orElse:
+                                                    () => Screenshot(
+                                                      id: '',
+                                                      path: null,
+                                                      addedOn: DateTime.now(),
+                                                      collectionIds: [],
+                                                      tags: [],
+                                                      links: [],
+                                                      aiProcessed: false,
+                                                      isDeleted: true,
+                                                    ),
+                                              );
+                                          return screenshot.isDeleted;
+                                        });
+
+                                        // Only update if something was actually removed
+                                        if (_currentScreenshotIds.length !=
+                                            originalCount) {
+                                          setState(() {});
+                                          _saveChanges();
+                                        }
+                                      }
+                                    },
+                                    onScreenshotUpdated: () {
+                                      // This callback is called from the detail screen
+                                      // We don't need to do anything here as we'll handle
+                                      // cleanup when we return
+                                    },
+                                  );
+                                }
+                                : null,
+                        onTap:
+                            _isSelectionMode
+                                ? () =>
+                                    _toggleScreenshotSelection(screenshot.id)
+                                : null,
                       );
                     }, childCount: screenshotsInCollection.length),
                   ),
