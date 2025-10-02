@@ -841,16 +841,32 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                         : Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Screenshots in Collection',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color:
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.onSecondaryContainer,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Screenshots in Collection',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onSecondaryContainer,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Total: ${screenshotsInCollection.length}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
                             ),
                             IconButton(
                               icon: Icon(
