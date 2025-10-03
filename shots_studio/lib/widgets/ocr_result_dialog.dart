@@ -51,26 +51,6 @@ class OCRResultDialog extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      'Text has been copied to clipboard automatically',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
@@ -90,7 +70,7 @@ class OCRResultDialog extends StatelessWidget {
             }
           },
           child: Text(
-            'Copy Again',
+            'Copy',
             style: TextStyle(color: Theme.of(context).colorScheme.primary),
           ),
         ),

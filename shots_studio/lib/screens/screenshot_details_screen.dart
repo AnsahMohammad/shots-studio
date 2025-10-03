@@ -1787,16 +1787,13 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
       // Show processing message
       SnackbarService().showInfo(context, 'Processing image with OCR...');
 
-      // Extract text and copy to clipboard
-      final extractedText = await _ocrService.extractTextAndCopyToClipboard(
+      // Extract text
+      final extractedText = await _ocrService.extractTextFromScreenshot(
         widget.screenshot,
       );
 
       if (extractedText != null && extractedText.isNotEmpty) {
-        SnackbarService().showSuccess(
-          context,
-          'Text extracted and copied to clipboard!',
-        );
+        SnackbarService().showSuccess(context, 'Text extracted successfully!');
         AnalyticsService().logFeatureUsed('ocr_text_extracted');
 
         // Show the extracted text in a dialog
