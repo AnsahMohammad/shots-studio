@@ -379,7 +379,7 @@ abstract class AppLocalizations {
   /// Indicator showing XMP metadata has been written to the image file
   ///
   /// In en, this message translates to:
-  /// **'XMP metadata written to file'**
+  /// **'XMP metadata written to the file'**
   String get xmpMetadataWritten;
 
   /// No description provided for @advancedSettings.

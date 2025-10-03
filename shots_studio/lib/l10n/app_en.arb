@@ -182,7 +182,7 @@
   "@writeTagsToXMP": {
     "description": "XMP metadata writing setting"
   },
-  "xmpMetadataWritten": "XMP metadata written to file",
+  "xmpMetadataWritten": "XMP metadata written to the file",
   "@xmpMetadataWritten": {
     "description": "Indicator showing XMP metadata has been written to the image file"
   },

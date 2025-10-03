@@ -61,7 +61,7 @@ void main() async {
       await AnalyticsService().initialize();
 
       // Optimize image cache for better memory management
-      MemoryUtils.optimizeImageCache();
+      await MemoryUtils.optimizeImageCache();
 
       await NotificationService().init();
 

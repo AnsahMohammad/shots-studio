@@ -13,14 +13,23 @@ class PerformanceMonitor extends StatefulWidget {
 
 class _PerformanceMonitorState extends State<PerformanceMonitor> {
   Map<String, dynamic> _cacheStats = {};
+  bool _enhancedCacheMode = false;
 
   @override
   void initState() {
     super.initState();
     _updateStats();
+    _loadEnhancedCacheModePreference();
 
     // Track performance monitor screen access
     AnalyticsService().logScreenView('performance_monitor_screen');
+  }
+
+  void _loadEnhancedCacheModePreference() async {
+    final enhancedMode = await MemoryUtils.getEnhancedCacheMode();
+    setState(() {
+      _enhancedCacheMode = enhancedMode;
+    });
   }
 
   void _updateStats() {
@@ -45,7 +54,7 @@ class _PerformanceMonitorState extends State<PerformanceMonitor> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Performance Monitor'),
+        title: const Text('Performance Menu'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -58,101 +67,140 @@ class _PerformanceMonitorState extends State<PerformanceMonitor> {
         ],
       ),
       backgroundColor: Theme.of(context).colorScheme.surface,
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Image Cache Statistics',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSecondaryContainer,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Image Cache Statistics',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            _buildStatCard(
-              'Cache Size',
-              '${_cacheStats['currentSize'] ?? 0} / ${_cacheStats['maximumSize'] ?? 0} images',
-              Icons.image,
-            ),
-            _buildStatCard(
-              'Memory Usage',
-              '${_formatBytes(_cacheStats['currentSizeBytes'] ?? 0)} / ${_formatBytes(_cacheStats['maximumSizeBytes'] ?? 0)}',
-              Icons.memory,
-            ),
-            _buildStatCard(
-              'Pending Images',
-              '${_cacheStats['pendingImageCount'] ?? 0}',
-              Icons.hourglass_empty,
-            ),
-            _buildStatCard(
-              'Display Refresh Rate',
-              '${DisplayUtils.getCurrentRefreshRate().toStringAsFixed(0)}Hz ${DisplayUtils.isHighRefreshRateEnabled ? '(Optimized)' : '(Standard)'}',
-              Icons.monitor,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Memory Management',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSecondaryContainer,
+              const SizedBox(height: 16),
+              _buildStatCard(
+                'Cache Size',
+                '${_cacheStats['currentSize'] ?? 0} / ${_cacheStats['maximumSize'] ?? 0} images',
+                Icons.image,
               ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  await MemoryUtils.clearImageCacheAndGC();
+              _buildStatCard(
+                'Memory Usage',
+                '${_formatBytes(_cacheStats['currentSizeBytes'] ?? 0)} / ${_formatBytes(_cacheStats['maximumSizeBytes'] ?? 0)}',
+                Icons.memory,
+              ),
+              _buildStatCard(
+                'Pending Images',
+                '${_cacheStats['pendingImageCount'] ?? 0}',
+                Icons.hourglass_empty,
+              ),
+              _buildStatCard(
+                'Display Refresh Rate',
+                '${DisplayUtils.getCurrentRefreshRate().toStringAsFixed(0)}Hz ${DisplayUtils.isHighRefreshRateEnabled ? '(Optimized)' : '(Standard)'}',
+                Icons.monitor,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Memory Management',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+                ),
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                secondary: Icon(
+                  Icons.speed,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: const Text('Enhanced Cache Mode'),
+                subtitle: Text(
+                  _enhancedCacheMode
+                      ? 'Cache supports up to 200 images for better experience'
+                      : 'Cache limited to 100 images for better performance (default)',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                value: _enhancedCacheMode,
+                activeThumbColor: Theme.of(context).colorScheme.primary,
+                onChanged: (bool value) async {
+                  setState(() {
+                    _enhancedCacheMode = value;
+                  });
+                  await MemoryUtils.setEnhancedCacheMode(value);
                   _updateStats();
-                  SnackbarService().showSuccess(context, 'Image cache cleared');
-                  AnalyticsService().logFeatureUsed('cache_cleared');
+                  SnackbarService().showSuccess(
+                    context,
+                    value
+                        ? 'Cache enhanced to 200 images for better experience'
+                        : 'Cache reduced to 100 images for better performance',
+                  );
+                  AnalyticsService().logFeatureUsed(
+                    'enhanced_cache_mode_${value ? 'enabled' : 'disabled'}',
+                  );
                 },
-                icon: const Icon(Icons.cleaning_services),
-                label: const Text('Clear Image Cache'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      Theme.of(context).colorScheme.primaryContainer,
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    await MemoryUtils.clearImageCacheAndGC();
+                    _updateStats();
+                    SnackbarService().showSuccess(
+                      context,
+                      'Image cache cleared',
+                    );
+                    AnalyticsService().logFeatureUsed('cache_cleared');
+                  },
+                  icon: const Icon(Icons.cleaning_services),
+                  label: const Text('Clear Image Cache'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        Theme.of(context).colorScheme.primaryContainer,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Card(
-              color: Theme.of(context).colorScheme.tertiaryContainer,
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Performance Tips',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color:
-                            Theme.of(context).colorScheme.onTertiaryContainer,
+              const SizedBox(height: 16),
+              Card(
+                color: Theme.of(context).colorScheme.tertiaryContainer,
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Performance Tips',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color:
+                              Theme.of(context).colorScheme.onTertiaryContainer,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      '• Lower screenshot limits (50-100) for better performance\n'
-                      '• Clear image cache if app becomes slow\n'
-                      '• Restart app if memory usage becomes high\n'
-                      '• High refresh rate displays (>60Hz) improve animation smoothness\n'
-                      '• Consider deleting unused screenshots',
-                      style: TextStyle(
-                        color:
-                            Theme.of(context).colorScheme.onTertiaryContainer,
+                      SizedBox(height: 8),
+                      Text(
+                        '• Default cache is optimized for performance (100 images)\n'
+                        '• Enable "Enhanced Cache Mode" above for smoother experience (Not recommended on devices with low RAM)\n'
+                        '• Clear image cache if app becomes slow\n'
+                        '• High refresh rate displays (>60Hz) improve animation smoothness\n'
+                        '• Consider deleting unused screenshots',
+                        style: TextStyle(
+                          color:
+                              Theme.of(context).colorScheme.onTertiaryContainer,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

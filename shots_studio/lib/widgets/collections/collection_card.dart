@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
+import 'package:shots_studio/utils/memory_utils.dart';
 
 class CollectionCard extends StatefulWidget {
   final Collection collection;
@@ -353,12 +354,8 @@ class _CollectionCardState extends State<CollectionCard> {
     _imageCache[screenshot.id] = imageWidget;
     _globalImageCache[screenshot.id] = imageWidget;
 
-    if (_globalImageCache.length > 100) {
-      final keys = _globalImageCache.keys.toList();
-      for (int i = 0; i < 20; i++) {
-        _globalImageCache.remove(keys[i]);
-      }
-    }
+    // Clean up old images when cache exceeds dynamic limit
+    _cleanupCacheIfNeeded();
 
     return imageWidget;
   }
@@ -368,5 +365,17 @@ class _CollectionCardState extends State<CollectionCard> {
       color: Colors.grey[300],
       child: const Icon(Icons.image, color: Colors.grey, size: 24),
     );
+  }
+
+  void _cleanupCacheIfNeeded() {
+    // Use async method to get cache size and cleanup if needed
+    MemoryUtils.getCacheSize().then((cacheSize) {
+      if (_globalImageCache.length > cacheSize) {
+        final keys = _globalImageCache.keys.toList();
+        for (int i = 0; i < 20; i++) {
+          _globalImageCache.remove(keys[i]);
+        }
+      }
+    });
   }
 }

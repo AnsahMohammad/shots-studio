@@ -1,5 +1,6 @@
 import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MemoryUtils {
   static void clearImageCache() {
@@ -26,12 +27,40 @@ class MemoryUtils {
   }
 
   /// Set image cache limits for better memory management
-  static void optimizeImageCache() {
+  static Future<void> optimizeImageCache() async {
     final imageCache = PaintingBinding.instance.imageCache;
+
+    // Check if enhanced cache mode is enabled
+    final prefs = await SharedPreferences.getInstance();
+    final isEnhancedCacheMode = prefs.getBool('enhanced_cache_mode') ?? false;
+
     imageCache.maximumSize =
-        100; // Increased to accommodate collection thumbnails
+        isEnhancedCacheMode
+            ? 200 // Enhanced cache for better experience
+            : 100; // Default cache for better performance
     imageCache.maximumSizeBytes =
         100 << 20; // 100MB for better thumbnail caching
+  }
+
+  /// Get the cache size setting for use in other components
+  static Future<int> getCacheSize() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isEnhancedCacheMode = prefs.getBool('enhanced_cache_mode') ?? false;
+    return isEnhancedCacheMode ? 200 : 100;
+  }
+
+  /// Set the enhanced cache mode preference
+  static Future<void> setEnhancedCacheMode(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('enhanced_cache_mode', enabled);
+    // Apply the cache setting immediately
+    await optimizeImageCache();
+  }
+
+  /// Get the enhanced cache mode preference
+  static Future<bool> getEnhancedCacheMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('enhanced_cache_mode') ?? false;
   }
 
   /// Get current image cache statistics

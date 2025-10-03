@@ -140,7 +140,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get writeTagsToXMP => 'Write Tags to XMP';
 
   @override
-  String get xmpMetadataWritten => 'XMP metadata written to file';
+  String get xmpMetadataWritten => 'XMP metadata written to the file';
 
   @override
   String get advancedSettings => 'Advanced Settings';
