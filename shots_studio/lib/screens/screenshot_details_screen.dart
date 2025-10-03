@@ -1314,7 +1314,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
         Text(
           imageName,
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Theme.of(context).colorScheme.onSecondaryContainer,
           ),
@@ -1394,7 +1394,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
         Text(
           AppLocalizations.of(context)?.aiDetails ?? 'AI Details',
           style: TextStyle(
-            fontSize: 18,
+            fontSize: 16,
             fontWeight: FontWeight.bold,
             color: Theme.of(context).colorScheme.onSecondaryContainer,
           ),
@@ -1469,7 +1469,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
         Text(
           AppLocalizations.of(context)?.tags ?? 'Tags',
           style: TextStyle(
-            fontSize: 18,
+            fontSize: 16,
             fontWeight: FontWeight.bold,
             color: Theme.of(context).colorScheme.onSecondaryContainer,
           ),
@@ -1558,7 +1558,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
       appBar: AppBar(
         title: Text(
           'Screenshot Detail',
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
         ),
         elevation: 0,
         actions: [

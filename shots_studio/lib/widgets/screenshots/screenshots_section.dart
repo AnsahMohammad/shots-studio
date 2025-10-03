@@ -388,7 +388,7 @@ class _ScreenshotsSectionState extends State<ScreenshotsSection> {
                           AppLocalizations.of(context)?.screenshots ??
                               'Screenshots',
                           style: const TextStyle(
-                            fontSize: 28,
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
                           ),
                           overflow: TextOverflow.ellipsis,

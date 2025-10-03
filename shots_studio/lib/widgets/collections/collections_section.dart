@@ -61,7 +61,7 @@ class CollectionsSection extends StatelessWidget {
               Text(
                 AppLocalizations.of(context)?.collections ?? 'Collections',
                 style: const TextStyle(
-                  fontSize: 28,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -152,7 +152,7 @@ class CollectionsSection extends StatelessWidget {
               AppLocalizations.of(context)?.createFirstCollection ??
                   'Create your first collection to',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 16,
                 color: Theme.of(context).colorScheme.onSecondaryContainer,
               ),
             ),
@@ -161,7 +161,7 @@ class CollectionsSection extends StatelessWidget {
               AppLocalizations.of(context)?.organizeScreenshots ??
                   'organize your screenshots',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 16,
                 color: Theme.of(context).colorScheme.onSecondaryContainer,
               ),
             ),

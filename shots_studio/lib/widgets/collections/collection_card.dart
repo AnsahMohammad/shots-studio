@@ -135,7 +135,7 @@ class _CollectionCardState extends State<CollectionCard> {
                       child: Text(
                         widget.collection.name ?? 'Untitled Collection',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color:
                               Theme.of(
@@ -177,7 +177,7 @@ class _CollectionCardState extends State<CollectionCard> {
                     child: Text(
                       '${widget.collection.screenshotCount}',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.onPrimary,
                       ),
