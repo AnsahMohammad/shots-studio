@@ -106,7 +106,7 @@ class _ApiKeyGuideDialogState extends State<ApiKeyGuideDialog> {
         child: ListBody(
           children: <Widget>[
             Text(
-              "To unlock the full power of AI-driven screenshot organization, you'll need a Google Gemini API key.",
+              "Get the most out of your screenshots with AI-powered organization and smart categorization!",
               style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 16),
@@ -120,7 +120,7 @@ class _ApiKeyGuideDialogState extends State<ApiKeyGuideDialog> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    "With an API key, you can:",
+                    "AI features include:",
                     style: TextStyle(
                       color: theme.colorScheme.secondary,
                       fontWeight: FontWeight.bold,
@@ -160,21 +160,77 @@ class _ApiKeyGuideDialogState extends State<ApiKeyGuideDialog> {
                   color: theme.colorScheme.primary.withOpacity(0.2),
                 ),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: theme.colorScheme.primary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      "You can still use the app without an API key, but AI features won't be available.",
-                      style: TextStyle(
-                        color: theme.colorScheme.onSecondaryContainer,
-                        fontSize: 13,
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.cloud,
+                        color: theme.colorScheme.primary,
+                        size: 20,
                       ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "Recommended: Cloud AI (Best Performance)",
+                          style: TextStyle(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Add your Google Gemini API key for the best AI performance and faster processing. The API is free for most users.",
+                    style: TextStyle(
+                      color: theme.colorScheme.onPrimaryContainer,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.secondaryContainer.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: theme.colorScheme.secondary.withOpacity(0.2),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.offline_bolt,
+                        color: theme.colorScheme.secondary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "Alternative: Offline AI (Uses Device Resources)",
+                          style: TextStyle(
+                            color: theme.colorScheme.secondary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Download the Gemma model in AI Settings for offline processing. Requires device storage and may be slower on older devices.",
+                    style: TextStyle(
+                      color: theme.colorScheme.onSecondaryContainer,
+                      fontSize: 12,
                     ),
                   ),
                 ],
@@ -264,7 +320,7 @@ class _ApiKeyGuideDialogState extends State<ApiKeyGuideDialog> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "You can always change this later in Settings.",
+                      "Remember: You can use offline AI instead by downloading the Gemma model in AI Settings.",
                       style: TextStyle(
                         color: theme.colorScheme.onSurface.withOpacity(0.6),
                         fontSize: 11,
@@ -281,7 +337,7 @@ class _ApiKeyGuideDialogState extends State<ApiKeyGuideDialog> {
       actions: <Widget>[
         TextButton(
           child: Text(
-            'Skip for now',
+            'Continue without API key',
             style: TextStyle(color: theme.colorScheme.secondary),
           ),
           onPressed: () {
@@ -378,7 +434,7 @@ Future<void> showApiKeyGuideIfNeeded(
             if (context.mounted) {
               SnackbarService().showSuccess(
                 context,
-                "API key saved! AI features are now available.",
+                "API key saved! Cloud AI features are now available.",
               );
             }
           },
