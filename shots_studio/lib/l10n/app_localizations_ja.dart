@@ -137,6 +137,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get betaTesting => 'ベータテスト';
 
   @override
+  String get writeTagsToXMP => 'タグをXMPに書き込む';
+
+  @override
+  String get xmpMetadataWritten => 'XMPメタデータがファイルに書き込まれました';
+
+  @override
   String get advancedSettings => '詳細設定';
 
   @override
@@ -387,10 +393,10 @@ class AppLocalizationsJa extends AppLocalizations {
       'このプロジェクトの支援をご検討いただき、ありがとうございます。あなたの貢献により、Shots Studioの維持と改善ができます。特別な取り決めや国際銀行振込については、GitHubからお問い合わせください。';
 
   @override
-  String get contactOnGitHub => 'GitHubで連絡する';
+  String get contactOnGitHub => 'GitHubで連絡';
 
   @override
-  String get noSponsorshipOptions => '現在、利用可能なスポンサーシップオプションはありません。';
+  String get noSponsorshipOptions => '現在、スポンサーシップオプションは利用できません。';
 
   @override
   String get close => '閉じる';

@@ -370,6 +370,18 @@ abstract class AppLocalizations {
   /// **'Beta Testing'**
   String get betaTesting;
 
+  /// XMP metadata writing setting
+  ///
+  /// In en, this message translates to:
+  /// **'Write Tags to XMP'**
+  String get writeTagsToXMP;
+
+  /// Indicator showing XMP metadata has been written to the image file
+  ///
+  /// In en, this message translates to:
+  /// **'XMP metadata written to file'**
+  String get xmpMetadataWritten;
+
   /// No description provided for @advancedSettings.
   ///
   /// In en, this message translates to:

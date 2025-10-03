@@ -469,5 +469,13 @@
   "close": "Zamknij",
   "@close": {
     "description": "Close button text"
+  },
+  "writeTagsToXMP": "Zapisz tagi do XMP",
+  "@writeTagsToXMP": {
+    "description": "XMP metadata writing setting"
+  },
+  "xmpMetadataWritten": "Metadane XMP zapisane do pliku",
+  "@xmpMetadataWritten": {
+    "description": "Indicator showing XMP metadata has been written to the image file"
   }
 }

@@ -136,5 +136,7 @@
   "supportFooterDescription": "Grazie per aver considerato di sostenere questo progetto. Il tuo contributo ci aiuta a mantenere e migliorare Shots Studio. Per accordi speciali o bonifici bancari internazionali, contattaci tramite GitHub.",
   "contactOnGitHub": "Contatta su GitHub",
   "noSponsorshipOptions": "Attualmente non sono disponibili opzioni di sponsorizzazione.",
-  "close": "Chiudi"
+  "close": "Chiudi",
+  "writeTagsToXMP": "Scrivi Tag in XMP",
+  "xmpMetadataWritten": "Metadati XMP scritti nel file"
 }

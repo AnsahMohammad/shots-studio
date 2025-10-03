@@ -25,6 +25,7 @@ import 'package:shots_studio/widgets/ocr_result_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shots_studio/services/xmp_metadata_service.dart';
 
 class ScreenshotDetailScreen extends StatefulWidget {
   final Screenshot screenshot;
@@ -1337,6 +1338,37 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
               fontSize: 14,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
+          ),
+        ],
+        // Show XMP metadata indicator if AI processed and XMP writing is enabled
+        if (widget.screenshot.aiProcessed) ...[
+          const SizedBox(height: 4),
+          FutureBuilder<bool>(
+            future: XMPMetadataService.isXMPWritingEnabled(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData && snapshot.data == true) {
+                return Row(
+                  children: [
+                    Icon(
+                      Icons.tag_outlined,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      AppLocalizations.of(context)?.xmpMetadataWritten ??
+                          'XMP metadata saved',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                );
+              }
+              return const SizedBox.shrink();
+            },
           ),
         ],
 

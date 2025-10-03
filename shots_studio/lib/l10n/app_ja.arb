@@ -134,7 +134,9 @@
   "comingSoon": "近日公開",
   "everyContributionMatters": "すべての貢献が重要です",
   "supportFooterDescription": "このプロジェクトの支援をご検討いただき、ありがとうございます。あなたの貢献により、Shots Studioの維持と改善ができます。特別な取り決めや国際銀行振込については、GitHubからお問い合わせください。",
-  "contactOnGitHub": "GitHubで連絡する",
-  "noSponsorshipOptions": "現在、利用可能なスポンサーシップオプションはありません。",
-  "close": "閉じる"
+    "contactOnGitHub": "GitHubで連絡",
+  "noSponsorshipOptions": "現在、スポンサーシップオプションは利用できません。",
+  "close": "閉じる",
+  "writeTagsToXMP": "タグをXMPに書き込む",
+  "xmpMetadataWritten": "XMPメタデータがファイルに書き込まれました"
 }

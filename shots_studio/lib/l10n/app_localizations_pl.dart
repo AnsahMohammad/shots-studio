@@ -137,6 +137,12 @@ class AppLocalizationsPl extends AppLocalizations {
   String get betaTesting => 'Testy Beta';
 
   @override
+  String get writeTagsToXMP => 'Zapisz tagi do XMP';
+
+  @override
+  String get xmpMetadataWritten => 'Metadane XMP zapisane do pliku';
+
+  @override
   String get advancedSettings => 'Ustawienia Zaawansowane';
 
   @override

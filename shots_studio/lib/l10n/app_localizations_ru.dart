@@ -137,6 +137,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get betaTesting => 'Бета-тестирование';
 
   @override
+  String get writeTagsToXMP => 'Записать теги в XMP';
+
+  @override
+  String get xmpMetadataWritten => 'XMP метаданные записаны в файл';
+
+  @override
   String get advancedSettings => 'Расширенные настройки';
 
   @override
@@ -397,7 +403,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get noSponsorshipOptions =>
-      'В настоящее время нет доступных вариантов спонсорства.';
+      'В настоящее время варианты спонсорства недоступны.';
 
   @override
   String get close => 'Закрыть';

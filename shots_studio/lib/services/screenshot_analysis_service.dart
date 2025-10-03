@@ -11,6 +11,7 @@ import 'package:shots_studio/utils/collection_utils.dart';
 import 'package:shots_studio/utils/ai_error_utils.dart';
 import 'package:shots_studio/utils/json_utils.dart';
 import 'package:shots_studio/utils/ai_language_config.dart';
+import 'package:shots_studio/services/xmp_metadata_service.dart';
 
 class ScreenshotAnalysisService extends AIService {
   // Track network errors to prevent multiple notifications
@@ -581,6 +582,9 @@ class ScreenshotAnalysisService extends AIService {
       );
     }
 
+    // Write XMP metadata to original file if enabled
+    _writeXMPMetadataAsync(updatedScreenshot);
+
     return [updatedScreenshot];
   }
 
@@ -640,6 +644,9 @@ class ScreenshotAnalysisService extends AIService {
           );
         }
 
+        // Write XMP metadata to original file if enabled
+        _writeXMPMetadataAsync(updatedScreenshot);
+
         updatedScreenshots.add(updatedScreenshot);
         if (matchedAiItemIndex != null) {
           availableResponses.removeAt(matchedAiItemIndex);
@@ -684,6 +691,33 @@ class ScreenshotAnalysisService extends AIService {
     if (result.shouldTerminate) {
       _processingTerminated = true;
     }
+  }
+
+  /// Write XMP metadata to original file asynchronously (non-blocking)
+  void _writeXMPMetadataAsync(Screenshot screenshot) {
+    // Run XMP writing in the background to not block AI processing
+    Future.microtask(() async {
+      try {
+        print(
+          'XMP: Starting metadata write for ${screenshot.id} - Path: ${screenshot.path}',
+        );
+        final success = await XMPMetadataService.writeXMPMetadata(
+          screenshot: screenshot,
+        );
+        if (success) {
+          print('XMP: Successfully wrote metadata for ${screenshot.id}');
+          print(
+            'XMP: Metadata includes: ${screenshot.tags.length} tags, title: "${screenshot.title}", description length: ${screenshot.description?.length ?? 0} chars',
+          );
+        } else {
+          print(
+            'XMP: Failed to write metadata for ${screenshot.id} (XMP writing may be disabled or file not writable)',
+          );
+        }
+      } catch (e) {
+        print('XMP: Error writing metadata for ${screenshot.id}: $e');
+      }
+    });
   }
 
   /// Log analytics for Gemma processing if applicable

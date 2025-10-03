@@ -178,6 +178,14 @@
   "@betaTesting": {
     "description": "Beta testing setting"
   },
+  "writeTagsToXMP": "Write Tags to XMP",
+  "@writeTagsToXMP": {
+    "description": "XMP metadata writing setting"
+  },
+  "xmpMetadataWritten": "XMP metadata written to file",
+  "@xmpMetadataWritten": {
+    "description": "Indicator showing XMP metadata has been written to the image file"
+  },
     "advancedSettings": "Advanced Settings",
   "developerMode": "Advanced Settings",
   "language": "Language",

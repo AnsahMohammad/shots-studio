@@ -134,5 +134,7 @@
   "supportFooterDescription": "感谢您考虑支持这个项目。您的贡献帮助我们维护和改进 Shots Studio。如需特殊安排或国际电汇，请通过 GitHub 联系我们。",
   "contactOnGitHub": "在 GitHub 上联系",
   "noSponsorshipOptions": "目前没有可用的赞助选项。",
-  "close": "关闭"
+  "close": "关闭",
+  "writeTagsToXMP": "将标签写入XMP",
+  "xmpMetadataWritten": "XMP元数据已写入文件"
 }

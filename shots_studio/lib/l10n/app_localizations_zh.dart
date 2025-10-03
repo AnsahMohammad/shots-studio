@@ -137,6 +137,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get betaTesting => 'Beta Testing';
 
   @override
+  String get writeTagsToXMP => '将标签写入XMP';
+
+  @override
+  String get xmpMetadataWritten => 'XMP元数据已写入文件';
+
+  @override
   String get advancedSettings => '高级设置';
 
   @override

@@ -134,7 +134,9 @@
   "comingSoon": "Скоро",
   "everyContributionMatters": "Каждый вклад важен",
   "supportFooterDescription": "Спасибо за рассмотрение возможности поддержки этого проекта. Ваш вклад помогает нам поддерживать и улучшать Shots Studio. Для специальных договоренностей или международных банковских переводов, пожалуйста, свяжитесь с нами через GitHub.",
-  "contactOnGitHub": "Связаться на GitHub",
-  "noSponsorshipOptions": "В настоящее время нет доступных вариантов спонсорства.",
-  "close": "Закрыть"
+    "contactOnGitHub": "Связаться на GitHub",
+  "noSponsorshipOptions": "В настоящее время варианты спонсорства недоступны.",
+  "close": "Закрыть",
+  "writeTagsToXMP": "Записать теги в XMP",
+  "xmpMetadataWritten": "XMP метаданные записаны в файл"
 }
