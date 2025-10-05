@@ -1,0 +1,481 @@
+{
+  "@@locale": "ro",
+  "appTitle": "Shots Studio",
+  "@appTitle": {
+    "description": "The application title"
+  },
+  "searchScreenshots": "Căutare Capturi de Ecran",
+  "@searchScreenshots": {
+    "description": "Tooltip for search button"
+  },
+  "analyzed": "Analizat {count}/{total}",
+  "@analyzed": {
+    "description": "Shows progress of AI analysis",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5"
+      },
+      "total": {
+        "type": "int", 
+        "example": "10"
+      }
+    }
+  },
+  "developerModeDisabled": "Setări avansate dezactivate",
+  "@developerModeDisabled": {
+    "description": "Message shown when developer mode is disabled"
+  },
+  "collections": "Colecții",
+  "@collections": {
+    "description": "Collections section title"
+  },
+  "screenshots": "Capturi de Ecran",
+  "@screenshots": {
+    "description": "Screenshots section title"
+  },
+  "settings": "Setări",
+  "@settings": {
+    "description": "Settings menu item"
+  },
+  "about": "Despre",
+  "@about": {
+    "description": "About menu item"
+  },
+  "privacy": "Confidențialitate",
+  "@privacy": {
+    "description": "Privacy menu item"
+  },
+  "createCollection": "Creare Colecție",
+  "@createCollection": {
+    "description": "Button text to create a new collection"
+  },
+  "editCollection": "Editare Colecție",
+  "@editCollection": {
+    "description": "Button text to edit collection"
+  },
+  "deleteCollection": "Ștergere Colecție",
+  "@deleteCollection": {
+    "description": "Button text to delete collection"
+  },
+  "collectionName": "Numele Colecției",
+  "@collectionName": {
+    "description": "Label for collection name input field"
+  },
+  "save": "Salvare",
+  "@save": {
+    "description": "Save button text"
+  },
+  "cancel": "Anulare",
+  "@cancel": {
+    "description": "Cancel button text"
+  },
+  "delete": "Ștergere",
+  "@delete": {
+    "description": "Delete button text"
+  },
+  "confirm": "Confirmare",
+  "@confirm": {
+    "description": "Confirm button text"
+  },
+  "yes": "Da",
+  "@yes": {
+    "description": "Yes button text"
+  },
+  "no": "Nu",
+  "@no": {
+    "description": "No button text"
+  },
+  "ok": "OK",
+  "@ok": {
+    "description": "OK button text"
+  },
+  "search": "Căutare",
+  "@search": {
+    "description": "Search button text"
+  },
+  "noResults": "Nici un rezultat găsit",
+  "@noResults": {
+    "description": "Message when search returns no results"
+  },
+  "loading": "Se încarcă...",
+  "@loading": {
+    "description": "Loading message"
+  },
+  "error": "Eroare",
+  "@error": {
+    "description": "Error message"
+  },
+  "retry": "Reîncercare",
+  "@retry": {
+    "description": "Retry button text"
+  },
+  "share": "Partajare",
+  "@share": {
+    "description": "Share button text"
+  },
+  "copy": "Copiere",
+  "@copy": {
+    "description": "Copy button text"
+  },
+  "paste": "Lipire",
+  "@paste": {
+    "description": "Paste button text"
+  },
+  "selectAll": "Selectare Totală",
+  "@selectAll": {
+    "description": "Select all button text"
+  },
+  "aiSettings": "Setări AI",
+  "@aiSettings": {
+    "description": "AI Settings menu item"
+  },
+  "apiKey": "Cheie API",
+  "@apiKey": {
+    "description": "API Key label"
+  },
+  "modelName": "Numele Modelului",
+  "@modelName": {
+    "description": "Model name label"
+  },
+  "autoProcessing": "Procesare Automată",
+  "@autoProcessing": {
+    "description": "Auto processing setting"
+  },
+  "enabled": "Activat",
+  "@enabled": {
+    "description": "Enabled status"
+  },
+  "disabled": "Dezactivat",
+  "@disabled": {
+    "description": "Disabled status"
+  },
+  "theme": "Temă",
+  "@theme": {
+    "description": "Theme setting"
+  },
+  "lightTheme": "Luminoasă",
+  "@lightTheme": {
+    "description": "Light theme option"
+  },
+  "darkTheme": "Întunecată",
+  "@darkTheme": {
+    "description": "Dark theme option"
+  },
+  "systemTheme": "Sistem",
+  "@systemTheme": {
+    "description": "System theme option"
+  },
+  "language": "Limbă",
+  "@language": {
+    "description": "Language setting"
+  },
+  "analytics": "Analiză",
+  "@analytics": {
+    "description": "Analytics setting"
+  },
+  "betaTesting": "Testare Beta",
+  "@betaTesting": {
+    "description": "Beta testing setting"
+  },
+  "writeTagsToXMP": "Scriere Etichete în XMP",
+  "@writeTagsToXMP": {
+    "description": "XMP metadata writing setting"
+  },
+  "xmpMetadataWritten": "Metadate XMP scrise în fișier",
+  "@xmpMetadataWritten": {
+    "description": "Indicator showing XMP metadata has been written to the image file"
+  },
+  "advancedSettings": "Setări Avansate",
+  "developerMode": "Setări Avansate",
+  "safeDelete": "Ștergere Sigură",
+  "sourceCode": "Cod Sursă",
+  "support": "Suport",
+  "checkForUpdates": "Verificare Actualizări",
+  "privacyNotice": "Notificare Confidențialitate",
+  "analyticsAndTelemetry": "Analiză și Telemetrie",
+  "performanceMenu": "Meniu Performanță",
+  "serverMessages": "Mesaje Server",
+  "maxParallelAI": "Max AI Paralel",
+  "enableScreenshotLimit": "Activare Limită Capturi de Ecran",
+  "tags": "Etichete",
+  "aiDetails": "Detalii AI",
+  "size": "Dimensiune",
+  "addDescription": "Adăugare descriere",
+  "addTag": "Adăugare etichetă",
+  "@developerMode": {
+    "description": "Advanced settings mode setting"
+  },
+  "amoledMode": "Mod AMOLED",
+  "@amoledMode": {
+    "description": "AMOLED mode setting"
+  },
+  "notifications": "Notificări",
+  "@notifications": {
+    "description": "Notifications setting"
+  },
+  "permissions": "Permisiuni",
+  "@permissions": {
+    "description": "Permissions setting"
+  },
+  "storage": "Stocare",
+  "@storage": {
+    "description": "Storage setting"
+  },
+  "camera": "Cameră",
+  "@camera": {
+    "description": "Camera permission"
+  },
+  "version": "Versiune",
+  "@version": {
+    "description": "App version label"
+  },
+  "buildNumber": "Numărul Versiunii",
+  "@buildNumber": {
+    "description": "Build number label"
+  },
+  "ocrResults": "Rezultate OCR",
+  "@ocrResults": {
+    "description": "OCR results dialog title"
+  },
+  "extractedText": "Text Extras",
+  "@extractedText": {
+    "description": "Label for extracted text from OCR"
+  },
+  "noTextFound": "Nu s-a găsit text în imagine",
+  "@noTextFound": {
+    "description": "Message when OCR finds no text"
+  },
+  "processing": "Procesare...",
+  "@processing": {
+    "description": "Processing message"
+  },
+  "selectImage": "Selectare Imagine",
+  "@selectImage": {
+    "description": "Select image button text"
+  },
+  "takePhoto": "Realizare Fotografie",
+  "@takePhoto": {
+    "description": "Take photo button text"
+  },
+  "fromGallery": "Din Galerie",
+  "@fromGallery": {
+    "description": "From gallery button text"
+  },
+  "imageSelected": "Imagine selectată",
+  "@imageSelected": {
+    "description": "Message when image is selected"
+  },
+  "noImageSelected": "Nici o imagine selectată",
+  "@noImageSelected": {
+    "description": "Message when no image is selected"
+  },
+  "apiKeyRequired": "Necesar pentru funcțiile AI",
+  "@apiKeyRequired": {
+    "description": "Message when API key is required"
+  },
+  "apiKeyValid": "Cheia API este validă",
+  "@apiKeyValid": {
+    "description": "Message when API key is valid"
+  },
+  "apiKeyValidationFailed": "Validarea cheii API a eșuat",
+  "@apiKeyValidationFailed": {
+    "description": "Message when API key validation fails"
+  },
+  "apiKeyNotValidated": "Cheia API este setată (nevalidată)",
+  "@apiKeyNotValidated": {
+    "description": "Message when API key is set but not validated"
+  },
+  "enterApiKey": "Introduceți Cheia API Gemini",
+  "@enterApiKey": {
+    "description": "Placeholder text for API key field"
+  },
+  "validateApiKey": "Validare Cheie API",
+  "@validateApiKey": {
+    "description": "Button text to validate API key"
+  },
+  "valid": "Valid",
+  "@valid": {
+    "description": "Valid status text"
+  },
+  "autoProcessingDescription": "Capturile de ecran vor fi procesate automat când sunt adăugate",
+  "@autoProcessingDescription": {
+    "description": "Description for auto processing when enabled"
+  },
+  "manualProcessingOnly": "Doar procesare manuală",
+  "@manualProcessingOnly": {
+    "description": "Description for auto processing when disabled"
+  },
+  "amoledModeDescription": "Temă întunecată optimizată pentru ecrane AMOLED",
+  "@amoledModeDescription": {
+    "description": "Description for AMOLED mode when enabled"
+  },
+  "defaultDarkTheme": "Temă întunecată implicită",
+  "@defaultDarkTheme": {
+    "description": "Description for AMOLED mode when disabled"
+  },
+  "getApiKey": "Obținere cheie API",
+  "@getApiKey": {
+    "description": "Tooltip for API key help button"
+  },
+  "stopProcessing": "Oprire Procesare",
+  "@stopProcessing": {
+    "description": "Tooltip for stop processing button"
+  },
+  "processWithAI": "Procesare cu AI", 
+  "@processWithAI": {
+    "description": "Tooltip for process with AI button"
+  },
+  "createFirstCollection": "Creați prima dvs. colecție pentru a",
+  "@createFirstCollection": {
+    "description": "First part of empty collections message"
+  },
+  "organizeScreenshots": "organiza capturile de ecran",
+  "@organizeScreenshots": {
+    "description": "Second part of empty collections message"
+  },
+  "cancelSelection": "Anulare selecție",
+  "@cancelSelection": {
+    "description": "Tooltip for cancel selection button"
+  },
+  "deselectAll": "Deselectare Totală",
+  "@deselectAll": {
+    "description": "Deselect all button text"
+  },
+  "deleteSelected": "Ștergere selectate",
+  "@deleteSelected": {
+    "description": "Tooltip for delete selected button"
+  },
+  "clearCorruptFiles": "Curățare Fișiere Corupte",
+  "@clearCorruptFiles": {
+    "description": "Button to clear all corrupt files"
+  },
+  "clearCorruptFilesConfirm": "Curățare Fișiere Corupte?",
+  "@clearCorruptFilesConfirm": {
+    "description": "Title for confirm dialog to clear corrupt files"
+  },
+  "clearCorruptFilesMessage": "Sunteți sigur că doriți să eliminați toate fișierele corupte din această colecție? Această acțiune nu poate fi anulată.",
+  "@clearCorruptFilesMessage": {
+    "description": "Message for confirm dialog to clear corrupt files"
+  },
+  "corruptFilesCleared": "Fișierele corupte au fost curățate",
+  "@corruptFilesCleared": {
+    "description": "Message shown when corrupt files are cleared"
+  },
+  "noCorruptFiles": "Nu s-au găsit fișiere corupte",
+  "@noCorruptFiles": {
+    "description": "Message shown when no corrupt files are found"
+  },
+  "enableLocalAI": "🤖 Activare Model AI Local",
+  "@enableLocalAI": {
+    "description": "Title for enable local AI dialog"
+  },
+  "localAIBenefits": "Ce înseamnă aceasta:",
+  "@localAIBenefits": {
+    "description": "Header for What this means: section"
+  },
+  "localAIOffline": "• Funcționează complet offline - fără internet necesar",
+  "@localAIOffline": {
+    "description": "Local AI benefit: offline functionality"
+  },
+  "localAIPrivacy": "• Datele dvs. rămân private pe dispozitiv",
+  "@localAIPrivacy": {
+    "description": "Local AI benefit: privacy"
+  },
+  "localAINote": "Notă:",
+  "@localAINote": {
+    "description": "Header for local AI notes section"
+  },
+  "localAIBattery": "• Utilizează mai multă baterie decât modelele cloud",
+  "@localAIBattery": {
+    "description": "Local AI note: battery usage"
+  },
+  "localAIRAM": "• Necesită cel puțin 4GB RAM disponibil",
+  "@localAIRAM": {
+    "description": "Local AI note: RAM requirement"
+  },
+  "localAIPrivacyNote": "Modelul va procesa capturile de ecran local pentru confidențialitate îmbunătățită.",
+  "@localAIPrivacyNote": {
+    "description": "Local AI privacy explanation"
+  },
+  "enableLocalAIButton": "Activare AI Local",
+  "@enableLocalAIButton": {
+    "description": "Button text to enable local AI"
+  },
+  "reminders": "Mementouri",
+  "@reminders": {
+    "description": "Reminders screen title"
+  },
+  "activeReminders": "Active",
+  "@activeReminders": {
+    "description": "Active reminders tab title"
+  },
+  "pastReminders": "Trecute",
+  "@pastReminders": {
+    "description": "Past reminders tab title"
+  },
+  "noActiveReminders": "Nu există mementouri active.\nSetați mementouri din detaliile capturilor de ecran.",
+  "@noActiveReminders": {
+    "description": "Message shown when there are no active reminders"
+  },
+  "noPastReminders": "Nu există mementouri trecute.",
+  "@noPastReminders": {
+    "description": "Message shown when there are no past reminders"
+  },
+  "editReminder": "Editare Memento",
+  "@editReminder": {
+    "description": "Tooltip for edit reminder button"
+  },
+  "clearReminder": "Curățare Memento",
+  "@clearReminder": {
+    "description": "Tooltip for clear reminder button"
+  },
+  "removePastReminder": "Eliminare",
+  "@removePastReminder": {
+    "description": "Tooltip for remove past reminder button"
+  },
+  "pastReminderRemoved": "Mementoul trecut a fost eliminat",
+  "@pastReminderRemoved": {
+    "description": "Message shown when a past reminder is removed"
+  },
+  "supportTheProject": "Sprijiniți proiectul",
+  "@supportTheProject": {
+    "description": "Title for sponsorship dialog and support button"
+  },
+  "supportShotsStudio": "Sprijiniți Shots Studio",
+  "@supportShotsStudio": {
+    "description": "Main title in sponsorship dialog"
+  },
+  "supportDescription": "Sprijinul dvs. ajută la menținerea acestui proiect în viață și ne permite să adăugăm funcții noi minunate",
+  "@supportDescription": {
+    "description": "Description text in sponsorship dialog"
+  },
+  "availableNow": "Disponibil acum",
+  "@availableNow": {
+    "description": "Section title for available sponsorship options"
+  },
+  "comingSoon": "Disponibil în curând",
+  "@comingSoon": {
+    "description": "Section title for upcoming sponsorship options"
+  },
+  "everyContributionMatters": "Fiecare contribuție contează",
+  "@everyContributionMatters": {
+    "description": "Footer title in sponsorship dialog"
+  },
+  "supportFooterDescription": "Vă mulțumim că luați în considerare sprijinirea acestui proiect. Contribuția dvs. ne ajută să menținem și să îmbunătățim Shots Studio. Pentru aranjamente speciale sau transferuri bancare internaționale, vă rugăm să ne contactați prin GitHub.",
+  "@supportFooterDescription": {
+    "description": "Footer description in sponsorship dialog"
+  },
+  "contactOnGitHub": "Contact pe GitHub",
+  "@contactOnGitHub": {
+    "description": "Button text to contact developer on GitHub"
+  },
+  "noSponsorshipOptions": "Nu sunt disponibile opțiuni de sponsorizare în prezent.",
+  "@noSponsorshipOptions": {
+    "description": "Message when no sponsorship options are available"
+  },
+  "close": "Închidere",
+  "@close": {
+    "description": "Close button text"
+  }
+}

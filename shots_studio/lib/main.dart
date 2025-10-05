@@ -193,6 +193,7 @@ class _MyAppState extends State<MyApp> {
             Locale('it'), // Italian
             Locale('ja'), // Japanese
             Locale('pl'), // Polish
+            Locale('ro'), // Romanian
             Locale('ru'), // Russian
           ],
           locale: _selectedLocale, // Use the selected locale

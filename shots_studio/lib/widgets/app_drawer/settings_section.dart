@@ -552,6 +552,15 @@ class _SettingsSectionState extends State<SettingsSection> {
                             ],
                           ),
                         ),
+                        DropdownMenuItem(
+                          value: 'ro',
+                          child: Row(
+                            children: [
+                              SizedBox(width: 8),
+                              Text('Română (Romanian)'),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ],
