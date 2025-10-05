@@ -13,7 +13,7 @@ class PrivacyContentProvider {
     return [
       // Header
       Text(
-        "Data Processing & Privacy Information",
+        "Privacy Policy & Data Processing Information",
         style: TextStyle(
           color: theme.colorScheme.primary,
           fontSize: 18,
@@ -22,9 +22,52 @@ class PrivacyContentProvider {
       ),
       const SizedBox(height: 16),
 
+      // Introduction Paragraph
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.7),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Welcome to Shots Studio",
+              style: TextStyle(
+                color: theme.colorScheme.primary,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "At Shots Studio, we believe your privacy is fundamental. This privacy policy explains how we handle your data, what information we collect (if any), and how we protect your personal information. We've designed our app with privacy-first principles, ensuring that your screenshots and personal data remain under your control.",
+              style: TextStyle(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.5,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Please take a moment to read through this information to understand how Shots Studio respects and protects your privacy.",
+              style: TextStyle(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.5,
+                fontSize: 14,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 20),
+
       // AI Processing Options
       Text(
-        "Artificial Intelligence Processing Options",
+        "Image Processing Options",
         style: TextStyle(
           color: theme.colorScheme.onSurface,
           fontSize: 16,
@@ -33,7 +76,7 @@ class PrivacyContentProvider {
       ),
       const SizedBox(height: 8),
       Text(
-        "Shots Studio offers two distinct AI processing methods, each with different privacy implications:",
+        "Shots Studio offers two distinct AI processing methods for processing your images, each with different privacy implications:",
         style: TextStyle(
           color: theme.colorScheme.onSurfaceVariant,
           height: 1.4,

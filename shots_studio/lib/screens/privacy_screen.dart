@@ -25,11 +25,34 @@ class PrivacyScreen extends StatefulWidget {
 
 class _PrivacyScreenState extends State<PrivacyScreen> {
   bool _analyticsEnabled = false; // Default to false for privacy - opt-in only
+  bool _hasScrolledToBottom = false;
+  bool _hasReadAndAgreed = false;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _loadAnalyticsEnabledPref();
+    _setupScrollListener();
+  }
+
+  void _setupScrollListener() {
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent - 50) {
+        if (!_hasScrolledToBottom) {
+          setState(() {
+            _hasScrolledToBottom = true;
+          });
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _loadAnalyticsEnabledPref() async {
@@ -100,264 +123,368 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(
+    return PopScope(
+      canPop: !widget.isAcknowledgementRequired,
+      onPopInvoked: (bool didPop) {
+        if (widget.isAcknowledgementRequired && !didPop) {
+          // If acknowledgment is required and user tries to go back,
+          // treat it as disagreement
+          _handleDisagree(context);
+        }
+      },
+      child: Scaffold(
         backgroundColor: theme.colorScheme.surface,
-        foregroundColor: theme.colorScheme.onSurface,
-        title: Text(
-          widget.isAcknowledgementRequired
-              ? 'Data Processing Acknowledgment'
-              : 'Privacy Notice',
-          style: TextStyle(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.bold,
+        appBar: AppBar(
+          backgroundColor: theme.colorScheme.surface,
+          foregroundColor: theme.colorScheme.onSurface,
+          title: Text(
+            widget.isAcknowledgementRequired
+                ? 'Data Processing Acknowledgment'
+                : 'Privacy Notice',
+            style: TextStyle(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
+          elevation: 0,
+          automaticallyImplyLeading: !widget.isAcknowledgementRequired,
         ),
-        elevation: 0,
-        automaticallyImplyLeading: !widget.isAcknowledgementRequired,
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (widget.isAcknowledgementRequired) ...[
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (widget.isAcknowledgementRequired) ...[
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: theme.colorScheme.primary.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                color: theme.colorScheme.primary,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  "By clicking 'Agree & Continue', you acknowledge and consent to the following:",
+                                  style: TextStyle(
+                                    color: theme.colorScheme.onPrimaryContainer,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Privacy content from provider
+                      ...PrivacyContentProvider.getPrivacyContent(
+                        context,
+                        launchUrlCallback: _launchURL,
+                      ),
+
+                      const SizedBox(height: 20),
+
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: theme.colorScheme.primaryContainer,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: theme.colorScheme.primary.withOpacity(0.3),
-                          ),
                         ),
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              Icons.info_outline,
-                              color: theme.colorScheme.primary,
-                              size: 24,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                "By clicking 'Agree & Continue', you acknowledge and consent to the following:",
+                            SwitchListTile(
+                              secondary: Icon(
+                                Icons.analytics_outlined,
+                                color: theme.colorScheme.primary,
+                              ),
+                              title: Text(
+                                'Analytics & Telemetry',
                                 style: TextStyle(
-                                  color: theme.colorScheme.onPrimaryContainer,
-                                  fontWeight: FontWeight.w500,
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Text(
+                                _analyticsEnabled
+                                    ? 'Analytics and telemetry enabled'
+                                    : 'Help improve the app by sharing anonymous usage data',
+                                style: TextStyle(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              value: _analyticsEnabled,
+                              activeThumbColor: theme.colorScheme.primary,
+                              onChanged: (bool value) {
+                                setState(() {
+                                  _analyticsEnabled = value;
+                                });
+                                _saveAnalyticsEnabled(value);
+
+                                // Track analytics for analytics setting (meta-analytics!)
+                                AnalyticsService().logFeatureUsed(
+                                  'settings_analytics_${value ? 'enabled' : 'disabled'}',
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 8),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                left: 16.0,
+                                right: 16.0,
+                              ),
+                              child: Text(
+                                "Anonymous usage analytics help us improve the app experience. This feature is completely optional and can be disabled at any time. For more details, you can inspect the source code of our analytics implementation here: ",
+                                style: TextStyle(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                left: 16.0,
+                                right: 16.0,
+                                top: 4.0,
+                              ),
+                              child: GestureDetector(
+                                onTap: () async {
+                                  const url =
+                                      'https://github.com/AnsahMohammad/shots-studio/blob/main/shots_studio/lib/services/analytics/posthog_analytics_service.dart';
+                                  final Uri uri = Uri.parse(url);
+                                  if (await canLaunchUrl(uri)) {
+                                    await launchUrl(
+                                      uri,
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                  } else {
+                                    SnackbarService().showError(
+                                      context,
+                                      'Could not launch $url',
+                                    );
+                                  }
+                                },
+                                child: Text(
+                                  'Analytics Source Code',
+                                  style: TextStyle(
+                                    color: theme.colorScheme.primary,
+                                    decoration: TextDecoration.underline,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
+
+                      // Additional spacing and information
+                      if (!widget.isAcknowledgementRequired) ...[
+                        const SizedBox(height: 16),
+                      ],
+
+                      // Legacy container for non-acknowledgment screens (keeping for any additional content)
+                      if (!widget.isAcknowledgementRequired) ...[
+                        // This section can be used for any additional settings that are specific
+                        // to the privacy screen accessed from app drawer (not first-time setup)
+                      ],
+
+                      const SizedBox(
+                        height: 100,
+                      ), // Extra space for bottom buttons
                     ],
-
-                    // Privacy content from provider
-                    ...PrivacyContentProvider.getPrivacyContent(
-                      context,
-                      launchUrlCallback: _launchURL,
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SwitchListTile(
-                            secondary: Icon(
-                              Icons.analytics_outlined,
-                              color: theme.colorScheme.primary,
-                            ),
-                            title: Text(
-                              'Analytics & Telemetry',
-                              style: TextStyle(
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Text(
-                              _analyticsEnabled
-                                  ? 'Help improve the app by sharing usage data'
-                                  : 'Analytics and crash reporting disabled',
-                              style: TextStyle(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            value: _analyticsEnabled,
-                            activeThumbColor: theme.colorScheme.primary,
-                            onChanged: (bool value) {
-                              setState(() {
-                                _analyticsEnabled = value;
-                              });
-                              _saveAnalyticsEnabled(value);
-
-                              // Track analytics for analytics setting (meta-analytics!)
-                              AnalyticsService().logFeatureUsed(
-                                'settings_analytics_${value ? 'enabled' : 'disabled'}',
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 8),
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              left: 16.0,
-                              right: 16.0,
-                            ),
-                            child: Text(
-                              "Anonymous usage analytics help us improve the app experience. This feature is completely optional and can be disabled at any time. For more details, you can inspect the source code of our analytics implementation here: ",
-                              style: TextStyle(
-                                color: theme.colorScheme.onSurfaceVariant,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              left: 16.0,
-                              right: 16.0,
-                              top: 4.0,
-                            ),
-                            child: GestureDetector(
-                              onTap: () async {
-                                const url =
-                                    'https://github.com/AnsahMohammad/shots-studio/blob/main/shots_studio/lib/services/analytics/posthog_analytics_service.dart';
-                                final Uri uri = Uri.parse(url);
-                                if (await canLaunchUrl(uri)) {
-                                  await launchUrl(
-                                    uri,
-                                    mode: LaunchMode.externalApplication,
-                                  );
-                                } else {
-                                  SnackbarService().showError(
-                                    context,
-                                    'Could not launch $url',
-                                  );
-                                }
-                              },
-                              child: Text(
-                                'Analytics Source Code',
-                                style: TextStyle(
-                                  color: theme.colorScheme.primary,
-                                  decoration: TextDecoration.underline,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Additional spacing and information
-                    if (!widget.isAcknowledgementRequired) ...[
-                      const SizedBox(height: 16),
-                    ],
-
-                    // Legacy container for non-acknowledgment screens (keeping for any additional content)
-                    if (!widget.isAcknowledgementRequired) ...[
-                      // This section can be used for any additional settings that are specific
-                      // to the privacy screen accessed from app drawer (not first-time setup)
-                    ],
-
-                    const SizedBox(
-                      height: 100,
-                    ), // Extra space for bottom buttons
-                  ],
-                ),
-              ),
-            ),
-
-            // Bottom action buttons
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                border: Border(
-                  top: BorderSide(
-                    color: theme.colorScheme.outline.withOpacity(0.2),
                   ),
                 ),
               ),
-              child:
-                  widget.isAcknowledgementRequired
-                      ? Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => _handleDisagree(context),
-                              style: OutlinedButton.styleFrom(
+
+              // Bottom action buttons
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  border: Border(
+                    top: BorderSide(
+                      color: theme.colorScheme.outline.withOpacity(0.2),
+                    ),
+                  ),
+                ),
+                child:
+                    widget.isAcknowledgementRequired
+                        ? Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Scroll indicator
+                            if (!_hasScrolledToBottom)
+                              Container(
+                                width: double.infinity,
                                 padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
+                                  horizontal: 12,
+                                  vertical: 8,
                                 ),
-                                side: BorderSide(
-                                  color: theme.colorScheme.secondary,
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.secondary
+                                      .withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: theme.colorScheme.secondary
+                                        .withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.keyboard_arrow_down,
+                                      color: theme.colorScheme.secondary,
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Flexible(
+                                      child: Text(
+                                        'Please scroll down to read the full policy',
+                                        style: TextStyle(
+                                          color: theme.colorScheme.secondary,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              child: Text(
-                                'Disagree',
-                                style: TextStyle(
-                                  color: theme.colorScheme.onSecondaryContainer,
-                                  fontWeight: FontWeight.w600,
+
+                            // Confirmation checkbox (only shown after scrolling)
+                            if (_hasScrolledToBottom) ...[
+                              const SizedBox(height: 12),
+                              CheckboxListTile(
+                                value: _hasReadAndAgreed,
+                                onChanged: (bool? value) {
+                                  setState(() {
+                                    _hasReadAndAgreed = value ?? false;
+                                  });
+                                },
+                                title: Text(
+                                  'I have read and understood the privacy policy',
+                                  style: TextStyle(
+                                    color: theme.colorScheme.onSurface,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
+                                controlAffinity:
+                                    ListTileControlAffinity.leading,
+                                activeColor: theme.colorScheme.primary,
+                                contentPadding: EdgeInsets.zero,
                               ),
+                            ],
+
+                            const SizedBox(height: 16),
+
+                            // Action buttons
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: () => _handleDisagree(context),
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      side: BorderSide(
+                                        color: theme.colorScheme.secondary,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Disagree',
+                                      style: TextStyle(
+                                        color:
+                                            theme
+                                                .colorScheme
+                                                .onSecondaryContainer,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  flex: 2,
+                                  child: ElevatedButton(
+                                    onPressed:
+                                        (_hasScrolledToBottom &&
+                                                _hasReadAndAgreed)
+                                            ? () => _handleAgree(context)
+                                            : null,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          theme.colorScheme.primary,
+                                      disabledBackgroundColor: theme
+                                          .colorScheme
+                                          .outline
+                                          .withOpacity(0.3),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Agree & Continue',
+                                      style: TextStyle(
+                                        color:
+                                            (_hasScrolledToBottom &&
+                                                    _hasReadAndAgreed)
+                                                ? theme.colorScheme.onPrimary
+                                                : theme.colorScheme.onSurface
+                                                    .withOpacity(0.5),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            flex: 2,
-                            child: ElevatedButton(
-                              onPressed: () => _handleAgree(context),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: theme.colorScheme.primary,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                              ),
-                              child: Text(
-                                'Agree & Continue',
-                                style: TextStyle(
-                                  color: theme.colorScheme.onPrimary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                          ],
+                        )
+                        : SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: theme.colorScheme.primary,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                             ),
-                          ),
-                        ],
-                      )
-                      : SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: theme.colorScheme.primary,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          child: Text(
-                            'Close',
-                            style: TextStyle(
-                              color: theme.colorScheme.onPrimary,
-                              fontWeight: FontWeight.bold,
+                            child: Text(
+                              'Close',
+                              style: TextStyle(
+                                color: theme.colorScheme.onPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
-      ),
+      ), // Close PopScope
     );
   }
 }

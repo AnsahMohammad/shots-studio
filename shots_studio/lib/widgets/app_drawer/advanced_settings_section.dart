@@ -420,30 +420,14 @@ class _AdvancedSettingsSectionState extends State<AdvancedSettingsSection> {
               Expanded(
                 child: Row(
                   children: [
-                    Text(
-                      AppLocalizations.of(context)?.writeTagsToXMP ??
-                          'Write Tags to XMP',
-                      style: TextStyle(
-                        color: theme.colorScheme.onSecondaryContainer,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.secondary,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
+                    Flexible(
                       child: Text(
-                        'BETA',
+                        AppLocalizations.of(context)?.writeTagsToXMP ??
+                            'Write Tags to XMP',
                         style: TextStyle(
-                          color: theme.colorScheme.onSecondary,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSecondaryContainer,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -463,7 +447,7 @@ class _AdvancedSettingsSectionState extends State<AdvancedSettingsSection> {
                           title: Row(
                             children: [
                               Text(
-                                'XMP Metadata Writing',
+                                'XMP Metadata',
                                 style: TextStyle(
                                   color: theme.colorScheme.onSurface,
                                 ),
@@ -491,24 +475,17 @@ class _AdvancedSettingsSectionState extends State<AdvancedSettingsSection> {
                           ),
                           content: SingleChildScrollView(
                             child: Text(
-                              '🔧 BETA FEATURE - Test carefully before enabling!\n\n'
-                              'When enabled, AI-generated tags, titles, and descriptions will be embedded directly into your image files as searchable metadata.\n\n'
+                              '🔧 BETA FEATURE - Be carefully before enabling!\n\n'
+                              'When enabled, AI-generated title will be embedded directly into your image files as searchable metadata.\n\n'
                               '✅ BENEFITS:\n'
-                              '• Tags become searchable in Gallery apps\n'
+                              '• Tags become searchable outside shots-studio\n'
                               '• Works with file managers and photo organizers\n'
                               '• Metadata travels with the image file\n'
-                              '• Automatic backup and recovery system\n\n'
                               '⚠️ IMPORTANT CHANGES:\n'
                               '• PNG screenshots → converted to JPEG (95% quality)\n'
                               '• WebP images → converted to JPEG for compatibility\n'
                               '• Original image files are permanently modified\n'
-                              '• Existing EXIF data may be replaced\n\n'
-                              '🛡️ SAFETY:\n'
-                              '• Automatic backup created before modification\n'
-                              '• Original file restored if any error occurs\n'
-                              '• Process fails safely - no data loss\n\n'
-                              '💡 RECOMMENDATION:\n'
-                              'Test with a few images first and ensure you have backups of important photos.',
+                              '• Existing EXIF data may be replaced\n\n',
                               style: TextStyle(
                                 color: theme.colorScheme.onSurfaceVariant,
                                 fontSize: 13,
