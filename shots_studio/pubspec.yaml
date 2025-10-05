@@ -5,7 +5,7 @@ publish_to: 'none'
 
 # The patch version numbering is automatically incremented by the git hook. 
 # Only update major and minor versions manually. 
-version: 1.9.28+4
+version: 1.9.29+4
 
 environment:
   sdk: ^3.7.2

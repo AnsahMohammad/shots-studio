@@ -34,11 +34,18 @@ class _ScreenshotSwipeDetailScreenState
   late PageController _pageController;
   late int _currentIndex;
 
+  // Cache for pre-built widgets to improve performance
+  final Map<int, Widget> _pageCache = {};
+
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
-    _pageController = PageController(initialPage: widget.initialIndex);
+    _pageController = PageController(
+      initialPage: widget.initialIndex,
+      viewportFraction: 1.0, // Ensure full viewport for smooth scrolling
+      keepPage: true, // Keep page state when off-screen
+    );
 
     // Track screen access
     AnalyticsService().logScreenView('screenshot_swipe_detail_screen');
@@ -48,6 +55,7 @@ class _ScreenshotSwipeDetailScreenState
   @override
   void dispose() {
     _pageController.dispose();
+    _pageCache.clear(); // Clear cache to prevent memory leaks
     super.dispose();
   }
 
@@ -58,6 +66,9 @@ class _ScreenshotSwipeDetailScreenState
     setState(() {
       _currentIndex = index;
     });
+
+    // Clean up distant cached pages to manage memory
+    _pageCache.removeWhere((key, value) => (key - index).abs() > 2);
   }
 
   void _navigateToIndex(int index) {
@@ -134,6 +145,45 @@ class _ScreenshotSwipeDetailScreenState
     // This callback just prevents the default Navigator.pop() behavior
   }
 
+  Widget _buildPage(int index) {
+    // Implement simple caching to reduce rebuilds during rapid scrolling
+    // Only cache current and adjacent pages to limit memory usage
+    final shouldCache = (index - _currentIndex).abs() <= 1;
+
+    if (shouldCache && _pageCache.containsKey(index)) {
+      return _pageCache[index]!;
+    }
+
+    final page = RepaintBoundary(
+      key: ValueKey('screenshot_${widget.screenshots[index].id}_$index'),
+      child: ScreenshotDetailScreen(
+        screenshot: widget.screenshots[index],
+        allCollections: widget.allCollections,
+        allScreenshots: widget.allScreenshots,
+        contextualScreenshots: widget.screenshots,
+        onUpdateCollection: widget.onUpdateCollection,
+        onDeleteScreenshot: _onScreenshotDeleted,
+        onScreenshotUpdated: widget.onScreenshotUpdated,
+        currentIndex: index,
+        totalCount: widget.screenshots.length,
+        onNavigateAfterDelete: _onNavigateAfterDelete,
+        onNavigateToIndex: _navigateToIndex,
+        disableAnimations:
+            true, // Disable bounce animations in PageView for better performance
+      ),
+    );
+
+    // Cache current and adjacent pages only
+    if (shouldCache) {
+      _pageCache[index] = page;
+
+      // Limit cache size - remove pages that are too far away
+      _pageCache.removeWhere((key, value) => (key - _currentIndex).abs() > 2);
+    }
+
+    return page;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.screenshots.isEmpty) {
@@ -148,20 +198,14 @@ class _ScreenshotSwipeDetailScreenState
         controller: _pageController,
         onPageChanged: _onPageChanged,
         itemCount: widget.screenshots.length,
+        // Performance optimizations
+        padEnds: false, // Reduces over-scroll and improves performance
+        allowImplicitScrolling: true, // Better scroll behavior
+        physics:
+            const ClampingScrollPhysics(), // Use clamping physics for better performance on Android
+        clipBehavior: Clip.none, // Reduce clipping overhead
         itemBuilder: (context, index) {
-          return ScreenshotDetailScreen(
-            screenshot: widget.screenshots[index],
-            allCollections: widget.allCollections,
-            allScreenshots: widget.allScreenshots,
-            contextualScreenshots: widget.screenshots,
-            onUpdateCollection: widget.onUpdateCollection,
-            onDeleteScreenshot: _onScreenshotDeleted,
-            onScreenshotUpdated: widget.onScreenshotUpdated,
-            currentIndex: index,
-            totalCount: widget.screenshots.length,
-            onNavigateAfterDelete: _onNavigateAfterDelete,
-            onNavigateToIndex: _navigateToIndex,
-          );
+          return _buildPage(index);
         },
       ),
     );

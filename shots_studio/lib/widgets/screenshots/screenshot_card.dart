@@ -50,13 +50,20 @@ class ScreenshotCard extends StatelessWidget {
           ), // Adjust for border width
           child: Image.file(
             file,
+            key: ValueKey(
+              'card_${screenshot.id}',
+            ), // Stable key for better caching
             fit: BoxFit.cover,
             cacheWidth: 300,
+            filterQuality:
+                FilterQuality
+                    .medium, // Balance quality and animation performance
+            gaplessPlayback: true, // Prevent flickering during transitions
             frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
               if (wasSynchronouslyLoaded) return child;
               return AnimatedOpacity(
                 opacity: frame == null ? 0 : 1,
-                duration: const Duration(milliseconds: 200),
+                duration: const Duration(milliseconds: 200), // Faster fade-in
                 child: child,
               );
             },
@@ -112,13 +119,19 @@ class ScreenshotCard extends StatelessWidget {
         ), // Adjust for border width
         child: Image.memory(
           screenshot.bytes!,
+          key: ValueKey(
+            'card_memory_${screenshot.id}',
+          ), // Stable key for better caching
           fit: BoxFit.cover,
           cacheWidth: 300,
+          filterQuality:
+              FilterQuality.medium, // Balance quality and animation performance
+          gaplessPlayback: true, // Prevent flickering during transitions
           frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
             if (wasSynchronouslyLoaded) return child;
             return AnimatedOpacity(
               opacity: frame == null ? 0 : 1,
-              duration: const Duration(milliseconds: 200),
+              duration: const Duration(milliseconds: 200), // Faster fade-in
               child: child,
             );
           },
@@ -154,93 +167,101 @@ class ScreenshotCard extends StatelessWidget {
       );
     }
 
-    Widget cardContent = Container(
-      decoration: BoxDecoration(
-        border: Border.all(
-          color:
-              isSelected
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.secondaryContainer,
-          width: isSelected ? 4.0 : 3.0,
-        ),
-        borderRadius: BorderRadius.circular(borderRadius),
-      ),
-      child: Stack(
-        children: [
-          // Using a plain container instead of Card to avoid double clipping
-          Container(
-            margin: EdgeInsets.zero,
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(
-                borderRadius - (isSelected ? 4.0 : 3.0),
-              ),
-              color: Theme.of(context).cardColor,
-            ),
-            child: SizedBox.expand(child: imageWidget),
+    Widget cardContent = RepaintBoundary(
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color:
+                isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.secondaryContainer,
+            width: isSelected ? 4.0 : 3.0,
           ),
-
-          // Selection overlay
-          if (isSelectionMode)
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(
-                  borderRadius - (isSelected ? 4.0 : 3.0),
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
+        child: Stack(
+          children: [
+            // Using a plain container instead of Card to avoid double clipping
+            RepaintBoundary(
+              child: Container(
+                margin: EdgeInsets.zero,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(
+                    borderRadius - (isSelected ? 4.0 : 3.0),
+                  ),
+                  color: Theme.of(context).cardColor,
                 ),
-                color:
-                    isSelected
-                        ? Theme.of(context).colorScheme.primary.withOpacity(0.3)
-                        : Colors.black.withOpacity(0.1),
+                child: SizedBox.expand(child: imageWidget),
               ),
             ),
 
-          // Selection indicator
-          if (isSelectionMode)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color:
-                      isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(
-                            context,
-                          ).colorScheme.surface.withOpacity(0.8),
-                  border: Border.all(
+            // Selection overlay
+            if (isSelectionMode)
+              RepaintBoundary(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(
+                      borderRadius - (isSelected ? 4.0 : 3.0),
+                    ),
+                    color:
+                        isSelected
+                            ? Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.3)
+                            : Colors.black.withValues(alpha: 0.1),
+                  ),
+                ),
+              ),
+
+            // Selection indicator
+            if (isSelectionMode)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
                     color:
                         isSelected
                             ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.outline,
-                    width: 2,
+                            : Theme.of(
+                              context,
+                            ).colorScheme.surface.withOpacity(0.8),
+                    border: Border.all(
+                      color:
+                          isSelected
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.outline,
+                      width: 2,
+                    ),
                   ),
+                  child:
+                      isSelected
+                          ? Icon(
+                            Icons.check,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          )
+                          : null,
                 ),
-                child:
-                    isSelected
-                        ? Icon(
-                          Icons.check,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        )
-                        : null,
               ),
-            ),
 
-          // AI processed indicator (only show when not in selection mode)
-          if (screenshot.aiProcessed && !isSelectionMode)
-            Positioned(
-              bottom: 4,
-              right: 4,
-              child: Icon(
-                Icons.check_circle,
-                color: Theme.of(context).colorScheme.primary,
-                size: 20,
+            // AI processed indicator (only show when not in selection mode)
+            if (screenshot.aiProcessed && !isSelectionMode)
+              Positioned(
+                bottom: 4,
+                right: 4,
+                child: Icon(
+                  Icons.check_circle,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 20,
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
 
@@ -250,7 +271,9 @@ class ScreenshotCard extends StatelessWidget {
           destinationBuilder != null && !isSelectionMode
               ? OpenContainer(
                 transitionType: ContainerTransitionType.fade,
-                transitionDuration: const Duration(milliseconds: 250),
+                transitionDuration: const Duration(
+                  milliseconds: 250,
+                ), // Faster, snappier animation
                 closedElevation: 0,
                 openElevation: 0,
                 closedShape: RoundedRectangleBorder(
@@ -258,8 +281,13 @@ class ScreenshotCard extends StatelessWidget {
                 ),
                 closedColor: Colors.transparent,
                 openColor: Theme.of(context).colorScheme.surface,
+                useRootNavigator:
+                    false, // Better performance for nested navigation
+                clipBehavior: Clip.antiAlias, // Smooth clipping
                 closedBuilder:
-                    (context, action) => _buildGestureDetector(cardContent),
+                    (context, action) => RepaintBoundary(
+                      child: _buildGestureDetector(cardContent),
+                    ),
                 openBuilder: (context, action) => destinationBuilder!(context),
               )
               : _buildGestureDetector(cardContent),

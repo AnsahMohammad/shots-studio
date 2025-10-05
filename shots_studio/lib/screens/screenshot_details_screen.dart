@@ -41,6 +41,8 @@ class ScreenshotDetailScreen extends StatefulWidget {
   final VoidCallback? onNavigateAfterDelete;
   final Function(int)?
   onNavigateToIndex; // Callback for navigating to a specific index
+  final bool
+  disableAnimations; // Flag to disable animations for better PageView performance
 
   const ScreenshotDetailScreen({
     super.key,
@@ -55,6 +57,7 @@ class ScreenshotDetailScreen extends StatefulWidget {
     this.totalCount,
     this.onNavigateAfterDelete,
     this.onNavigateToIndex,
+    this.disableAnimations = false,
   });
 
   @override
@@ -84,20 +87,30 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     ); // Track screenshot details screen access
     AnalyticsService().logScreenView('screenshot_details_screen');
 
-    // Initialize simple bounce animation
+    // Initialize animation controller - always enable for floating toolbar bounce
+    // The disableAnimations flag only affects the main screen bounce, not the toolbar
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
+    _scaleAnimation = Tween<double>(
+      begin: 0.8, // Always start with bounce effect for floating toolbar
+      end: 1.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve:
+            Curves.elasticOut, // Always use bounce curve for floating toolbar
+      ),
     );
 
     // Check for expired reminders after the frame is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkExpiredReminders();
-      // Delay the bounce animation slightly to avoid conflicts with page transitions
+      // Always run the floating toolbar bounce animation
+      // The disableAnimations flag was meant to disable screen-level animations,
+      // not the floating toolbar which should always have a nice entrance
       Future.delayed(const Duration(milliseconds: 100), () {
         if (mounted) {
           _animationController.forward();
