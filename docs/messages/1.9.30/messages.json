@@ -1,0 +1,21 @@
+{
+  "messages": [
+    {
+      "show": true,
+      "id": "welcome_1_9_30",
+      "title": "Here's what's new in Shots Studio 1.9.30! 🚀",
+      "message": "Say Hello to a Smarter, Sharper Shots Studio! 🎉\n\nWhat's new:\n\n - **Double-tap zoom** and enhanced image zooming for better viewing.\n - Enable **Beta EXIF metadata writing**, making your screenshots searchable outside Shots Studio.\n - **Romanian 🇷🇴 localisation** onboarded.\n - Improved font sizes and smoother animations across the app.\n\nCheck out the changelogs for the full scoop!\n\nWith ❤️,\nTeam Shots Studio",
+      "type": "info",
+      "priority": "high",
+      "show_once": true,
+      "valid_until": "2026-10-01T00:00:00Z",
+      "is_notification": false,
+      "version": "1.9.30",
+      "beta_only": false,
+      "action_text": "changelogs",
+      "dismiss_text": "dismiss",
+      "action_url": "https://github.com/AnsahMohammad/shots-studio/releases/tag/v1.9.30",
+      "platform": "all"
+    }
+  ]
+}
