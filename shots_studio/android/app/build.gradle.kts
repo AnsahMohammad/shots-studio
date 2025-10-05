@@ -64,6 +64,12 @@ android {
             buildConfigField("String", "BUILD_SOURCE", "\"playstore\"")
             manifestPlaceholders["appNameSuffix"] = ""
         }
+        create("dog") {
+            dimension = "source"
+            applicationIdSuffix = ".dog"
+            buildConfigField("String", "BUILD_SOURCE", "\"github\"")
+            manifestPlaceholders["appNameSuffix"] = " (Dog)"
+        }
     }
 
     // signingConfigs {
@@ -84,6 +90,9 @@ android {
         }
         getByName("playstore") {
             manifest.srcFile("src/playstore/AndroidManifest.xml")
+        }
+        getByName("dog") {
+            manifest.srcFile("src/dog/AndroidManifest.xml")
         }
     }
 

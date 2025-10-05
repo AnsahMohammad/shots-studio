@@ -2,7 +2,7 @@
 
 # Build script for different flavors of Shots Studio
 # Usage: ./build_flavors.sh [flavor] [build_type]
-# Flavors: fdroid (default), github, playstore
+# Flavors: fdroid (default), github, playstore, dog
 # Build types: debug (default), release, profile
 
 FLAVOR=${1:-fdroid}
@@ -23,9 +23,13 @@ case $FLAVOR in
         echo "Building Play Store flavor..."
         flutter build apk --$BUILD_TYPE --flavor playstore --dart-define=BUILD_SOURCE=playstore
         ;;
+    dog)
+        echo "Building Dog flavor (test release)..."
+        flutter build apk --$BUILD_TYPE --flavor dog --dart-define=BUILD_SOURCE=github
+        ;;
     *)
         echo "Unknown flavor: $FLAVOR"
-        echo "Available flavors: fdroid, github, playstore"
+        echo "Available flavors: fdroid, github, playstore, dog"
         exit 1
         ;;
 esac

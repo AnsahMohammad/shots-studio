@@ -285,6 +285,9 @@ flutter build apk --release --flavor fdroid --dart-define=BUILD_SOURCE=fdroid
 flutter build apk --release --flavor github --dart-define=BUILD_SOURCE=github
 flutter build apk --release --flavor playstore --dart-define=BUILD_SOURCE=playstore
 
+# Build test release version (separate package name: com.ansah.shots_studio.dog)
+flutter run apk --release --flavor dog --dart-define=BUILD_SOURCE=github
+
 # Play Store flavor (most common for app bundles)
 flutter build appbundle --release --flavor playstore --dart-define=BUILD_SOURCE=playstore
 
@@ -293,6 +296,7 @@ flutter build appbundle --release --flavor playstore --dart-define=BUILD_SOURCE=
 chmod +x build_flavors.sh
 ./build_flavors.sh fdroid debug      # F-Droid debug build
 ./build_flavors.sh github release    # GitHub release build
+./build_flavors.sh dog release       # Test release build (separate package)
 
 # Check for dependency updates
 flutter pub outdated
