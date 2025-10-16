@@ -1,0 +1,182 @@
+
+AntiFeatures:
+  NonFreeNet:
+    en-US: Promotes proprietary Google Gemini API.
+  Tracking:
+    en-US: Telemetry is enabled by default.
+Categories:
+  - Multimedia
+  - System
+License: GPL-3.0-only
+AuthorName: Ansah Mohammad
+AuthorEmail: mohdansah10@gmail.com
+SourceCode: https://gitlab.com/mohdansah10/shots-studio
+IssueTracker: https://gitlab.com/mohdansah10/shots-studio/-/issues
+Changelog: https://gitlab.com/mohdansah10/shots-studio/-/releases
+AutoName: Shots Studio
+RepoType: git
+Repo: https://gitlab.com/mohdansah10/shots-studio.git
+Binaries: https://archive.org/download/shots_studio-release/shots_studio-fdroid-release-%v.apk
+Builds:
+  - versionName: 1.8.80
+    versionCode: 1
+    commit: v1.8.80
+    sudo:
+      - mkdir -p /home/ansah/Documents/Programming/Projects/shots-studio
+      - chown -R vagrant /home/ansah
+    output: shots_studio/build/app/outputs/flutter-apk/app-release.apk
+    srclibs:
+      - flutter@stable
+    rm:
+      - shots_studio/ios
+      - shots_studio/linux
+      - shots_studio/macos
+      - shots_studio/web
+      - shots_studio/windows
+    prebuild:
+      - git -C $$flutter$$ reset --hard $(cat shots_studio/flutter.version)
+      - export repo=/home/ansah/Documents/Programming/Projects/shots-studio/shots_studio
+      - mv shots_studio $repo
+      - pushd $repo
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      - export PATH="$$flutter$$/bin:$PATH"
+      - flutter config --no-analytics
+      - flutter pub get
+      - popd
+      - mv $repo .
+    scandelete:
+      - shots_studio/.pub-cache
+    build:
+      - export repo=/home/ansah/Documents/Programming/Projects/shots-studio/shots_studio
+      - mv shots_studio $repo
+      - pushd $repo
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      - export PATH="$$flutter$$/bin:$PATH"
+      - flutter build apk --release
+      - popd
+      - mv $repo .
+  - versionName: 1.8.148
+    versionCode: 2
+    commit: v1.8.148
+    sudo:
+      - mkdir -p /home/ansah/Documents/Programming/Projects/shots-studio
+      - chown -R vagrant /home/ansah
+    output: shots_studio/build/app/outputs/flutter-apk/app-fdroid-release.apk
+    srclibs:
+      - flutter@stable
+    rm:
+      - shots_studio/ios
+      - shots_studio/linux
+      - shots_studio/macos
+      - shots_studio/web
+      - shots_studio/windows
+    prebuild:
+      - git -C $$flutter$$ reset --hard $(cat shots_studio/flutter.version)
+      - export repo=/home/ansah/Documents/Programming/Projects/shots-studio/shots_studio
+      - mv shots_studio $repo
+      - pushd $repo
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      - export PATH="$$flutter$$/bin:$PATH"
+      - flutter config --no-analytics
+      - flutter pub get
+      - popd
+      - mv $repo .
+    scandelete:
+      - shots_studio/.pub-cache
+    build:
+      - export repo=/home/ansah/Documents/Programming/Projects/shots-studio/shots_studio
+      - mv shots_studio $repo
+      - pushd $repo
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      - export PATH="$$flutter$$/bin:$PATH"
+      - flutter build apk --release --flavor fdroid --dart-define=BUILD_SOURCE=fdroid
+      - popd
+      - mv $repo .
+  - versionName: 1.8.170
+    versionCode: 3
+    disable: https://gitlab.com/mohdansah10/shots-studio/-/issues/2
+    commit: 46575d5341e64327da9589fff398d52213eb517b
+    sudo:
+      - mkdir -p /home/ansah/Documents/Programming/Projects/shots-studio
+      - chown -R vagrant /home/ansah
+    output: shots_studio/build/app/outputs/flutter-apk/app-fdroid-release.apk
+    srclibs:
+      - flutter@stable
+    rm:
+      - shots_studio/ios
+      - shots_studio/linux
+      - shots_studio/macos
+      - shots_studio/web
+      - shots_studio/windows
+    prebuild:
+      - git -C $$flutter$$ reset --hard $(cat shots_studio/flutter.version)
+      - export repo=/home/ansah/Documents/Programming/Projects/shots-studio/shots_studio
+      - mv shots_studio $repo
+      - pushd $repo
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      - export PATH="$$flutter$$/bin:$PATH"
+      - flutter config --no-analytics
+      - flutter pub get
+      - sed -i -e 's/8.12.1/8.11.1/' $PUB_CACHE/hosted/pub.dev/{{image_picker,path_provider,shared_preferences,url_launcher}_android,flutter_plugin_android_lifecycle}-*/android/build.gradle
+      - popd
+      - mv $repo .
+    scandelete:
+      - shots_studio/.pub-cache
+    build:
+      - export repo=/home/ansah/Documents/Programming/Projects/shots-studio/shots_studio
+      - mv shots_studio $repo
+      - pushd $repo
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      - export PATH="$$flutter$$/bin:$PATH"
+      - flutter build apk --release --flavor fdroid --dart-define=BUILD_SOURCE=fdroid
+      - popd
+      - mv $repo .
+  - versionName: 1.9.31
+    versionCode: 5
+    commit: 4405d3da59cf7d1ddecc92ac9d935b91aa6d33c8
+    sudo:
+      - mkdir -p /home/ansah/Documents/Programming/Projects/shots-studio
+      - chown -R vagrant /home/ansah
+    output: shots_studio/build/app/outputs/flutter-apk/app-fdroid-release.apk
+    srclibs:
+      - flutter@stable
+    rm:
+      - shots_studio/ios
+      - shots_studio/linux
+      - shots_studio/macos
+      - shots_studio/web
+      - shots_studio/windows
+    prebuild:
+      - git -C $$flutter$$ reset --hard $(cat shots_studio/flutter.version)
+      - export repo=/home/ansah/Documents/Programming/Projects/shots-studio/shots_studio
+      - mv shots_studio $repo
+      - pushd $repo
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      - export PATH="$$flutter$$/bin:$PATH"
+      - flutter config --no-analytics
+      - flutter pub get
+      - popd
+      - mv $repo .
+    scanignore:
+      - shots_studio/.pub-cache/hosted/pub.dev/image_picker_android-*/android/build.gradle
+      - shots_studio/.pub-cache/hosted/pub.dev/path_provider_android-*/android/build.gradle
+      - shots_studio/.pub-cache/hosted/pub.dev/shared_preferences_android-*/android/build.gradle
+      - shots_studio/.pub-cache/hosted/pub.dev/url_launcher_android-*/android/build.gradle
+      - shots_studio/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-*/android/build.gradle
+    scandelete:
+      - shots_studio/.pub-cache
+    build:
+      - export repo=/home/ansah/Documents/Programming/Projects/shots-studio/shots_studio
+      - mv shots_studio $repo
+      - pushd $repo
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      - export PATH="$$flutter$$/bin:$PATH"
+      - flutter build apk --release --flavor fdroid --dart-define=BUILD_SOURCE=fdroid
+      - popd
+      - mv $repo .
+AllowedAPKSigningKeys: 4e93aa8564d719b7081e9e5ae59a86bcb3c2ae576a0d5d4e9172f3de7ac8b0a6
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+UpdateCheckData: shots_studio/pubspec.yaml|version:\s.+\+(\d+)|.|version:\s(.+)\+
+CurrentVersion: 1.9.31
+CurrentVersionCode: 5
