@@ -1,35 +1,34 @@
 # This is the GitLab CI/CD configuration file.
-
-# We'll use the same official F-Droid build image as the F-Droid server.
-# This ensures the environment is a perfect match.
 image: registry.gitlab.com/fdroid/fdroidserver:buildserver-bookworm
 
 stages:
   - build
 
-# This is the job that will generate your reference APK.
 generate-fdroid-release:
   stage: build
   script:
     - echo "Setting up F-Droid environment..."
-    # 'bsenv.sh' sets up necessary paths for the build tools.
+    # 'bsenv.sh' sets up some necessary environment variables.
     - source /etc/profile.d/bsenv.sh
 
+    - echo "Downloading the latest F-Droid server tools..."
+    # These are the missing steps:
+    # 1. Create a directory for the tools.
+    # 2. Download and extract the tools into that directory.
+    # 3. Add the tools' location to the PATH so they can be executed.
+    - mkdir -p /fdroidserver
+    - curl --silent https://gitlab.com/fdroid/fdroidserver/-/archive/master/fdroidserver-master.tar.gz | tar -xz --directory=/fdroidserver --strip-components=1
+    - export PATH="/fdroidserver:$PATH"
+
     - echo "Building the F-Droid APK for com.ansah.shots_studio..."
-    # This is the core command that builds your app.
-    # -v is for verbose logging.
-    # -l tells it to build locally without connecting to a full server.
+    # Now this command will work because 'fdroid' can be found in the PATH.
     - fdroid build -v -l com.ansah.shots_studio
 
     - echo "Build complete. APK is ready for artifact upload."
 
-  # This is the magic part! ✨
-  # It tells GitLab to save the generated APK as a downloadable file.
   artifacts:
     name: "fdroid-release-$CI_COMMIT_REF_NAME"
     paths:
       # The 'fdroid build' command places the final unsigned APK here.
-      # The wildcard (*) ensures it finds the file regardless of the version code.
       - unsigned/com.ansah.shots_studio_*.apk
-    # This makes the artifact available for 1 week. You can change this.
     expire_in: 1 week
