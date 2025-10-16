@@ -1,36 +1,35 @@
-image: alpine:latest
+# This is the GitLab CI/CD configuration file.
+
+# We'll use the same official F-Droid build image as the F-Droid server.
+# This ensures the environment is a perfect match.
+image: registry.gitlab.com/fdroid/fdroidserver:buildserver-bookworm
 
 stages:
   - build
-  - deploy
 
-# Build APK job
-build_apk:
+# This is the job that will generate your reference APK.
+generate-fdroid-release:
   stage: build
-  image: cirrusci/flutter:stable
-  before_script:
-    - cd shots_studio/
-    - flutter pub get
   script:
-    - flutter build apk --release
-  artifacts:
-    paths:
-    - build/app/outputs/apk/**/release/*.apk
-    expire_in: 1 month
+    - echo "Setting up F-Droid environment..."
+    # 'bsenv.sh' sets up necessary paths for the build tools.
+    - source /etc/profile.d/bsenv.sh
 
-  rules:
-    - if: '$CI_COMMIT_TAG'
-      when: always    # run automatically on tag
-    - when: manual    # allow manual trigger for anything else
+    - echo "Building the F-Droid APK for com.ansah.shots_studio..."
+    # This is the core command that builds your app.
+    # -v is for verbose logging.
+    # -l tells it to build locally without connecting to a full server.
+    - fdroid build -v -l com.ansah.shots_studio
 
-# GitLab Pages job
-pages:
-  stage: deploy
-  script:
-    - mkdir public
-    - cp -r docs/* public
+    - echo "Build complete. APK is ready for artifact upload."
+
+  # This is the magic part! ✨
+  # It tells GitLab to save the generated APK as a downloadable file.
   artifacts:
+    name: "fdroid-release-$CI_COMMIT_REF_NAME"
     paths:
-      - public
-  only:
-    - main
+      # The 'fdroid build' command places the final unsigned APK here.
+      # The wildcard (*) ensures it finds the file regardless of the version code.
+      - unsigned/com.ansah.shots_studio_*.apk
+    # This makes the artifact available for 1 week. You can change this.
+    expire_in: 1 week
