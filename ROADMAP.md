@@ -1,4 +1,18 @@
-M3 expressive adoption for FAB
-Add backup and restore
-
-!!! Add to set the download path for local gemma model
+- Zooming fix
+- Source Tabs like pixel screenshots
+- Tap to expand descriptions
+- API key hide for gemma
+- Create collections from search tags (like pixelshot)
+- haptics vibrations (tag deletion, collection plus, buttons)
+- AI detail info on details Page make it cleaner.
+- check about migrating license to Apache
+- accept agreement prompt shown only when there is change in privacy policy doc (can implement with hashes or do manual trigger, or check last time when the file was changed from GitHub / Gitlab / locally)
+- new collection from add collection widget in screenshot details Page itself. 
+- change the select on main screen to 1. remove the delete 2. Multi share, 3. Add to collection
+- delete doesn't remove file until you leave the file when you're removing from details screen. Maybe we can add a nice animation 
+- opening notification opens the window
+- navigating to desired page using popups, like showing the popup to set up gemma, opening the settings page.. etc
+- add share collection which will copy files into a new folder, either a zip or duplicates
+- M3E Snackbar
+- onboard Vietnamese 
+- Add backup and restore
