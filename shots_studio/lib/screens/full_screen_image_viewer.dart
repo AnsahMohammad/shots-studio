@@ -48,6 +48,9 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer>
   // Track which images are currently being preloaded
   final Set<int> _preloadingImages = {};
 
+  // Track if PageView scrolling should be enabled
+  bool _allowPageViewScrolling = true;
+
   @override
   void initState() {
     super.initState();
@@ -183,6 +186,14 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer>
     void animationListener() {
       if (mounted && !_isDisposed) {
         controller.value = _matrixAnimation.value;
+
+        final currentScale = controller.value.getMaxScaleOnAxis();
+        final shouldAllowScrolling = currentScale <= 1.01;
+        if (_allowPageViewScrolling != shouldAllowScrolling) {
+          setState(() {
+            _allowPageViewScrolling = shouldAllowScrolling;
+          });
+        }
       }
     }
 
@@ -191,6 +202,14 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer>
     _animationController.forward(from: 0.0).then((_) {
       // Clean up listener after animation completes
       _animationController.removeListener(animationListener);
+
+      final currentScale = controller.value.getMaxScaleOnAxis();
+      final shouldAllowScrolling = currentScale <= 1.01;
+      if (mounted && _allowPageViewScrolling != shouldAllowScrolling) {
+        setState(() {
+          _allowPageViewScrolling = shouldAllowScrolling;
+        });
+      }
     });
   }
 
@@ -217,6 +236,33 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer>
           minScale: _minScale,
           maxScale: _maxScale,
           clipBehavior: Clip.none, // Reduce clipping overhead
+          onInteractionStart: (details) {
+            // Update scroll permission when interaction starts
+            final isZoomed = controller.value.getMaxScaleOnAxis() > 1.01;
+            if (isZoomed != !_allowPageViewScrolling) {
+              setState(() {
+                _allowPageViewScrolling = !isZoomed;
+              });
+            }
+          },
+          onInteractionUpdate: (details) {
+            // Continuously check zoom state during interaction
+            final isZoomed = controller.value.getMaxScaleOnAxis() > 1.01;
+            if (isZoomed != !_allowPageViewScrolling) {
+              setState(() {
+                _allowPageViewScrolling = !isZoomed;
+              });
+            }
+          },
+          onInteractionEnd: (details) {
+            // Update scroll permission when interaction ends
+            final isZoomed = controller.value.getMaxScaleOnAxis() > 1.01;
+            if (isZoomed != !_allowPageViewScrolling) {
+              setState(() {
+                _allowPageViewScrolling = !isZoomed;
+              });
+            }
+          },
           child: Center(child: child),
         ),
       ),
@@ -304,12 +350,10 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer>
       return Image.memory(
         screenshot.bytes!,
         key: ValueKey('memory_${screenshot.id}'),
-        // Performance optimizations for memory images
-        cacheWidth: null, // Let Flutter handle optimal caching
+        cacheWidth: null,
         cacheHeight: null,
-        filterQuality:
-            FilterQuality.medium, // Balance between quality and performance
-        gaplessPlayback: true, // Prevent flickering during transitions
+        filterQuality: FilterQuality.medium,
+        gaplessPlayback: true,
         frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
           if (wasSynchronouslyLoaded) return child;
           return AnimatedOpacity(
@@ -367,7 +411,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer>
 
   void _preloadImages(int currentIndex) {
     // Preload images in a wider range to prevent flickering during fast swipes
-    final preloadRange = 3; // Preload 3 images in each direction
+    final preloadRange = 3;
 
     for (int i = -preloadRange; i <= preloadRange; i++) {
       final targetIndex = currentIndex + i;
@@ -410,9 +454,6 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer>
   }
 
   Widget _buildCachedImage(int index) {
-    // Use more aggressive caching - cache all visible and nearby images
-
-    // Always return cached widget if available to prevent rebuilds
     if (_imageCache.containsKey(index)) {
       return _imageCache[index]!;
     }
@@ -426,10 +467,8 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer>
       ),
     );
 
-    // Cache the widget regardless of distance to prevent flickering
     _imageCache[index] = image;
 
-    // Only remove very distant images to prevent excessive memory usage
     _imageCache.removeWhere((key, value) => (key - _currentIndex).abs() > 5);
 
     return image;
@@ -536,20 +575,29 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer>
                   _transformationController,
                   _buildImageContent(currentScreenshot),
                 )
-                : PageView.builder(
-                  controller: _pageController,
-                  onPageChanged: _onPageChanged,
-                  itemCount: widget.screenshots.length,
-                  // Performance optimizations
-                  padEnds:
-                      false, // Reduces over-scroll and improves performance
-                  allowImplicitScrolling: true, // Better scroll behavior
-                  physics:
-                      const ClampingScrollPhysics(), // Optimized physics for better performance
-                  clipBehavior: Clip.none, // Reduce clipping overhead
-                  itemBuilder: (context, index) {
-                    return _buildCachedImage(index);
+                : NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    if (!_allowPageViewScrolling) {
+                      return true;
+                    }
+                    return false;
                   },
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: _onPageChanged,
+                    itemCount: widget.screenshots.length,
+                    // Disable PageView physics when zoomed to allow panning
+                    physics:
+                        _allowPageViewScrolling
+                            ? const ClampingScrollPhysics()
+                            : const NeverScrollableScrollPhysics(),
+                    padEnds: false,
+                    allowImplicitScrolling: true,
+                    clipBehavior: Clip.none,
+                    itemBuilder: (context, index) {
+                      return _buildCachedImage(index);
+                    },
+                  ),
                 ),
       ),
     );

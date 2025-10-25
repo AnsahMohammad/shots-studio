@@ -1,4 +1,3 @@
-- Zooming fix
 - Source Tabs like pixel screenshots
 - Tap to expand descriptions
 - API key hide for gemma
