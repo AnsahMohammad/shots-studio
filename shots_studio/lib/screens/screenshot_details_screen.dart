@@ -970,20 +970,20 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
         print('HardDeleteService: Hard delete not available or disabled');
       }
 
-      // Navigation and success message
       if (widget.onNavigateAfterDelete != null) {
         widget.onNavigateAfterDelete!();
       } else if (mounted) {
         Navigator.of(context).pop();
       }
 
-      // Show appropriate success message
-      if (mounted &&
-          !(_hardDeleteEnabled &&
-              HardDeleteService.isHardDeleteAvailable() &&
-              !deleteMessage.contains('successfully'))) {
-        SnackbarService().showSuccess(context, deleteMessage);
-      }
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted &&
+            !(_hardDeleteEnabled &&
+                HardDeleteService.isHardDeleteAvailable() &&
+                !deleteMessage.contains('successfully'))) {
+          SnackbarService().showSuccess(context, deleteMessage);
+        }
+      });
     } catch (e) {
       print('Error during delete operation: $e');
       if (mounted) {
