@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shots_studio/services/haptic_service.dart';
 
 class AddCollectionButton extends StatefulWidget {
   final VoidCallback onTap;
@@ -20,7 +21,10 @@ class _AddCollectionButtonState extends State<AddCollectionButton> {
       child: Card(
         child: Material(
           child: InkWell(
-            onTap: widget.onTap,
+            onTap: () {
+              HapticService.mediumImpact();
+              widget.onTap();
+            },
             borderRadius: BorderRadius.circular(16),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),

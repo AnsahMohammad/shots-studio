@@ -41,6 +41,7 @@ import 'package:shots_studio/services/corrupt_file_service.dart';
 import 'package:shots_studio/widgets/custom_paths_dialog.dart';
 import 'package:shots_studio/utils/build_source.dart';
 import 'package:shots_studio/utils/display_utils.dart';
+import 'package:shots_studio/services/haptic_service.dart';
 
 void main() async {
   await SentryFlutter.init(
@@ -53,6 +54,9 @@ void main() async {
     },
     appRunner: () async {
       WidgetsFlutterBinding.ensureInitialized();
+
+      // Initialize haptic feedback service
+      await HapticService.initialize();
 
       // Initialize display refresh rate detection and optimization
       await DisplayUtils.initializeHighRefreshRate();
@@ -483,16 +487,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               context,
               'Processing cancelled. Processed $processedCount of $totalCount screenshots.',
             );
+            // Haptic feedback for cancellation
+            HapticService.warning();
           } else if (success) {
             SnackbarService().showSuccess(
               context,
               'Completed processing $processedCount of $totalCount screenshots.',
             );
+            // Haptic feedback for successful completion
+            HapticService.processingComplete();
           } else {
             SnackbarService().showError(
               context,
               error ?? 'Failed to process screenshots',
             );
+            // Haptic feedback for error
+            HapticService.error();
           }
 
           // Save final data
@@ -931,6 +941,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         setState(() {
           _isInitializingProcessing = false; // No longer initializing
         });
+
+        // Haptic feedback for processing start
+        HapticService.processingStart();
+
         SnackbarService().showInfo(
           context,
           'Processing started for ${unprocessedScreenshots.length} screenshots.',
@@ -1047,6 +1061,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _takeScreenshot(ImageSource source) async {
+    // Haptic feedback for screenshot capture initiation
+    HapticService.screenshotCapture();
+
     setState(() {
       _isLoading = true;
     });
@@ -1182,6 +1199,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _addCollection(Collection collection) {
+    // Haptic feedback for collection creation
+    HapticService.collectionCreated();
+
     setState(() {
       _collections.add(collection);
 
@@ -1329,6 +1349,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _deleteCollection(String collectionId) {
+    // Haptic feedback for collection deletion
+    HapticService.delete();
+
     setState(() {
       _collections.removeWhere((c) => c.id == collectionId);
       for (var screenshot in _screenshots) {
@@ -1367,6 +1390,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _deleteScreenshot(String screenshotId) {
+    // Haptic feedback for delete action
+    HapticService.delete();
+
     setState(() {
       // Mark screenshot as deleted instead of removing it
       final screenshotIndex = _screenshots.indexWhere(
@@ -1389,6 +1415,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _bulkDeleteScreenshots(List<String> screenshotIds) {
     if (screenshotIds.isEmpty) return;
+
+    // Haptic feedback for bulk delete
+    HapticService.delete();
 
     // Log bulk delete analytics
     AnalyticsService().logFeatureUsed('bulk_delete_screenshots');
@@ -1672,6 +1701,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             print(
               "FileWatcher: Adding ${uniqueScreenshots.length} screenshots to state...",
             );
+
+            // Haptic feedback for new screenshots detected
+            HapticService.lightImpact();
+
             setState(() {
               _screenshots.addAll(uniqueScreenshots);
             });

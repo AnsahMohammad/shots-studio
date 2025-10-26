@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/utils/theme_manager.dart';
 import 'package:shots_studio/l10n/app_localizations.dart';
+import 'package:shots_studio/services/haptic_service.dart';
 
 class SettingsSection extends StatefulWidget {
   final String? currentApiKey;
@@ -671,7 +672,7 @@ class _SettingsSectionState extends State<SettingsSection> {
             style: TextStyle(color: theme.colorScheme.onSecondaryContainer),
           ),
           subtitle: Text(
-            'Enable smooth animations throughout the app (beta)',
+            'Enable smooth animations and haptics (beta)',
             style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
           ),
           value: _enhancedAnimationsEnabled,
@@ -682,10 +683,19 @@ class _SettingsSectionState extends State<SettingsSection> {
             });
             _saveEnhancedAnimationsEnabled(value);
 
+            HapticService.updateEnhancedAnimationsSetting(value);
+
             // Track analytics for enhanced animations setting
             AnalyticsService().logFeatureUsed(
               'settings_enhanced_animations_${value ? 'enabled' : 'disabled'}',
             );
+
+            // Haptic feedback when toggling (if enabled)
+            if (value) {
+              HapticService.success();
+            } else {
+              HapticService.lightImpact();
+            }
           },
         ),
       ],
