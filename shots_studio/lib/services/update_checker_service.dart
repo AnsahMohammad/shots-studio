@@ -14,70 +14,80 @@ class UpdateCheckerService {
   /// Returns null if no update available, or UpdateInfo if update is available
   static Future<UpdateInfo?> checkForUpdates() async {
     try {
-      // Get current app version
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
 
-      // Check if beta testing is enabled
       final prefs = await SharedPreferences.getInstance();
       final bool betaTestingEnabled =
           prefs.getBool('beta_testing_enabled') ?? false;
 
-      // Fetch latest release from GitHub (always get the very latest)
-      final latestRelease = await _getLatestRelease();
-      if (latestRelease == null) {
-        print('No latest release found or error fetching it.');
+      // Fetch recent releases from GitHub (up to 3)
+      final releases = await _getRecentReleases();
+      if (releases.isEmpty) {
+        print('No releases found or error fetching them.');
         return null;
       }
 
-      final String tagName = latestRelease['tag_name'] ?? '';
+      // Find the appropriate release based on beta testing preference
+      Map<String, dynamic>? selectedRelease;
 
-      // Determine if it's a pre-release based on tag name
+      for (final release in releases) {
+        final String tagName = release['tag_name'] ?? '';
+
+        final bool isPreRelease =
+            tagName.startsWith('a') || tagName.startsWith('b');
+        final bool isStableRelease = tagName.startsWith('v');
+
+        // Skip pre-releases if user is not in beta testing
+        if (!betaTestingEnabled && isPreRelease) {
+          continue;
+        }
+
+        // For non-beta users, only consider stable releases
+        if (!betaTestingEnabled && !isStableRelease) {
+          continue;
+        }
+
+        final latestVersion = _extractVersionFromTag(tagName);
+
+        if (latestVersion != null &&
+            _isNewerVersion(currentVersion, latestVersion)) {
+          selectedRelease = release;
+          break;
+        }
+      }
+
+      // If no suitable release found, return null
+      if (selectedRelease == null) {
+        return null;
+      }
+
+      // Build UpdateInfo from the selected release
+      final String tagName = selectedRelease['tag_name'] ?? '';
+      final String latestVersion = _extractVersionFromTag(tagName) ?? '';
       final bool isPreRelease =
           tagName.startsWith('a') || tagName.startsWith('b');
-      final bool isStableRelease = tagName.startsWith('v');
 
-      // Only show update if:
-      // - It's a stable release (all users see it), OR
-      // - It's a pre-release AND user has beta testing enabled
-      if (!isStableRelease && !isPreRelease) {
-        return null; // Invalid tag format
-      }
-
-      if (isPreRelease && !betaTestingEnabled) {
-        return null; // Pre-release but user doesn't want beta updates
-      }
-
-      // Compare versions
-      final latestVersion = _extractVersionFromTag(tagName);
-      if (latestVersion == null) {
-        return null;
-      }
-
-      if (_isNewerVersion(currentVersion, latestVersion)) {
-        return UpdateInfo(
-          currentVersion: currentVersion,
-          latestVersion: latestVersion,
-          releaseUrl: latestRelease['html_url'],
-          releaseNotes: latestRelease['body'] ?? '',
-          tagName: tagName,
-          publishedAt: latestRelease['published_at'],
-          isPreRelease: isPreRelease,
-        );
-      }
-
-      return null;
+      return UpdateInfo(
+        currentVersion: currentVersion,
+        latestVersion: latestVersion,
+        releaseUrl: selectedRelease['html_url'],
+        releaseNotes: selectedRelease['body'] ?? '',
+        tagName: tagName,
+        publishedAt: selectedRelease['published_at'],
+        isPreRelease: isPreRelease,
+      );
     } catch (e) {
       return null;
     }
   }
 
-  /// Fetches the latest release from GitHub API
-  static Future<Map<String, dynamic>?> _getLatestRelease() async {
+  /// Fetches the latest releases from GitHub API (up to 3)
+  static Future<List<Map<String, dynamic>>> _getRecentReleases() async {
     try {
       final response = await http
           .get(
-            Uri.parse('$githubApiUrl/$repoOwner/$repoName/releases/latest'),
+            Uri.parse('$githubApiUrl/$repoOwner/$repoName/releases?per_page=3'),
             headers: {
               'Accept': 'application/vnd.github.v3+json',
               'User-Agent': 'shots_studio_app',
@@ -86,17 +96,16 @@ class UpdateCheckerService {
           .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> release =
-            json.decode(response.body) as Map<String, dynamic>;
-
-        return release;
+        final List<dynamic> releases =
+            json.decode(response.body) as List<dynamic>;
+        return releases.cast<Map<String, dynamic>>();
       } else {
         print('GitHub API error: ${response.statusCode}');
-        return null;
+        return [];
       }
     } catch (e) {
-      print('Network error fetching latest release: $e');
-      return null;
+      print('Network error fetching releases: $e');
+      return [];
     }
   }
 
