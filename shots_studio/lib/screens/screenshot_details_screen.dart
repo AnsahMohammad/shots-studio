@@ -68,11 +68,14 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     with SingleTickerProviderStateMixin {
   late List<String> _tags;
   late TextEditingController _descriptionController;
+  late FocusNode _descriptionFocusNode;
   bool _isProcessingAI = false;
   bool _isProcessingOCR = false;
   final AIServiceManager _aiServiceManager = AIServiceManager();
   final OCRService _ocrService = OCRService();
   bool _hardDeleteEnabled = false;
+  bool _isDescriptionExpanded = false;
+  bool _enhancedAnimationsEnabled = true;
 
   // Animation controller for simple bounce
   late AnimationController _animationController;
@@ -84,7 +87,19 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     _tags = List.from(widget.screenshot.tags);
     _descriptionController = TextEditingController(
       text: widget.screenshot.description,
-    ); // Track screenshot details screen access
+    );
+
+    // Initialize focus node and add listener to expand when focused
+    _descriptionFocusNode = FocusNode();
+    _descriptionFocusNode.addListener(() {
+      if (_descriptionFocusNode.hasFocus && !_isDescriptionExpanded) {
+        setState(() {
+          _isDescriptionExpanded = true;
+        });
+      }
+    });
+
+    // Track screenshot details screen access
     AnalyticsService().logScreenView('screenshot_details_screen');
 
     // Initialize animation controller - always enable for floating toolbar bounce
@@ -120,6 +135,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
 
     // Load hard delete setting
     _loadHardDeleteSetting();
+    _loadEnhancedAnimationsSetting();
   }
 
   void _checkExpiredReminders() {
@@ -142,6 +158,16 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     if (mounted) {
       setState(() {
         _hardDeleteEnabled = prefs.getBool('hard_delete_enabled') ?? false;
+      });
+    }
+  }
+
+  void _loadEnhancedAnimationsSetting() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _enhancedAnimationsEnabled =
+            prefs.getBool('enhanced_animations_enabled') ?? true;
       });
     }
   }
@@ -405,6 +431,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
   @override
   void dispose() {
     _descriptionController.dispose();
+    _descriptionFocusNode.dispose();
     _animationController.dispose();
 
     // Ensure wakelock is disabled when the screen is disposed
@@ -1320,6 +1347,186 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     return imageWidget;
   }
 
+  /// Build the expandable description field with gradient overlay
+  Widget _buildDescriptionField() {
+    final hasText = _descriptionController.text.trim().isNotEmpty;
+    final textSpan = TextSpan(
+      text: _descriptionController.text,
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSecondaryContainer,
+        fontSize: 16,
+      ),
+    );
+
+    final textPainter = TextPainter(
+      text: textSpan,
+      maxLines: 4,
+      textDirection: Directionality.of(context),
+    );
+
+    textPainter.layout(maxWidth: MediaQuery.of(context).size.width - 64);
+    final isOverflowing = textPainter.didExceedMaxLines;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AnimatedSize(
+          duration:
+              _enhancedAnimationsEnabled
+                  ? const Duration(milliseconds: 500)
+                  : const Duration(milliseconds: 200),
+          curve:
+              _enhancedAnimationsEnabled
+                  ? Curves
+                      .easeOutBack // Smooth expansion with slight overshoot/bounce at the end
+                  : Curves.easeInOut,
+          child: Stack(
+            children: [
+              TextField(
+                controller: _descriptionController,
+                focusNode: _descriptionFocusNode,
+                decoration: InputDecoration(
+                  hintText:
+                      AppLocalizations.of(context)?.addDescription ??
+                      'Add a description...',
+                  filled: true,
+                  fillColor: Theme.of(context).colorScheme.secondaryContainer,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.all(16),
+                ),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+                  fontSize: 16,
+                ),
+                maxLines: _isDescriptionExpanded ? null : 4,
+                onChanged: (value) {
+                  widget.screenshot.description = value;
+                  setState(() {}); // Rebuild to check overflow
+                },
+                onEditingComplete: () {
+                  widget.screenshot.description = _descriptionController.text;
+                  _updateScreenshotDetails();
+                  FocusScope.of(context).unfocus();
+                },
+              ),
+              // Gradient overlay and expand button
+              if (hasText && isOverflowing && !_isDescriptionExpanded)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: IgnorePointer(
+                    ignoring: false,
+                    child: Container(
+                      height: 60,
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(12),
+                          bottomRight: Radius.circular(12),
+                        ),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Theme.of(context).colorScheme.secondaryContainer
+                                .withValues(alpha: 0.0),
+                            Theme.of(context).colorScheme.secondaryContainer
+                                .withValues(alpha: 0.7),
+                            Theme.of(context).colorScheme.secondaryContainer,
+                          ],
+                          stops: const [0.0, 0.5, 1.0],
+                        ),
+                      ),
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              if (_enhancedAnimationsEnabled) {
+                                // Animated expansion with bouncy effect
+                                setState(() {
+                                  _isDescriptionExpanded = true;
+                                });
+                              } else {
+                                // Simple expansion without animation
+                                setState(() {
+                                  _isDescriptionExpanded = true;
+                                });
+                              }
+                            },
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(12),
+                              bottomRight: Radius.circular(12),
+                            ),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Read more',
+                                    style: TextStyle(
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Icon(
+                                    Icons.keyboard_arrow_down_rounded,
+                                    size: 20,
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        // Collapse button when expanded
+        if (_isDescriptionExpanded && isOverflowing)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Center(
+              child: TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _isDescriptionExpanded = false;
+                  });
+                },
+                icon: Icon(
+                  Icons.keyboard_arrow_up_rounded,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                label: Text(
+                  'Show less',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   /// Build the details content section
   Widget _buildDetailsContent(String imageName) {
     return Column(
@@ -1386,32 +1593,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
         ],
 
         const SizedBox(height: 16),
-        TextField(
-          controller: _descriptionController,
-          decoration: InputDecoration(
-            hintText:
-                AppLocalizations.of(context)?.addDescription ??
-                'Add a description...',
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.secondaryContainer,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-          ),
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSecondaryContainer,
-          ),
-          maxLines: 3,
-          onChanged: (value) {
-            widget.screenshot.description = value;
-          },
-          onEditingComplete: () {
-            widget.screenshot.description = _descriptionController.text;
-            _updateScreenshotDetails();
-            FocusScope.of(context).unfocus();
-          },
-        ),
+        _buildDescriptionField(),
 
         // Links section - show if there are any extracted links
         if (widget.screenshot.links.isNotEmpty) ...[
