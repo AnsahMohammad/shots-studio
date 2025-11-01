@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/update_checker_service.dart';
 import '../services/update_installer_service.dart';
 import '../services/analytics/analytics_service.dart';
+import '../services/snackbar_service.dart';
 
 class UpdateDialog extends StatefulWidget {
   final UpdateInfo updateInfo;
@@ -83,13 +84,9 @@ class _UpdateDialogState extends State<UpdateDialog> {
       // If we reach here, the update was successful
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Update installed successfully! Please restart the app.',
-            ),
-            backgroundColor: Colors.green,
-          ),
+        SnackbarService().showSuccess(
+          context,
+          'Update installed successfully! Please restart the app.',
         );
       }
     } catch (e) {
@@ -473,9 +470,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
       await _launchURL(releasesUrl);
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error opening update page: $e')),
-        );
+        SnackbarService().showError(context, 'Error opening update page: $e');
       }
     }
 

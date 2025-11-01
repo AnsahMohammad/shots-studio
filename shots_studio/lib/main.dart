@@ -30,6 +30,7 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/services/file_watcher_service.dart';
 import 'package:shots_studio/services/update_checker_service.dart';
+import 'package:shots_studio/services/update_installer_service.dart';
 import 'package:shots_studio/widgets/update_dialog.dart';
 import 'package:shots_studio/widgets/server_message_dialog.dart';
 import 'package:shots_studio/utils/theme_utils.dart';
@@ -812,6 +813,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         AnalyticsService().logFeatureUsed('update_available');
       } else if (updateInfo == null) {
         print('MainApp: No update available');
+
+        // Clean up any previously downloaded APK files since no update is available
+        await UpdateInstallerService.deleteDownloadedApks();
       } else if (!mounted) {
         print('MainApp: Widget not mounted, cannot show dialog');
       }

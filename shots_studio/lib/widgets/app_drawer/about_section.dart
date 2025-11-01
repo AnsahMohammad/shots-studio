@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../../services/sponsorship_service.dart';
 import '../../services/analytics/analytics_service.dart';
 import '../../services/update_checker_service.dart';
+import '../../services/snackbar_service.dart';
 import '../sponsorship/sponsorship_dialog.dart';
 import '../update_dialog.dart';
 import '../../l10n/app_localizations.dart';
@@ -69,13 +70,9 @@ class AboutSection extends StatelessWidget {
 
     if (!launched && context.mounted) {
       // Show error if all sources fail
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Failed to open donation page: ${lastError ?? "Unknown error"}',
-          ),
-          duration: const Duration(seconds: 3),
-        ),
+      SnackbarService().showError(
+        context,
+        'Failed to open donation page: ${lastError ?? "Unknown error"}',
       );
     }
   }
@@ -120,13 +117,9 @@ class AboutSection extends StatelessWidget {
 
     if (!launched && context.mounted) {
       // Show error if all sources fail
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Failed to open source code: ${lastError ?? "Unknown error"}',
-          ),
-          duration: const Duration(seconds: 3),
-        ),
+      SnackbarService().showError(
+        context,
+        'Failed to open source code: ${lastError ?? "Unknown error"}',
       );
     }
   }
@@ -154,8 +147,9 @@ class AboutSection extends StatelessWidget {
     } catch (e) {
       // Show error if feedback form can't be loaded
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to open feedback form: $e')),
+        SnackbarService().showError(
+          context,
+          'Failed to open feedback form: $e',
         );
       }
     }
@@ -197,9 +191,7 @@ class AboutSection extends StatelessWidget {
 
   Future<void> _checkForUpdatesManually(BuildContext context) async {
     // Show loading indicator
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Checking for updates...')));
+    SnackbarService().showInfo(context, 'Checking for updates...');
 
     try {
       final updateInfo = await UpdateCheckerService.checkForUpdates();
@@ -216,19 +208,16 @@ class AboutSection extends StatelessWidget {
       } else {
         // No update available
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('You are running the latest version!'),
-            ),
+          SnackbarService().showSuccess(
+            context,
+            'You are running the latest version!',
           );
         }
       }
     } catch (e) {
       // Error occurred
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to check for updates: $e')),
-        );
+        SnackbarService().showError(context, 'Failed to check for updates: $e');
       }
     }
   }
@@ -263,11 +252,9 @@ class AboutSection extends StatelessWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to copy version to clipboard'),
-            duration: Duration(seconds: 2),
-          ),
+        SnackbarService().showError(
+          context,
+          'Failed to copy version to clipboard',
         );
       }
     }

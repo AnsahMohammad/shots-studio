@@ -273,4 +273,34 @@ class UpdateInstallerService {
     }
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
+
+  /// Deletes all downloaded APK files from temporary directory
+  /// This should be called when no update is available to clean up old downloads
+  static Future<void> deleteDownloadedApks() async {
+    try {
+      final Directory tempDir = await getTemporaryDirectory();
+      final List<FileSystemEntity> files = tempDir.listSync();
+
+      int deletedCount = 0;
+      for (final file in files) {
+        if (file is File && file.path.toLowerCase().endsWith('.apk')) {
+          try {
+            await file.delete();
+            deletedCount++;
+            print('Deleted APK: ${file.path}');
+          } catch (e) {
+            print('Failed to delete APK ${file.path}: $e');
+          }
+        }
+      }
+
+      if (deletedCount > 0) {
+        print('Cleaned up $deletedCount downloaded APK file(s)');
+      } else {
+        print('No downloaded APK files found to clean up');
+      }
+    } catch (e) {
+      print('Error cleaning up downloaded APKs: $e');
+    }
+  }
 }

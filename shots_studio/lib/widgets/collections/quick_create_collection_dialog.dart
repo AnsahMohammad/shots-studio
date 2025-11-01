@@ -59,9 +59,9 @@ class _QuickCreateCollectionDialogState
             Text(
               l10n != null
                   ? l10n.quickCreateCollectionMessage(
-                      widget.collectionName,
-                      widget.screenshotCount,
-                    )
+                    widget.collectionName,
+                    widget.screenshotCount,
+                  )
                   : 'Create a new collection "${widget.collectionName}" with ${widget.screenshotCount} screenshot${widget.screenshotCount == 1 ? '' : 's'} from your search results?',
               style: TextStyle(
                 color: theme.colorScheme.onSurfaceVariant,

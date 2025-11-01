@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
+import 'package:shots_studio/services/snackbar_service.dart';
 import 'package:shots_studio/utils/ai_provider_config.dart';
 import 'package:shots_studio/utils/ai_language_config.dart';
 import 'package:file_picker/file_picker.dart';
@@ -156,11 +157,9 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
             AnalyticsService().logFeatureUsed('gemma_model_file_selected');
 
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Gemma model file copied: $originalFileName'),
-                  backgroundColor: Colors.green,
-                ),
+              SnackbarService().showSuccess(
+                context,
+                'Gemma model file copied: $originalFileName',
               );
             }
           } else {
@@ -172,12 +171,7 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error selecting model file: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        SnackbarService().showError(context, 'Error selecting model file: $e');
       }
     } finally {
       setState(() {
@@ -274,21 +268,14 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
       AnalyticsService().logFeatureUsed('gemma_model_cleared');
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Gemma models cleared and provider disabled'),
-            backgroundColor: Colors.orange,
-          ),
+        SnackbarService().showWarning(
+          context,
+          'Gemma models cleared and provider disabled',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error clearing model: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        SnackbarService().showError(context, 'Error clearing model: $e');
       }
     }
   }
@@ -362,11 +349,9 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                     } catch (e) {
                       await Clipboard.setData(const ClipboardData(text: url));
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Link copied to clipboard!'),
-                            backgroundColor: Colors.orange,
-                          ),
+                        SnackbarService().showInfo(
+                          context,
+                          'Link copied to clipboard!',
                         );
                       }
                     }
@@ -466,14 +451,9 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
     final success = await _downloadService.startDownload(downloadLocation);
 
     if (!success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Download failed: ${_downloadService.progress.error?.substring(0, 50) ?? "Unknown error"}...',
-          ),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 4),
-        ),
+      SnackbarService().showError(
+        context,
+        'Download failed: ${_downloadService.progress.error?.substring(0, 50) ?? "Unknown error"}...',
       );
     }
   }
@@ -512,11 +492,9 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
     if (localizations == null) {
       // Fallback if localizations are not available
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cannot show dialog - localization not available'),
-            backgroundColor: Colors.red,
-          ),
+        SnackbarService().showError(
+          context,
+          'Cannot show dialog - localization not available',
         );
       }
       return;
@@ -591,11 +569,9 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
         (_gemmaModelPath == null || _gemmaModelPath?.isEmpty == true)) {
       // Show a message that model file is required
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select a Gemma model file first'),
-            backgroundColor: Colors.orange,
-          ),
+        SnackbarService().showWarning(
+          context,
+          'Please select a Gemma model file first',
         );
       }
       return;
@@ -1249,14 +1225,9 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                             const ClipboardData(text: url),
                           );
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Could not open browser. Link copied to clipboard!',
-                                ),
-                                backgroundColor: Colors.orange,
-                                duration: Duration(seconds: 2),
-                              ),
+                            SnackbarService().showWarning(
+                              context,
+                              'Could not open browser. Link copied to clipboard!',
                             );
                           }
                         }
@@ -1264,14 +1235,9 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                         // Fallback to copying to clipboard on error
                         await Clipboard.setData(const ClipboardData(text: url));
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Error opening link. URL copied to clipboard!',
-                              ),
-                              backgroundColor: Colors.orange,
-                              duration: Duration(seconds: 2),
-                            ),
+                          SnackbarService().showWarning(
+                            context,
+                            'Error opening link. URL copied to clipboard!',
                           );
                         }
                       }

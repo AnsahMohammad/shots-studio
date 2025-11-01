@@ -206,7 +206,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: TextField(
@@ -223,7 +223,8 @@ class _SearchScreenState extends State<SearchScreen> {
           if (_filteredScreenshots.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.create_new_folder),
-              tooltip: l10n?.createCollectionFromSearchResults ??
+              tooltip:
+                  l10n?.createCollectionFromSearchResults ??
                   'Create collection from search results',
               onPressed: _showQuickCreateDialog,
             ),

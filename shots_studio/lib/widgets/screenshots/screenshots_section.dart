@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/widgets/screenshots/screenshot_card.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
+import 'package:shots_studio/services/snackbar_service.dart';
 import 'package:shots_studio/utils/responsive_utils.dart';
 import 'package:shots_studio/services/hard_delete_service.dart';
 import 'package:shots_studio/l10n/app_localizations.dart';
@@ -272,12 +273,7 @@ class _ScreenshotsSectionState extends State<ScreenshotsSection> {
 
       // Show success message
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(deleteMessage),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
-        );
+        SnackbarService().showSuccess(context, deleteMessage);
       }
     } catch (e) {
       print('Error during bulk delete operation: $e');
@@ -286,12 +282,7 @@ class _ScreenshotsSectionState extends State<ScreenshotsSection> {
       _exitSelectionMode();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error during bulk delete: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        SnackbarService().showError(context, 'Error during bulk delete: $e');
       }
     }
   }
