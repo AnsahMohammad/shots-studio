@@ -136,5 +136,13 @@
   "noSponsorshipOptions": "Aucune option de parrainage n'est actuellement disponible.",
   "close": "Fermer",
   "writeTagsToXMP": "Écrire les balises dans XMP",
-  "xmpMetadataWritten": "Métadonnées XMP écrites dans le fichier"
+  "xmpMetadataWritten": "Métadonnées XMP écrites dans le fichier",
+  "quickCreateCollection": "Création Rapide de Collection",
+  "quickCreateCollectionMessage": "Créer une nouvelle collection \"{collectionName}\" avec {count} capture(s) d'écran à partir de vos résultats de recherche?",
+  "quickCreateWhatHappens": "Ce qui se passe:",
+  "quickCreateExplanation": "Toutes les captures d'écran de vos résultats de recherche seront ajoutées à cette nouvelle collection. Vous pourrez personnaliser le nom de la collection et les paramètres plus tard.",
+  "dontShowAgain": "Ne plus afficher",
+  "create": "Créer",
+  "createCollectionFromSearchResults": "Créer une collection à partir des résultats de recherche",
+  "noScreenshotsFoundFor": "Aucune capture d'écran trouvée pour \"{query}\""
 }

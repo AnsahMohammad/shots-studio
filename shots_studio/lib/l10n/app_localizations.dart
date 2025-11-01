@@ -893,6 +893,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Close'**
   String get close;
+
+  /// Title for quick create collection dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Create Collection'**
+  String get quickCreateCollection;
+
+  /// Message asking user to confirm quick collection creation
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new collection \"{collectionName}\" with {count} screenshot(s) from your search results?'**
+  String quickCreateCollectionMessage(String collectionName, int count);
+
+  /// Label for information section in quick create dialog
+  ///
+  /// In en, this message translates to:
+  /// **'What happens:'**
+  String get quickCreateWhatHappens;
+
+  /// Explanation of what happens when quick creating a collection
+  ///
+  /// In en, this message translates to:
+  /// **'All screenshots from your search results will be added to this new collection. You can customize the collection name and settings later.'**
+  String get quickCreateExplanation;
+
+  /// Checkbox label to not show dialog again
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t show this again'**
+  String get dontShowAgain;
+
+  /// Create button text
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get create;
+
+  /// Tooltip for button to create collection from search results
+  ///
+  /// In en, this message translates to:
+  /// **'Create collection from search results'**
+  String get createCollectionFromSearchResults;
+
+  /// Message when no screenshots match the search query
+  ///
+  /// In en, this message translates to:
+  /// **'No screenshots found for \"{query}\"'**
+  String noScreenshotsFoundFor(String query);
 }
 
 class _AppLocalizationsDelegate

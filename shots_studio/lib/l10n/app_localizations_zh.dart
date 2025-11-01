@@ -397,4 +397,32 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get close => '关闭';
+
+  @override
+  String get quickCreateCollection => '快速创建集合';
+
+  @override
+  String quickCreateCollectionMessage(String collectionName, int count) {
+    return '是否要创建名为 \"$collectionName\" 的集合，包含 $count 张截图？';
+  }
+
+  @override
+  String get quickCreateWhatHappens => '会发生什么？';
+
+  @override
+  String get quickCreateExplanation => '我们将立即创建一个包含所有搜索结果的新集合。';
+
+  @override
+  String get dontShowAgain => '不再显示';
+
+  @override
+  String get create => '创建';
+
+  @override
+  String get createCollectionFromSearchResults => '从搜索结果创建集合';
+
+  @override
+  String noScreenshotsFoundFor(String query) {
+    return '未找到与 \"$query\" 相关的截图';
+  }
 }

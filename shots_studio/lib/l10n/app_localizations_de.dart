@@ -407,4 +407,34 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get close => 'Schließen';
+
+  @override
+  String get quickCreateCollection => 'Schnell Sammlung erstellen';
+
+  @override
+  String quickCreateCollectionMessage(String collectionName, int count) {
+    return 'Neue Sammlung \"$collectionName\" mit $count Screenshot(s) aus Ihren Suchergebnissen erstellen?';
+  }
+
+  @override
+  String get quickCreateWhatHappens => 'Was passiert:';
+
+  @override
+  String get quickCreateExplanation =>
+      'Alle Screenshots aus Ihren Suchergebnissen werden zu dieser neuen Sammlung hinzugefügt. Sie können den Sammlungsnamen und die Einstellungen später anpassen.';
+
+  @override
+  String get dontShowAgain => 'Nicht mehr anzeigen';
+
+  @override
+  String get create => 'Erstellen';
+
+  @override
+  String get createCollectionFromSearchResults =>
+      'Sammlung aus Suchergebnissen erstellen';
+
+  @override
+  String noScreenshotsFoundFor(String query) {
+    return 'Keine Screenshots für \"$query\" gefunden';
+  }
 }

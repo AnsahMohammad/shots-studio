@@ -118,6 +118,51 @@
   "@copy": {
     "description": "Copy button text"
   },
+  "quickCreateCollection": "Szybkie Tworzenie Kolekcji",
+  "@quickCreateCollection": {
+    "description": "Quick create collection dialog title"
+  },
+  "quickCreateCollectionMessage": "Chcesz utworzyć kolekcję o nazwie \"{collectionName}\" z {count} zrzutami ekranu?",
+  "@quickCreateCollectionMessage": {
+    "description": "Quick create collection confirmation message",
+    "placeholders": {
+      "collectionName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "quickCreateWhatHappens": "Co się stanie?",
+  "@quickCreateWhatHappens": {
+    "description": "What happens section header in quick create dialog"
+  },
+  "quickCreateExplanation": "Natychmiast utworzymy nową kolekcję zawierającą wszystkie wyniki wyszukiwania.",
+  "@quickCreateExplanation": {
+    "description": "Explanation of what quick create does"
+  },
+  "dontShowAgain": "Nie pokazuj ponownie",
+  "@dontShowAgain": {
+    "description": "Don't show again checkbox label"
+  },
+  "create": "Utwórz",
+  "@create": {
+    "description": "Create button text"
+  },
+  "createCollectionFromSearchResults": "Utwórz kolekcję z wyników wyszukiwania",
+  "@createCollectionFromSearchResults": {
+    "description": "Tooltip for quick create collection button"
+  },
+  "noScreenshotsFoundFor": "Nie znaleziono zrzutów ekranu dla \"{query}\"",
+  "@noScreenshotsFoundFor": {
+    "description": "Message shown when no screenshots match the search query",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
   "paste": "Wklej",
   "@paste": {
     "description": "Paste button text"

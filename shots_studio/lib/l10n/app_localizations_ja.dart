@@ -400,4 +400,33 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get close => '閉じる';
+
+  @override
+  String get quickCreateCollection => 'クイックコレクション作成';
+
+  @override
+  String quickCreateCollectionMessage(String collectionName, int count) {
+    return '検索結果から$count件のスクリーンショットを含む新しいコレクション\"$collectionName\"を作成しますか？';
+  }
+
+  @override
+  String get quickCreateWhatHappens => '実行内容：';
+
+  @override
+  String get quickCreateExplanation =>
+      '検索結果のすべてのスクリーンショットがこの新しいコレクションに追加されます。コレクション名と設定は後でカスタマイズできます。';
+
+  @override
+  String get dontShowAgain => '今後表示しない';
+
+  @override
+  String get create => '作成';
+
+  @override
+  String get createCollectionFromSearchResults => '検索結果からコレクションを作成';
+
+  @override
+  String noScreenshotsFoundFor(String query) {
+    return '\"$query\"に一致するスクリーンショットが見つかりません';
+  }
 }

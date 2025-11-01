@@ -138,5 +138,13 @@
   "noSponsorshipOptions": "Attualmente non sono disponibili opzioni di sponsorizzazione.",
   "close": "Chiudi",
   "writeTagsToXMP": "Scrivi Tag in XMP",
-  "xmpMetadataWritten": "Metadati XMP scritti nel file"
+  "xmpMetadataWritten": "Metadati XMP scritti nel file",
+  "quickCreateCollection": "Crea Raccolta Veloce",
+  "quickCreateCollectionMessage": "Creare una nuova raccolta \"{collectionName}\" con {count} screenshot dai risultati di ricerca?",
+  "quickCreateWhatHappens": "Cosa succede:",
+  "quickCreateExplanation": "Tutti gli screenshot dai risultati di ricerca verranno aggiunti a questa nuova raccolta. Puoi personalizzare il nome della raccolta e le impostazioni in seguito.",
+  "dontShowAgain": "Non mostrare più",
+  "create": "Crea",
+  "createCollectionFromSearchResults": "Crea raccolta dai risultati di ricerca",
+  "noScreenshotsFoundFor": "Nessuno screenshot trovato per \"{query}\""
 }

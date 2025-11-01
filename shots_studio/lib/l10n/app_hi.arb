@@ -136,5 +136,13 @@
   "noSponsorshipOptions": "वर्तमान में कोई प्रायोजन विकल्प उपलब्ध नहीं हैं।",
   "close": "बंद करें",
   "writeTagsToXMP": "XMP में टैग लिखें",
-  "xmpMetadataWritten": "XMP मेटाडेटा फाइल में लिखा गया"
+  "xmpMetadataWritten": "XMP मेटाडेटा फाइल में लिखा गया",
+  "quickCreateCollection": "त्वरित संग्रह बनाएं",
+  "quickCreateCollectionMessage": "अपने खोज परिणामों से {count} स्क्रीनशॉट के साथ नया संग्रह \"{collectionName}\" बनाएं?",
+  "quickCreateWhatHappens": "क्या होगा:",
+  "quickCreateExplanation": "आपके खोज परिणामों से सभी स्क्रीनशॉट इस नए संग्रह में जोड़े जाएंगे। आप बाद में संग्रह का नाम और सेटिंग्स अनुकूलित कर सकते हैं।",
+  "dontShowAgain": "फिर से न दिखाएं",
+  "create": "बनाएं",
+  "createCollectionFromSearchResults": "खोज परिणामों से संग्रह बनाएं",
+  "noScreenshotsFoundFor": "\"{query}\" के लिए कोई स्क्रीनशॉट नहीं मिला"
 }

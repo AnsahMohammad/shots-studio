@@ -137,6 +137,51 @@
     "contactOnGitHub": "Связаться на GitHub",
   "noSponsorshipOptions": "В настоящее время варианты спонсорства недоступны.",
   "close": "Закрыть",
+  "quickCreateCollection": "Быстрое Создание Коллекции",
+  "@quickCreateCollection": {
+    "description": "Quick create collection dialog title"
+  },
+  "quickCreateCollectionMessage": "Хотите создать коллекцию с именем \"{collectionName}\" с {count} скриншотами?",
+  "@quickCreateCollectionMessage": {
+    "description": "Quick create collection confirmation message",
+    "placeholders": {
+      "collectionName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "quickCreateWhatHappens": "Что произойдет?",
+  "@quickCreateWhatHappens": {
+    "description": "What happens section header in quick create dialog"
+  },
+  "quickCreateExplanation": "Мы мгновенно создадим новую коллекцию, содержащую все результаты поиска.",
+  "@quickCreateExplanation": {
+    "description": "Explanation of what quick create does"
+  },
+  "dontShowAgain": "Больше не показывать",
+  "@dontShowAgain": {
+    "description": "Don't show again checkbox label"
+  },
+  "create": "Создать",
+  "@create": {
+    "description": "Create button text"
+  },
+  "createCollectionFromSearchResults": "Создать коллекцию из результатов поиска",
+  "@createCollectionFromSearchResults": {
+    "description": "Tooltip for quick create collection button"
+  },
+  "noScreenshotsFoundFor": "Скриншоты не найдены для \"{query}\"",
+  "@noScreenshotsFoundFor": {
+    "description": "Message shown when no screenshots match the search query",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
   "writeTagsToXMP": "Записать теги в XMP",
   "xmpMetadataWritten": "XMP метаданные записаны в файл"
 }

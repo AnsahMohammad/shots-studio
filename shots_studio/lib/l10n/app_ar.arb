@@ -136,5 +136,13 @@
   "noSponsorshipOptions": "لا توجد خيارات رعاية متاحة حالياً.",
   "close": "إغلاق",
   "writeTagsToXMP": "كتابة العلامات في XMP",
-  "xmpMetadataWritten": "تم كتابة بيانات XMP الوصفية في الملف"
+  "xmpMetadataWritten": "تم كتابة بيانات XMP الوصفية في الملف",
+  "quickCreateCollection": "إنشاء سريع للمجموعة",
+  "quickCreateCollectionMessage": "إنشاء مجموعة جديدة \"{collectionName}\" مع {count} لقطة شاشة من نتائج البحث؟",
+  "quickCreateWhatHappens": "ماذا سيحدث:",
+  "quickCreateExplanation": "سيتم إضافة جميع لقطات الشاشة من نتائج البحث إلى هذه المجموعة الجديدة. يمكنك تخصيص اسم المجموعة والإعدادات لاحقًا.",
+  "dontShowAgain": "لا تظهر هذا مرة أخرى",
+  "create": "إنشاء",
+  "createCollectionFromSearchResults": "إنشاء مجموعة من نتائج البحث",
+  "noScreenshotsFoundFor": "لم يتم العثور على لقطات شاشة لـ \"{query}\""
 }

@@ -34,6 +34,7 @@ class ScreenshotDetailScreen extends StatefulWidget {
   final List<Screenshot>?
   contextualScreenshots; // The filtered/contextual list for swiping
   final Function(Collection) onUpdateCollection;
+  final Function(Collection)? onCollectionAdded;
   final Function(String) onDeleteScreenshot;
   final VoidCallback? onScreenshotUpdated;
   final int? currentIndex;
@@ -52,6 +53,7 @@ class ScreenshotDetailScreen extends StatefulWidget {
     required this.onUpdateCollection,
     required this.onDeleteScreenshot,
     this.contextualScreenshots,
+    this.onCollectionAdded,
     this.onScreenshotUpdated,
     this.currentIndex,
     this.totalCount,
@@ -493,6 +495,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
               allScreenshots: widget.allScreenshots,
               allCollections: widget.allCollections,
               onUpdateCollection: widget.onUpdateCollection,
+              onCollectionAdded: widget.onCollectionAdded ?? (_) {},
               onDeleteScreenshot: widget.onDeleteScreenshot,
               initialSearchQuery: tag,
             ),

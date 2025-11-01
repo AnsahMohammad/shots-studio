@@ -1,5 +1,4 @@
 - Source Tabs like pixel screenshots
-- Create collections from search tags (like pixelshot)
 - AI detail info on details Page make it cleaner.
 - accept agreement prompt shown only when there is change in privacy policy doc (can implement with hashes or do manual trigger, or check last time when the file was changed from GitHub / Gitlab / locally)
 - new collection from add collection widget in screenshot details Page itself. 

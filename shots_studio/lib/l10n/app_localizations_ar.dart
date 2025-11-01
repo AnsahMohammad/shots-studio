@@ -404,4 +404,33 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get close => 'إغلاق';
+
+  @override
+  String get quickCreateCollection => 'إنشاء سريع للمجموعة';
+
+  @override
+  String quickCreateCollectionMessage(String collectionName, int count) {
+    return 'إنشاء مجموعة جديدة \"$collectionName\" مع $count لقطة شاشة من نتائج البحث؟';
+  }
+
+  @override
+  String get quickCreateWhatHappens => 'ماذا سيحدث:';
+
+  @override
+  String get quickCreateExplanation =>
+      'سيتم إضافة جميع لقطات الشاشة من نتائج البحث إلى هذه المجموعة الجديدة. يمكنك تخصيص اسم المجموعة والإعدادات لاحقًا.';
+
+  @override
+  String get dontShowAgain => 'لا تظهر هذا مرة أخرى';
+
+  @override
+  String get create => 'إنشاء';
+
+  @override
+  String get createCollectionFromSearchResults => 'إنشاء مجموعة من نتائج البحث';
+
+  @override
+  String noScreenshotsFoundFor(String query) {
+    return 'لم يتم العثور على لقطات شاشة لـ \"$query\"';
+  }
 }
