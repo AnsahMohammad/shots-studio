@@ -850,10 +850,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     // Check if a valid model is selected
     if (_selectedModelName.toLowerCase() == 'No AI Model'.toLowerCase()) {
       print("Main app: No AI model selected");
-      SnackbarService().showWarning(
-        context,
-        'Please select an AI model in settings',
-      );
+      // SnackbarService().showWarning(
+      //   context,
+      //   'Please select an AI model in settings',
+      // );
       return;
     }
 
