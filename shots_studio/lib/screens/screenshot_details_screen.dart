@@ -1544,57 +1544,43 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
           ),
         ),
         const SizedBox(height: 4),
-        Text(
-          // Format DateTime using intl package
-          DateFormat('MMM d, yyyy, hh:mm a').format(widget.screenshot.addedOn),
-          style: TextStyle(
-            fontSize: 14,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-        if (widget.screenshot.fileSize != null &&
-            widget.screenshot.fileSize! > 0) ...[
-          const SizedBox(height: 4),
-          Text(
-            '${AppLocalizations.of(context)?.size ?? 'Size'}: ${_formatFileSize(widget.screenshot.fileSize!)}',
-            style: TextStyle(
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+        Row(
+          children: [
+            Flexible(
+              child: Text(
+                // Format DateTime using intl package
+                DateFormat(
+                  'MMM d, yyyy, hh:mm a',
+                ).format(widget.screenshot.addedOn),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-        ],
-        // Show XMP metadata indicator if AI processed and XMP writing is enabled
-        if (widget.screenshot.aiProcessed) ...[
-          const SizedBox(height: 4),
-          FutureBuilder<bool>(
-            future: XMPMetadataService.isXMPWritingEnabled(),
-            builder: (context, snapshot) {
-              if (snapshot.hasData && snapshot.data == true) {
-                return Row(
-                  children: [
-                    Icon(
-                      Icons.tag_outlined,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      AppLocalizations.of(context)?.xmpMetadataWritten ??
-                          'XMP metadata saved',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-        ],
-
+            if (widget.screenshot.fileSize != null &&
+                widget.screenshot.fileSize! > 0) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Text(
+                  '•',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              Text(
+                _formatFileSize(widget.screenshot.fileSize!),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ],
+        ),
         const SizedBox(height: 16),
         _buildDescriptionField(),
 
