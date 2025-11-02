@@ -37,6 +37,9 @@ class _ScreenshotSwipeDetailScreenState
   // Cache for pre-built widgets to improve performance
   final Map<int, Widget> _pageCache = {};
 
+  // Cache for pre-built widgets to improve performance
+  final Map<int, Widget> _pageCache = {};
+
   @override
   void initState() {
     super.initState();
@@ -174,6 +177,7 @@ class _ScreenshotSwipeDetailScreenState
         physics: const ClampingScrollPhysics(),
         clipBehavior: Clip.none,
         itemBuilder: (context, index) {
+          return _buildPage(index);
           return _buildPage(index);
         },
       ),

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/gestures.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 
@@ -20,6 +21,8 @@ class FullScreenImageViewer extends StatefulWidget {
   State<FullScreenImageViewer> createState() => _FullScreenImageViewerState();
 }
 
+class _FullScreenImageViewerState extends State<FullScreenImageViewer>
+    with TickerProviderStateMixin {
 class _FullScreenImageViewerState extends State<FullScreenImageViewer>
     with TickerProviderStateMixin {
   late PageController _pageController;
@@ -74,9 +77,34 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer>
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
+    _pageController = PageController(
+      initialPage: _currentIndex,
+      viewportFraction: 1.0, // Ensure full viewport for smooth scrolling
+      keepPage: true, // Keep page state when off-screen
+    );
+
+    // Initialize transformation controllers
+    _transformationController = TransformationController();
+    _transformationControllers = List.generate(
+      widget.screenshots.length,
+      (index) => TransformationController(),
+    );
+
+    // Initialize animation controller for smooth zoom transitions
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
 
     // Track full screen viewer access
     AnalyticsService().logScreenView('full_screen_image_viewer');
+
+    // Start preloading images around the initial index to prevent flickering
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_isDisposed) {
+        _preloadImages(_currentIndex);
+      }
+    });
 
     // Start preloading images around the initial index to prevent flickering
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -98,6 +126,14 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer>
     _imageCache.clear(); // Clear cache to prevent memory leaks
     _preloadedImages.clear();
     _preloadingImages.clear();
+    _transformationController.dispose();
+    _animationController.dispose();
+    for (final controller in _transformationControllers) {
+      controller.dispose();
+    }
+    _imageCache.clear(); // Clear cache to prevent memory leaks
+    _preloadedImages.clear();
+    _preloadingImages.clear();
     super.dispose();
   }
 
@@ -108,6 +144,13 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer>
       _currentIndex = index;
     });
     widget.onScreenshotChanged?.call(index);
+
+    // Preload images around the new current index to prevent flickering
+    _preloadImages(index);
+
+    // Clean up very distant cached images to manage memory (more generous range)
+    _imageCache.removeWhere((key, value) => (key - index).abs() > 5);
+    _preloadedImages.removeWhere((key, value) => (key - index).abs() > 15);
 
     // Preload images around the new current index to prevent flickering
     _preloadImages(index);
@@ -275,6 +318,21 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer>
       if (file.existsSync()) {
         return Image.file(
           file,
+          key: ValueKey('file_${screenshot.path}'),
+          // Performance optimizations for large images
+          cacheWidth: null, // Let Flutter handle optimal caching
+          cacheHeight: null,
+          filterQuality:
+              FilterQuality.medium, // Balance between quality and performance
+          gaplessPlayback: true, // Prevent flickering during transitions
+          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+            if (wasSynchronouslyLoaded) return child;
+            return AnimatedOpacity(
+              opacity: frame == null ? 0 : 1,
+              duration: const Duration(milliseconds: 200),
+              child: child,
+            );
+          },
           key: ValueKey('file_${screenshot.path}'),
           // Performance optimizations for large images
           cacheWidth: null, // Let Flutter handle optimal caching
