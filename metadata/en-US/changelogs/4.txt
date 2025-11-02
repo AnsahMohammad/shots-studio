@@ -1,0 +1,26 @@
+### 🚀 What’s New  
+- Added a **quick “Create Collection”** feature directly accessible from the search screen, allowing you to instantly create collections based on search terms or tags.  
+- Introduced a new **“Smooth Animations”** setting with integrated haptic feedback and app-wide animations — this will serve as a central toggle for all animations in future updates.  
+- Enhanced **zoom interactions** for a smoother and more responsive full-screen image viewing experience.  
+- Implemented the **M3 Expressive Snackbar** with dismiss support for more intuitive user feedback.  
+
+---
+
+### 🐞 Bug Fixes  
+- Resolved background service cleanup issues to prevent timeouts.  
+- Fixed a crash affecting Android 15+ devices after reboot.  
+- Addressed a navigation bug when deleting images from the viewer.  
+
+---
+
+### ⚙️ Technical & Performance Improvements  
+- Refined **AI model selection validation** and improved related settings UI components.  
+- Temporarily disabled the unstable **XMP tagging** feature pending further fixes.  
+- Added **auto-deletion of APK files** post-update and integrated the new M3E SnackbarService.  
+- Expanded the **update checking pipeline** to detect up to three upcoming releases.  
+- Simplified **privacy acknowledgment** logic by centralizing key constants.  
+- Cleaned up **Gemma’s quick settings** section for improved readability.  
+- Upgraded to **Flutter SDK 3.35.7** for enhanced stability and performance.  
+- Updated the **project roadmap documentation** for clearer development tracking.  
+
+---
