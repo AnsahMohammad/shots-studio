@@ -138,5 +138,13 @@
   "noSponsorshipOptions": "現在、スポンサーシップオプションは利用できません。",
   "close": "閉じる",
   "writeTagsToXMP": "タグをXMPに書き込む",
-  "xmpMetadataWritten": "XMPメタデータがファイルに書き込まれました"
+  "xmpMetadataWritten": "XMPメタデータがファイルに書き込まれました",
+  "quickCreateCollection": "クイックコレクション作成",
+  "quickCreateCollectionMessage": "検索結果から{count}件のスクリーンショットを含む新しいコレクション\"{collectionName}\"を作成しますか？",
+  "quickCreateWhatHappens": "実行内容：",
+  "quickCreateExplanation": "検索結果のすべてのスクリーンショットがこの新しいコレクションに追加されます。コレクション名と設定は後でカスタマイズできます。",
+  "dontShowAgain": "今後表示しない",
+  "create": "作成",
+  "createCollectionFromSearchResults": "検索結果からコレクションを作成",
+  "noScreenshotsFoundFor": "\"{query}\"に一致するスクリーンショットが見つかりません"
 }

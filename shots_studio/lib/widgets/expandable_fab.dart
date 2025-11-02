@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../services/analytics/analytics_service.dart';
+import '../services/haptic_service.dart';
 
 class ExpandableFab extends StatefulWidget {
   final List<ExpandableFabAction> actions;
@@ -69,15 +70,18 @@ class _ExpandableFabState extends State<ExpandableFab>
       _isExpanded = !_isExpanded;
       if (_isExpanded) {
         _controller.forward();
-        // Track FAB expansion
         AnalyticsService().logFeatureUsed('fab_expanded');
+        HapticService.fabExpand();
       } else {
         _controller.reverse();
+        HapticService.lightImpact();
       }
     });
   }
 
   void _closeAndExecute(VoidCallback action) {
+    HapticService.fabActionSelected();
+
     if (_isExpanded) {
       setState(() {
         _isExpanded = false;

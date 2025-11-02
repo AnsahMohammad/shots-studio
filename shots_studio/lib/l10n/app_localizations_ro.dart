@@ -406,4 +406,34 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get close => 'Închidere';
+
+  @override
+  String get quickCreateCollection => 'Creare Rapidă Colecție';
+
+  @override
+  String quickCreateCollectionMessage(String collectionName, int count) {
+    return 'Doriți să creați o colecție numită \"$collectionName\" cu $count capturi de ecran?';
+  }
+
+  @override
+  String get quickCreateWhatHappens => 'Ce se va întâmpla?';
+
+  @override
+  String get quickCreateExplanation =>
+      'Vom crea instantaneu o colecție nouă conținând toate rezultatele căutării.';
+
+  @override
+  String get dontShowAgain => 'Nu mai afișa';
+
+  @override
+  String get create => 'Creează';
+
+  @override
+  String get createCollectionFromSearchResults =>
+      'Creați colecție din rezultatele căutării';
+
+  @override
+  String noScreenshotsFoundFor(String query) {
+    return 'Nu s-au găsit capturi de ecran pentru \"$query\"';
+  }
 }

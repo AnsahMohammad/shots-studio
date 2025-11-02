@@ -30,6 +30,7 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/services/file_watcher_service.dart';
 import 'package:shots_studio/services/update_checker_service.dart';
+import 'package:shots_studio/services/update_installer_service.dart';
 import 'package:shots_studio/widgets/update_dialog.dart';
 import 'package:shots_studio/widgets/server_message_dialog.dart';
 import 'package:shots_studio/utils/theme_utils.dart';
@@ -41,6 +42,7 @@ import 'package:shots_studio/services/corrupt_file_service.dart';
 import 'package:shots_studio/widgets/custom_paths_dialog.dart';
 import 'package:shots_studio/utils/build_source.dart';
 import 'package:shots_studio/utils/display_utils.dart';
+import 'package:shots_studio/services/haptic_service.dart';
 
 void main() async {
   await SentryFlutter.init(
@@ -53,6 +55,9 @@ void main() async {
     },
     appRunner: () async {
       WidgetsFlutterBinding.ensureInitialized();
+
+      // Initialize haptic feedback service
+      await HapticService.initialize();
 
       // Initialize display refresh rate detection and optimization
       await DisplayUtils.initializeHighRefreshRate();
@@ -483,16 +488,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               context,
               'Processing cancelled. Processed $processedCount of $totalCount screenshots.',
             );
+            // Haptic feedback for cancellation
+            HapticService.warning();
           } else if (success) {
             SnackbarService().showSuccess(
               context,
               'Completed processing $processedCount of $totalCount screenshots.',
             );
+            // Haptic feedback for successful completion
+            HapticService.processingComplete();
           } else {
             SnackbarService().showError(
               context,
               error ?? 'Failed to process screenshots',
             );
+            // Haptic feedback for error
+            HapticService.error();
           }
 
           // Save final data
@@ -802,6 +813,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         AnalyticsService().logFeatureUsed('update_available');
       } else if (updateInfo == null) {
         print('MainApp: No update available');
+
+        // Clean up any previously downloaded APK files since no update is available
+        await UpdateInstallerService.deleteDownloadedApks();
       } else if (!mounted) {
         print('MainApp: Widget not mounted, cannot show dialog');
       }
@@ -833,6 +847,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _processWithGemini() async {
     print("Main app: _processWithGemini called");
+    // Check if a valid model is selected
+    if (_selectedModelName.toLowerCase() == 'No AI Model'.toLowerCase()) {
+      print("Main app: No AI model selected");
+      // SnackbarService().showWarning(
+      //   context,
+      //   'Please select an AI model in settings',
+      // );
+      return;
+    }
 
     // Check for API key
     //  if gemma skip API key check
@@ -931,6 +954,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         setState(() {
           _isInitializingProcessing = false; // No longer initializing
         });
+
+        // Haptic feedback for processing start
+        HapticService.processingStart();
+
         SnackbarService().showInfo(
           context,
           'Processing started for ${unprocessedScreenshots.length} screenshots.',
@@ -1047,6 +1074,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _takeScreenshot(ImageSource source) async {
+    // Haptic feedback for screenshot capture initiation
+    HapticService.screenshotCapture();
+
     setState(() {
       _isLoading = true;
     });
@@ -1182,6 +1212,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _addCollection(Collection collection) {
+    // Haptic feedback for collection creation
+    HapticService.collectionCreated();
+
     setState(() {
       _collections.add(collection);
 
@@ -1329,6 +1362,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _deleteCollection(String collectionId) {
+    // Haptic feedback for collection deletion
+    HapticService.delete();
+
     setState(() {
       _collections.removeWhere((c) => c.id == collectionId);
       for (var screenshot in _screenshots) {
@@ -1367,6 +1403,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _deleteScreenshot(String screenshotId) {
+    // Haptic feedback for delete action
+    HapticService.delete();
+
     setState(() {
       // Mark screenshot as deleted instead of removing it
       final screenshotIndex = _screenshots.indexWhere(
@@ -1389,6 +1428,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _bulkDeleteScreenshots(List<String> screenshotIds) {
     if (screenshotIds.isEmpty) return;
+
+    // Haptic feedback for bulk delete
+    HapticService.delete();
 
     // Log bulk delete analytics
     AnalyticsService().logFeatureUsed('bulk_delete_screenshots');
@@ -1497,6 +1539,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               allScreenshots: _activeScreenshots,
               allCollections: _collections,
               onUpdateCollection: _updateCollection,
+              onCollectionAdded: _addCollection,
               onDeleteScreenshot: _deleteScreenshot,
             ),
       ),
@@ -1599,9 +1642,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   // Helper method to check and auto-process screenshots
   Future<void> _autoProcessWithGemini() async {
-    // Only auto-process if enabled, we have an API key, we're not already processing,
+    // Only auto-process if enabled, a valid model is selected, we have an API key (if needed),
+    // and we're not already processing
     if (_autoProcessEnabled &&
         !_isProcessingAI &&
+        _selectedModelName.toLowerCase() != 'none' &&
         ((_apiKey != null && _apiKey!.isNotEmpty) ||
             _selectedModelName == 'gemma')) {
       // Check if there are any unprocessed screenshots
@@ -1672,6 +1717,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             print(
               "FileWatcher: Adding ${uniqueScreenshots.length} screenshots to state...",
             );
+
+            // Haptic feedback for new screenshots detected
+            HapticService.lightImpact();
+
             setState(() {
               _screenshots.addAll(uniqueScreenshots);
             });
@@ -1901,6 +1950,85 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final mediaPadding = MediaQuery.of(context).padding;
+
+    final Widget bodyContent =
+        _isLoading
+            ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  const Text('Loading screenshots...'),
+                  if (_totalToLoad > 0) ...[
+                    const SizedBox(height: 8),
+                    Text('$_loadingProgress / $_totalToLoad'),
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
+                      value:
+                          _totalToLoad > 0
+                              ? _loadingProgress / _totalToLoad
+                              : 0,
+                    ),
+                  ],
+                ],
+              ),
+            )
+            : NestedScrollView(
+              headerSliverBuilder: (context, innerBoxIsScrolled) {
+                return [
+                  SliverToBoxAdapter(
+                    child: Column(
+                      children: [
+                        // AI Processing Container
+                        AIProcessingContainer(
+                          isProcessing: _isProcessingAI,
+                          processedCount: _aiProcessedCount,
+                          totalCount: _aiTotalToProcess,
+                          isInitializing: _isInitializingProcessing,
+                        ),
+                        // Collections Section
+                        CollectionsSection(
+                          collections: _collections,
+                          screenshots: _activeScreenshots,
+                          onCollectionAdded: _addCollection,
+                          onUpdateCollection: _updateCollection,
+                          onUpdateCollections: _updateCollections,
+                          onDeleteCollection: _deleteCollection,
+                          onDeleteScreenshot: _deleteScreenshot,
+                        ),
+                      ],
+                    ),
+                  ),
+                ];
+              },
+              body: ScreenshotsSection(
+                screenshots: _activeScreenshots,
+                onScreenshotTap: _showScreenshotDetail,
+                onBulkDelete: _bulkDeleteScreenshots,
+                onScreenshotUpdated: _onScreenshotUpdated,
+                screenshotDetailBuilder: (context, screenshot) {
+                  final int initialIndex = _activeScreenshots.indexWhere(
+                    (s) => s.id == screenshot.id,
+                  );
+                  return ScreenshotSwipeDetailScreen(
+                    screenshots: List.from(_activeScreenshots),
+                    initialIndex: initialIndex >= 0 ? initialIndex : 0,
+                    allCollections: _collections,
+                    allScreenshots: _screenshots,
+                    onUpdateCollection: (updatedCollection) {
+                      _updateCollection(updatedCollection);
+                    },
+                    onDeleteScreenshot: _deleteScreenshot,
+                    onScreenshotUpdated: () {
+                      setState(() {});
+                    },
+                  );
+                },
+              ),
+            );
+
     return Scaffold(
       appBar: HomeAppBar(
         onProcessWithAI: _isProcessingAI ? null : _processWithGemini,
@@ -1941,137 +2069,72 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         allScreenshots: _screenshots,
         onClearCorruptFiles: _clearCorruptFiles,
       ),
-      floatingActionButton: ExpandableFab(
-        distance: 80,
-        actions: [
-          ExpandableFabAction(
-            icon: Icons.photo_library,
-            label: 'Gallery',
-            onPressed: () {
-              // Track gallery selection
-              AnalyticsService().logFeatureUsed('fab_gallery_selected');
-              _takeScreenshot(ImageSource.gallery);
-            },
-          ),
-          if (!kIsWeb) // Camera option only for mobile
-            ExpandableFabAction(
-              icon: Icons.camera_alt,
-              label: 'Camera',
-              onPressed: () {
-                // Track camera selection
-                AnalyticsService().logFeatureUsed('fab_camera_selected');
-                _takeScreenshot(ImageSource.camera);
-              },
-            ),
-          if (!kIsWeb) // Android screenshot loading option
-            ExpandableFabAction(
-              icon: Icons.folder_open,
-              label: 'Load Screenshots',
-              onPressed: () {
-                // Track load device screenshots
-                AnalyticsService().logFeatureUsed(
-                  'fab_load_device_screenshots',
-                );
-                _loadAndroidScreenshots(forceReload: true).then((_) {
-                  // Re-sync FileWatcher with newly loaded screenshots
-                  final existingPaths =
-                      _screenshots
-                          .map((s) => s.path)
-                          .whereType<String>()
-                          .toList();
-                  _fileWatcher.syncWithExistingScreenshots(existingPaths);
-                });
-              },
-            ),
-          if (!kIsWeb) // Custom paths management
-            ExpandableFabAction(
-              icon: Icons.create_new_folder,
-              label: 'Custom Paths',
-              onPressed: () {
-                // Track custom paths management
-                AnalyticsService().logFeatureUsed('fab_manage_custom_paths');
-                _showCustomPathsDialog();
-              },
-            ),
-        ],
-        child: const Icon(Icons.add_a_photo),
-      ),
-      body:
-          _isLoading
-              ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    Text('Loading screenshots...'),
-                    if (_totalToLoad > 0) ...[
-                      const SizedBox(height: 8),
-                      Text('$_loadingProgress / $_totalToLoad'),
-                      const SizedBox(height: 8),
-                      LinearProgressIndicator(
-                        value:
-                            _totalToLoad > 0
-                                ? _loadingProgress / _totalToLoad
-                                : 0,
-                      ),
-                    ],
-                  ],
-                ),
-              )
-              : NestedScrollView(
-                headerSliverBuilder: (context, innerBoxIsScrolled) {
-                  return [
-                    SliverToBoxAdapter(
-                      child: Column(
-                        children: [
-                          // AI Processing Container
-                          AIProcessingContainer(
-                            isProcessing: _isProcessingAI,
-                            processedCount: _aiProcessedCount,
-                            totalCount: _aiTotalToProcess,
-                            isInitializing: _isInitializingProcessing,
-                          ),
-                          // Collections Section
-                          CollectionsSection(
-                            collections: _collections,
-                            screenshots: _activeScreenshots,
-                            onCollectionAdded: _addCollection,
-                            onUpdateCollection: _updateCollection,
-                            onUpdateCollections: _updateCollections,
-                            onDeleteCollection: _deleteCollection,
-                            onDeleteScreenshot: _deleteScreenshot,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ];
-                },
-                body: ScreenshotsSection(
-                  screenshots: _activeScreenshots,
-                  onScreenshotTap: _showScreenshotDetail,
-                  onBulkDelete: _bulkDeleteScreenshots,
-                  onScreenshotUpdated: _onScreenshotUpdated,
-                  screenshotDetailBuilder: (context, screenshot) {
-                    final int initialIndex = _activeScreenshots.indexWhere(
-                      (s) => s.id == screenshot.id,
-                    );
-                    return ScreenshotSwipeDetailScreen(
-                      screenshots: List.from(_activeScreenshots),
-                      initialIndex: initialIndex >= 0 ? initialIndex : 0,
-                      allCollections: _collections,
-                      allScreenshots: _screenshots,
-                      onUpdateCollection: (updatedCollection) {
-                        _updateCollection(updatedCollection);
-                      },
-                      onDeleteScreenshot: _deleteScreenshot,
-                      onScreenshotUpdated: () {
-                        setState(() {});
-                      },
-                    );
+      body: Stack(
+        children: [
+          Positioned.fill(child: bodyContent),
+          Positioned(
+            right: 16 + mediaPadding.right,
+            bottom: 16 + mediaPadding.bottom,
+            child: ExpandableFab(
+              distance: 80,
+              actions: [
+                ExpandableFabAction(
+                  icon: Icons.photo_library,
+                  label: 'Gallery',
+                  onPressed: () {
+                    // Track gallery selection
+                    AnalyticsService().logFeatureUsed('fab_gallery_selected');
+                    _takeScreenshot(ImageSource.gallery);
                   },
                 ),
-              ),
+                if (!kIsWeb) // Camera option only for mobile
+                  ExpandableFabAction(
+                    icon: Icons.camera_alt,
+                    label: 'Camera',
+                    onPressed: () {
+                      // Track camera selection
+                      AnalyticsService().logFeatureUsed('fab_camera_selected');
+                      _takeScreenshot(ImageSource.camera);
+                    },
+                  ),
+                if (!kIsWeb) // Android screenshot loading option
+                  ExpandableFabAction(
+                    icon: Icons.folder_open,
+                    label: 'Load Screenshots',
+                    onPressed: () {
+                      // Track load device screenshots
+                      AnalyticsService().logFeatureUsed(
+                        'fab_load_device_screenshots',
+                      );
+                      _loadAndroidScreenshots(forceReload: true).then((_) {
+                        // Re-sync FileWatcher with newly loaded screenshots
+                        final existingPaths =
+                            _screenshots
+                                .map((s) => s.path)
+                                .whereType<String>()
+                                .toList();
+                        _fileWatcher.syncWithExistingScreenshots(existingPaths);
+                      });
+                    },
+                  ),
+                if (!kIsWeb) // Custom paths management
+                  ExpandableFabAction(
+                    icon: Icons.create_new_folder,
+                    label: 'Custom Paths',
+                    onPressed: () {
+                      // Track custom paths management
+                      AnalyticsService().logFeatureUsed(
+                        'fab_manage_custom_paths',
+                      );
+                      _showCustomPathsDialog();
+                    },
+                  ),
+              ],
+              child: const Icon(Icons.add_a_photo),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

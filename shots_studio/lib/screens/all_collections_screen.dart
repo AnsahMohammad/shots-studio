@@ -3,6 +3,7 @@ import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/screens/collection_detail_screen.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
+import 'package:shots_studio/services/snackbar_service.dart';
 import 'package:shots_studio/widgets/collections/collection_list_item.dart';
 
 class AllCollectionsScreen extends StatefulWidget {
@@ -91,13 +92,7 @@ class _AllCollectionsScreenState extends State<AllCollectionsScreen> {
     AnalyticsService().logFeatureUsed('collections_reordered');
 
     // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Collection order saved!'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    SnackbarService().showSuccess(context, 'Collection order saved!');
   }
 
   @override

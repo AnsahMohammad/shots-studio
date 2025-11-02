@@ -135,6 +135,51 @@
   "contactOnGitHub": "Contato no GitHub",
   "noSponsorshipOptions": "Nenhuma opção de patrocínio está disponível no momento.",
   "close": "Fechar",
+  "quickCreateCollection": "Criação Rápida de Coleção",
+  "@quickCreateCollection": {
+    "description": "Quick create collection dialog title"
+  },
+  "quickCreateCollectionMessage": "Deseja criar uma coleção chamada \"{collectionName}\" com {count} capturas de tela?",
+  "@quickCreateCollectionMessage": {
+    "description": "Quick create collection confirmation message",
+    "placeholders": {
+      "collectionName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "quickCreateWhatHappens": "O que vai acontecer?",
+  "@quickCreateWhatHappens": {
+    "description": "What happens section header in quick create dialog"
+  },
+  "quickCreateExplanation": "Criaremos instantaneamente uma nova coleção contendo todos os resultados da pesquisa.",
+  "@quickCreateExplanation": {
+    "description": "Explanation of what quick create does"
+  },
+  "dontShowAgain": "Não mostrar novamente",
+  "@dontShowAgain": {
+    "description": "Don't show again checkbox label"
+  },
+  "create": "Criar",
+  "@create": {
+    "description": "Create button text"
+  },
+  "createCollectionFromSearchResults": "Criar coleção a partir dos resultados da pesquisa",
+  "@createCollectionFromSearchResults": {
+    "description": "Tooltip for quick create collection button"
+  },
+  "noScreenshotsFoundFor": "Nenhuma captura de tela encontrada para \"{query}\"",
+  "@noScreenshotsFoundFor": {
+    "description": "Message shown when no screenshots match the search query",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
   "writeTagsToXMP": "Escrever Tags em XMP",
   "xmpMetadataWritten": "Metadados XMP escritos no arquivo"
 }

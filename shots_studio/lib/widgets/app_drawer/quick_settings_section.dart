@@ -431,173 +431,182 @@ class _QuickSettingsSectionState extends State<QuickSettingsSection> {
           ),
         ),
 
-        // API Key Input
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.vpn_key_outlined,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      AppLocalizations.of(context)?.apiKey ?? 'API Key',
-                      style: TextStyle(
-                        color: theme.colorScheme.onSecondaryContainer,
-                        fontSize: 16,
+        // API Key Input - Only shown for Gemini models
+        if (_selectedModelName.toLowerCase().startsWith('gemini'))
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.vpn_key_outlined,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        AppLocalizations.of(context)?.apiKey ?? 'API Key',
+                        style: TextStyle(
+                          color: theme.colorScheme.onSecondaryContainer,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    tooltip:
-                        AppLocalizations.of(context)?.getApiKey ??
-                        "Get an API key",
-                    icon: Icon(
-                      Icons.help_outline,
-                      color: theme.colorScheme.primary,
-                      size: 20,
-                    ),
-                    onPressed: () async {
-                      // Track when users seek API key help
-                      AnalyticsService().logFeatureUsed(
-                        'api_key_help_clicked_quick',
-                      );
-
-                      final Uri url = Uri.parse(
-                        'https://aistudio.google.com/app/apikey',
-                      );
-                      if (await canLaunchUrl(url)) {
-                        await launchUrl(
-                          url,
-                          mode: LaunchMode.externalApplication,
+                    IconButton(
+                      tooltip:
+                          AppLocalizations.of(context)?.getApiKey ??
+                          "Get an API key",
+                      icon: Icon(
+                        Icons.help_outline,
+                        color: theme.colorScheme.primary,
+                        size: 20,
+                      ),
+                      onPressed: () async {
+                        // Track when users seek API key help
+                        AnalyticsService().logFeatureUsed(
+                          'api_key_help_clicked_quick',
                         );
-                      }
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                key: widget.apiKeyFieldKey,
-                controller: _apiKeyController,
-                focusNode: _apiKeyFocusNode,
-                style: TextStyle(color: theme.colorScheme.onSecondaryContainer),
-                decoration: InputDecoration(
-                  hintText:
-                      AppLocalizations.of(context)?.enterApiKey ??
-                      'Enter Gemini API Key',
-                  helperText: _getApiKeyHelperText(),
-                  helperStyle: TextStyle(
-                    color: _getApiKeyHelperColor(theme),
-                    fontSize: 12,
-                  ),
-                  hintStyle: TextStyle(
+
+                        final Uri url = Uri.parse(
+                          'https://aistudio.google.com/app/apikey',
+                        );
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(
+                            url,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  key: widget.apiKeyFieldKey,
+                  controller: _apiKeyController,
+                  focusNode: _apiKeyFocusNode,
+                  style: TextStyle(
                     color: theme.colorScheme.onSecondaryContainer,
                   ),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(
-                      color: _getApiKeyBorderColor(theme),
-                      width: _apiKeyController.text.isEmpty ? 2.0 : 1.0,
+                  decoration: InputDecoration(
+                    hintText:
+                        AppLocalizations.of(context)?.enterApiKey ??
+                        'Enter Gemini API Key',
+                    helperText: _getApiKeyHelperText(),
+                    helperStyle: TextStyle(
+                      color: _getApiKeyHelperColor(theme),
+                      fontSize: 12,
                     ),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.primary,
-                      width: 2.0,
+                    hintStyle: TextStyle(
+                      color: theme.colorScheme.onSecondaryContainer,
                     ),
-                  ),
-                  suffixIcon: _getApiKeySuffixIcon(theme),
-                ),
-                obscureText: true,
-                onChanged: (value) {
-                  widget.onApiKeyChanged(value);
-                  _saveApiKey(value);
-
-                  // Track API key changes in analytics (only track if key was added or removed, not the actual key)
-                  if (_apiKeyController.text.isEmpty && value.isNotEmpty) {
-                    // API key was added
-                    AnalyticsService().logFeatureUsed('api_key_added_quick');
-                    AnalyticsService().logFeatureAdopted(
-                      'gemini_api_configured',
-                    );
-                  } else if (_apiKeyController.text.isNotEmpty &&
-                      value.isEmpty) {
-                    // API key was removed
-                    AnalyticsService().logFeatureUsed('api_key_removed_quick');
-                  }
-
-                  // Reset validation state when API key changes
-                  setState(() {
-                    _apiKeyValid = null;
-                  });
-
-                  // Clear cached validation result in the service
-                  ApiValidationService().clearCache();
-                },
-              ),
-              // Validation button
-              if (_apiKeyController.text.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12.0),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _isValidatingApiKey ? null : _validateApiKey,
-                      icon:
-                          _isValidatingApiKey
-                              ? SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    theme.colorScheme.onPrimary,
-                                  ),
-                                ),
-                              )
-                              : Icon(
-                                _apiKeyValid == true
-                                    ? Icons.check_circle
-                                    : Icons.security,
-                                size: 16,
-                              ),
-                      label: Text(
-                        _isValidatingApiKey
-                            ? 'Validating...'
-                            : _apiKeyValid == true
-                            ? AppLocalizations.of(context)?.valid ?? 'Valid'
-                            : AppLocalizations.of(context)?.validateApiKey ??
-                                'Validate API Key',
-                        style: const TextStyle(fontSize: 14),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(
+                        color: _getApiKeyBorderColor(theme),
+                        width: _apiKeyController.text.isEmpty ? 2.0 : 1.0,
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            _apiKeyValid == true
-                                ? theme.colorScheme.primaryContainer
-                                : theme.colorScheme.secondaryContainer,
-                        foregroundColor:
-                            _apiKeyValid == true
-                                ? theme.colorScheme.onPrimaryContainer
-                                : theme.colorScheme.onSecondaryContainer,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(
+                        color: theme.colorScheme.primary,
+                        width: 2.0,
+                      ),
+                    ),
+                    suffixIcon: _getApiKeySuffixIcon(theme),
+                  ),
+                  obscureText: true,
+                  onChanged: (value) {
+                    widget.onApiKeyChanged(value);
+                    _saveApiKey(value);
+
+                    // Track API key changes in analytics (only track if key was added or removed, not the actual key)
+                    if (_apiKeyController.text.isEmpty && value.isNotEmpty) {
+                      // API key was added
+                      AnalyticsService().logFeatureUsed('api_key_added_quick');
+                      AnalyticsService().logFeatureAdopted(
+                        'gemini_api_configured',
+                      );
+                    } else if (_apiKeyController.text.isNotEmpty &&
+                        value.isEmpty) {
+                      // API key was removed
+                      AnalyticsService().logFeatureUsed(
+                        'api_key_removed_quick',
+                      );
+                    }
+
+                    // Reset validation state when API key changes
+                    setState(() {
+                      _apiKeyValid = null;
+                    });
+
+                    // Clear cached validation result in the service
+                    ApiValidationService().clearCache();
+                  },
+                ),
+                // Validation button
+                if (_apiKeyController.text.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12.0),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _isValidatingApiKey ? null : _validateApiKey,
+                        icon:
+                            _isValidatingApiKey
+                                ? SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      theme.colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                )
+                                : Icon(
+                                  _apiKeyValid == true
+                                      ? Icons.check_circle
+                                      : Icons.security,
+                                  size: 16,
+                                ),
+                        label: Text(
+                          _isValidatingApiKey
+                              ? 'Validating...'
+                              : _apiKeyValid == true
+                              ? AppLocalizations.of(context)?.valid ?? 'Valid'
+                              : AppLocalizations.of(context)?.validateApiKey ??
+                                  'Validate API Key',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              _apiKeyValid == true
+                                  ? theme.colorScheme.primaryContainer
+                                  : theme.colorScheme.secondaryContainer,
+                          foregroundColor:
+                              _apiKeyValid == true
+                                  ? theme.colorScheme.onPrimaryContainer
+                                  : theme.colorScheme.onSecondaryContainer,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
-        ),
 
-        // Add a helper note about getting an API key
-        if (_apiKeyController.text.isEmpty)
+        // Add a helper note about getting an API key - Only shown for Gemini models
+        if (_apiKeyController.text.isEmpty &&
+            _selectedModelName.toLowerCase().startsWith('gemini'))
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: 16.0,

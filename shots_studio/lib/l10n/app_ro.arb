@@ -118,6 +118,51 @@
   "@copy": {
     "description": "Copy button text"
   },
+  "quickCreateCollection": "Creare Rapidă Colecție",
+  "@quickCreateCollection": {
+    "description": "Quick create collection dialog title"
+  },
+  "quickCreateCollectionMessage": "Doriți să creați o colecție numită \"{collectionName}\" cu {count} capturi de ecran?",
+  "@quickCreateCollectionMessage": {
+    "description": "Quick create collection confirmation message",
+    "placeholders": {
+      "collectionName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "quickCreateWhatHappens": "Ce se va întâmpla?",
+  "@quickCreateWhatHappens": {
+    "description": "What happens section header in quick create dialog"
+  },
+  "quickCreateExplanation": "Vom crea instantaneu o colecție nouă conținând toate rezultatele căutării.",
+  "@quickCreateExplanation": {
+    "description": "Explanation of what quick create does"
+  },
+  "dontShowAgain": "Nu mai afișa",
+  "@dontShowAgain": {
+    "description": "Don't show again checkbox label"
+  },
+  "create": "Creează",
+  "@create": {
+    "description": "Create button text"
+  },
+  "createCollectionFromSearchResults": "Creați colecție din rezultatele căutării",
+  "@createCollectionFromSearchResults": {
+    "description": "Tooltip for quick create collection button"
+  },
+  "noScreenshotsFoundFor": "Nu s-au găsit capturi de ecran pentru \"{query}\"",
+  "@noScreenshotsFoundFor": {
+    "description": "Message shown when no screenshots match the search query",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
   "paste": "Lipire",
   "@paste": {
     "description": "Paste button text"

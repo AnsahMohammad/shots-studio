@@ -407,4 +407,34 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get close => 'Закрыть';
+
+  @override
+  String get quickCreateCollection => 'Быстрое Создание Коллекции';
+
+  @override
+  String quickCreateCollectionMessage(String collectionName, int count) {
+    return 'Хотите создать коллекцию с именем \"$collectionName\" с $count скриншотами?';
+  }
+
+  @override
+  String get quickCreateWhatHappens => 'Что произойдет?';
+
+  @override
+  String get quickCreateExplanation =>
+      'Мы мгновенно создадим новую коллекцию, содержащую все результаты поиска.';
+
+  @override
+  String get dontShowAgain => 'Больше не показывать';
+
+  @override
+  String get create => 'Создать';
+
+  @override
+  String get createCollectionFromSearchResults =>
+      'Создать коллекцию из результатов поиска';
+
+  @override
+  String noScreenshotsFoundFor(String query) {
+    return 'Скриншоты не найдены для \"$query\"';
+  }
 }

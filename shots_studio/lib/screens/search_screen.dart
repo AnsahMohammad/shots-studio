@@ -5,11 +5,16 @@ import 'package:shots_studio/screens/screenshot_swipe_detail_screen.dart';
 import 'package:shots_studio/widgets/screenshots/screenshot_card.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/utils/responsive_utils.dart';
+import 'package:shots_studio/widgets/collections/quick_create_collection_dialog.dart';
+import 'package:shots_studio/l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 class SearchScreen extends StatefulWidget {
   final List<Screenshot> allScreenshots;
   final List<Collection> allCollections;
   final Function(Collection) onUpdateCollection;
+  final Function(Collection) onCollectionAdded;
   final Function(String) onDeleteScreenshot;
   final String? initialSearchQuery; // Add this parameter
 
@@ -18,6 +23,7 @@ class SearchScreen extends StatefulWidget {
     required this.allScreenshots,
     required this.allCollections,
     required this.onUpdateCollection,
+    required this.onCollectionAdded,
     required this.onDeleteScreenshot,
     this.initialSearchQuery, // Add this parameter
   });
@@ -126,9 +132,81 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  Future<void> _showQuickCreateDialog() async {
+    // Check if user has opted out of showing this dialog
+    final prefs = await SharedPreferences.getInstance();
+    final dontShowAgain =
+        prefs.getBool('quick_create_dialog_dont_show_again') ?? false;
+
+    if (dontShowAgain) {
+      // If user opted out, create collection directly
+      _createCollectionDirectly();
+    } else {
+      // Show confirmation dialog
+      if (!mounted) return;
+
+      // Create a title from the search query
+      final String collectionTitle =
+          _searchQuery.trim().isEmpty
+              ? 'Collection ${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}'
+              : _searchQuery
+                  .trim()
+                  .split(' ')
+                  .map((word) => word[0].toUpperCase() + word.substring(1))
+                  .join(' ');
+
+      showDialog(
+        context: context,
+        builder:
+            (context) => QuickCreateCollectionDialog(
+              collectionName: collectionTitle,
+              screenshotCount: _filteredScreenshots.length,
+              onConfirm: _createCollectionDirectly,
+            ),
+      );
+    }
+  }
+
+  void _createCollectionDirectly() {
+    // Get the IDs of all filtered screenshots
+    final selectedIds = _filteredScreenshots.map((s) => s.id).toList();
+
+    // Create a title from the search query or use a default
+    final String collectionTitle =
+        _searchQuery.trim().isEmpty
+            ? 'Collection ${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}'
+            : _searchQuery
+                .trim()
+                .split(' ')
+                .map((word) => word[0].toUpperCase() + word.substring(1))
+                .join(' ');
+
+    // Create the collection
+    final newCollection = Collection(
+      id: const Uuid().v4(),
+      name: collectionTitle,
+      description: 'Created from search results',
+      screenshotIds: selectedIds,
+      lastModified: DateTime.now(),
+      screenshotCount: selectedIds.length,
+      isAutoAddEnabled: false,
+      displayOrder: DateTime.now().millisecondsSinceEpoch,
+    );
+
+    // Add it through the callback
+    widget.onCollectionAdded(newCollection);
+
+    // Log analytics
+    AnalyticsService().logFeatureUsed(
+      'create_collection_from_search_results_quick',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: TextField(
@@ -141,12 +219,24 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           style: TextStyle(color: theme.colorScheme.onSurface),
         ),
+        actions: [
+          if (_filteredScreenshots.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.create_new_folder),
+              tooltip:
+                  l10n?.createCollectionFromSearchResults ??
+                  'Create collection from search results',
+              onPressed: _showQuickCreateDialog,
+            ),
+        ],
       ),
       body:
           _filteredScreenshots.isEmpty && _searchQuery.isNotEmpty
               ? Center(
                 child: Text(
-                  'No screenshots found for "$_searchQuery"',
+                  l10n != null
+                      ? l10n.noScreenshotsFoundFor(_searchQuery)
+                      : 'No screenshots found for "$_searchQuery"',
                   style: TextStyle(
                     fontSize: 16,
                     color: theme.colorScheme.onSurfaceVariant,

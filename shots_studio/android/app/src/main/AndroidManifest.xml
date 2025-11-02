@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
@@ -63,7 +64,18 @@
         <!-- Background service for AI processing -->
         <service
             android:name="id.flutter.flutter_background_service.BackgroundService"
-            android:foregroundServiceType="dataSync" />
+            android:foregroundServiceType="dataSync"
+            android:enabled="true"
+            android:exported="false"
+            android:stopWithTask="false"
+            tools:replace="android:exported" />
+            
+        <!-- Disable boot receiver from flutter_background_service plugin to comply with Android 15+ restrictions -->
+        <receiver
+            android:name="id.flutter.flutter_background_service.BootReceiver"
+            android:enabled="false"
+            android:exported="false"
+            tools:node="remove" />
             
         <!-- Receiver for handling boot completed to reschedule notifications -->
         <receiver 

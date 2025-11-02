@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
+import 'package:shots_studio/services/snackbar_service.dart';
 import 'package:shots_studio/l10n/app_localizations.dart';
 
 /// Service for handling corrupt file detection and cleanup operations
@@ -82,13 +83,9 @@ class CorruptFileService {
   static void showSuccessMessage(BuildContext context, int clearedCount) {
     if (!context.mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '${AppLocalizations.of(context)?.corruptFilesCleared ?? 'Corrupt files cleared'} ($clearedCount files removed)',
-        ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
+    SnackbarService().showSuccess(
+      context,
+      '${AppLocalizations.of(context)?.corruptFilesCleared ?? 'Corrupt files cleared'} ($clearedCount files removed)',
     );
   }
 

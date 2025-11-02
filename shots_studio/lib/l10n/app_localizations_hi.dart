@@ -405,4 +405,34 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get close => 'बंद करें';
+
+  @override
+  String get quickCreateCollection => 'त्वरित संग्रह बनाएं';
+
+  @override
+  String quickCreateCollectionMessage(String collectionName, int count) {
+    return 'अपने खोज परिणामों से $count स्क्रीनशॉट के साथ नया संग्रह \"$collectionName\" बनाएं?';
+  }
+
+  @override
+  String get quickCreateWhatHappens => 'क्या होगा:';
+
+  @override
+  String get quickCreateExplanation =>
+      'आपके खोज परिणामों से सभी स्क्रीनशॉट इस नए संग्रह में जोड़े जाएंगे। आप बाद में संग्रह का नाम और सेटिंग्स अनुकूलित कर सकते हैं।';
+
+  @override
+  String get dontShowAgain => 'फिर से न दिखाएं';
+
+  @override
+  String get create => 'बनाएं';
+
+  @override
+  String get createCollectionFromSearchResults =>
+      'खोज परिणामों से संग्रह बनाएं';
+
+  @override
+  String noScreenshotsFoundFor(String query) {
+    return '\"$query\" के लिए कोई स्क्रीनशॉट नहीं मिला';
+  }
 }

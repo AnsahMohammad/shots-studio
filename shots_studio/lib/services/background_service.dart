@@ -216,7 +216,10 @@ class BackgroundProcessingService {
       service.on('stopService').listen((event) async {
         _serviceRunning = false;
         _processingActive = false;
-        await _cleanupSafetyMonitoring();
+        // Clean up without blocking to avoid timeout
+        _cleanupSafetyMonitoring().catchError((e) {
+          // Silently handle cleanup errors
+        });
         service.stopSelf();
       });
 
@@ -259,7 +262,10 @@ class BackgroundProcessingService {
       service.on(CHANNEL_STOP).listen((event) async {
         _serviceRunning = false;
         _processingActive = false;
-        await _cleanupSafetyMonitoring();
+        // Clean up without blocking to avoid timeout
+        _cleanupSafetyMonitoring().catchError((e) {
+          // Silently handle cleanup errors
+        });
         // Stop the service completely when processing is stopped
         service.stopSelf();
       });
@@ -380,10 +386,12 @@ class BackgroundProcessingService {
             'Gemma processing stopped due to low battery ($batteryLevel%)',
       });
 
-      // Clean up subscriptions
-      await _cleanupSafetyMonitoring();
+      // Clean up subscriptions without blocking to avoid timeout
+      _cleanupSafetyMonitoring().catchError((e) {
+        // Silently handle cleanup errors
+      });
 
-      // Stop the service
+      // Stop the service immediately
       service.stopSelf();
     } catch (e) {
       // Handle error silently
@@ -425,10 +433,12 @@ class BackgroundProcessingService {
               'Gemini processing stopped - switched from WiFi to mobile data',
         });
 
-        // Clean up subscriptions
-        await _cleanupSafetyMonitoring();
+        // Clean up subscriptions without blocking to avoid timeout
+        _cleanupSafetyMonitoring().catchError((e) {
+          // Silently handle cleanup errors
+        });
 
-        // Stop the service
+        // Stop the service immediately
         service.stopSelf();
       }
     } catch (e) {
@@ -650,14 +660,16 @@ class BackgroundProcessingService {
         'totalCount': totalCount,
       });
 
-      // Stop the service after processing is complete
-      // Allow a brief delay for the notification to be shown
-      await Future.delayed(const Duration(seconds: 2));
-
-      // Clean up processing state and safety monitoring
+      // Clean up processing state immediately (synchronous)
       _processingActive = false;
-      await _cleanupSafetyMonitoring();
 
+      // Clean up safety monitoring without blocking
+      // Use unawaited to avoid blocking the service stop
+      _cleanupSafetyMonitoring().catchError((e) {
+        // Silently handle cleanup errors
+      });
+
+      // Stop the service immediately to avoid timeout on Android 16+
       service.stopSelf();
     } catch (e) {
       updateNotification(
@@ -667,14 +679,16 @@ class BackgroundProcessingService {
       );
       service.invoke(CHANNEL_ERROR, {'error': e.toString()});
 
-      // Stop the service on error as well
-      // Allow a brief delay for the notification to be shown
-      await Future.delayed(const Duration(seconds: 2));
-
-      // Clean up processing state and safety monitoring
+      // Clean up processing state immediately (synchronous)
       _processingActive = false;
-      await _cleanupSafetyMonitoring();
 
+      // Clean up safety monitoring without blocking
+      // Use unawaited to avoid blocking the service stop
+      _cleanupSafetyMonitoring().catchError((e) {
+        // Silently handle cleanup errors
+      });
+
+      // Stop the service immediately to avoid timeout on Android 16+
       service.stopSelf();
     }
   }

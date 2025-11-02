@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shots_studio/widgets/app_drawer/index.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
+import 'package:shots_studio/services/snackbar_service.dart';
 import 'package:shots_studio/l10n/app_localizations.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/screens/settings_screen.dart';
@@ -148,14 +149,10 @@ class _AppDrawerState extends State<AppDrawer> {
     if (widget.currentDevMode == true) {
       if (widget.onDevModeChanged != null) {
         widget.onDevModeChanged!(false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context)?.developerModeDisabled ??
-                  'Advanced settings disabled',
-            ),
-            duration: Duration(seconds: 2),
-          ),
+        SnackbarService().showInfo(
+          context,
+          AppLocalizations.of(context)?.developerModeDisabled ??
+              'Advanced settings disabled',
         );
       }
     }

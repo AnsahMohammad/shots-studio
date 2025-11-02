@@ -513,5 +513,53 @@
   "close": "Close",
   "@close": {
     "description": "Close button text"
+  },
+  "quickCreateCollection": "Quick Create Collection",
+  "@quickCreateCollection": {
+    "description": "Title for quick create collection dialog"
+  },
+  "quickCreateCollectionMessage": "Create a new collection \"{collectionName}\" with {count} screenshot(s) from your search results?",
+  "@quickCreateCollectionMessage": {
+    "description": "Message asking user to confirm quick collection creation",
+    "placeholders": {
+      "collectionName": {
+        "type": "String",
+        "example": "Invoice"
+      },
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "quickCreateWhatHappens": "What happens:",
+  "@quickCreateWhatHappens": {
+    "description": "Label for information section in quick create dialog"
+  },
+  "quickCreateExplanation": "All screenshots from your search results will be added to this new collection. You can customize the collection name and settings later.",
+  "@quickCreateExplanation": {
+    "description": "Explanation of what happens when quick creating a collection"
+  },
+  "dontShowAgain": "Don't show this again",
+  "@dontShowAgain": {
+    "description": "Checkbox label to not show dialog again"
+  },
+  "create": "Create",
+  "@create": {
+    "description": "Create button text"
+  },
+  "createCollectionFromSearchResults": "Create collection from search results",
+  "@createCollectionFromSearchResults": {
+    "description": "Tooltip for button to create collection from search results"
+  },
+  "noScreenshotsFoundFor": "No screenshots found for \"{query}\"",
+  "@noScreenshotsFoundFor": {
+    "description": "Message when no screenshots match the search query",
+    "placeholders": {
+      "query": {
+        "type": "String",
+        "example": "invoice"
+      }
+    }
   }
 }

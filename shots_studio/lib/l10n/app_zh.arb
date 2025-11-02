@@ -135,6 +135,51 @@
   "contactOnGitHub": "在 GitHub 上联系",
   "noSponsorshipOptions": "目前没有可用的赞助选项。",
   "close": "关闭",
+  "quickCreateCollection": "快速创建集合",
+  "@quickCreateCollection": {
+    "description": "Quick create collection dialog title"
+  },
+  "quickCreateCollectionMessage": "是否要创建名为 \"{collectionName}\" 的集合，包含 {count} 张截图？",
+  "@quickCreateCollectionMessage": {
+    "description": "Quick create collection confirmation message",
+    "placeholders": {
+      "collectionName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "quickCreateWhatHappens": "会发生什么？",
+  "@quickCreateWhatHappens": {
+    "description": "What happens section header in quick create dialog"
+  },
+  "quickCreateExplanation": "我们将立即创建一个包含所有搜索结果的新集合。",
+  "@quickCreateExplanation": {
+    "description": "Explanation of what quick create does"
+  },
+  "dontShowAgain": "不再显示",
+  "@dontShowAgain": {
+    "description": "Don't show again checkbox label"
+  },
+  "create": "创建",
+  "@create": {
+    "description": "Create button text"
+  },
+  "createCollectionFromSearchResults": "从搜索结果创建集合",
+  "@createCollectionFromSearchResults": {
+    "description": "Tooltip for quick create collection button"
+  },
+  "noScreenshotsFoundFor": "未找到与 \"{query}\" 相关的截图",
+  "@noScreenshotsFoundFor": {
+    "description": "Message shown when no screenshots match the search query",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
   "writeTagsToXMP": "将标签写入XMP",
   "xmpMetadataWritten": "XMP元数据已写入文件"
 }

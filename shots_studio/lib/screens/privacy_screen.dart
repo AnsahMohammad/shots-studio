@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shots_studio/services/snackbar_service.dart';
 import 'package:shots_studio/utils/privacy_content_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
+
+// Version-specific privacy acknowledgment key
+const String _privacyAcknowledgementKey = 'privacyAcknowledgementAccepted_v1';
 
 class PrivacyScreen extends StatefulWidget {
   final bool isAcknowledgementRequired;
@@ -86,15 +88,8 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       // Track privacy agreement
       AnalyticsService().logFeatureUsed('privacy_screen_agreed');
 
-      // Get app version to make privacy acknowledgment version-specific
-      final packageInfo = await PackageInfo.fromPlatform();
-      final appVersion = packageInfo.version;
-
-      // Version-specific privacy acknowledgment key
-      final String privacyAcknowledgementKey =
-          'privacyAcknowledgementAccepted_v$appVersion';
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(privacyAcknowledgementKey, true);
+      await prefs.setBool(_privacyAcknowledgementKey, true);
 
       if (widget.onAgreed != null) {
         widget.onAgreed!();
@@ -491,15 +486,8 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
 
 // Helper function to show privacy screen when acknowledgment is needed
 Future<bool> showPrivacyScreenIfNeeded(BuildContext context) async {
-  // Get app version to make privacy acknowledgment version-specific
-  final packageInfo = await PackageInfo.fromPlatform();
-  final appVersion = packageInfo.version;
-
-  // Version-specific privacy acknowledgment key
-  final String privacyAcknowledgementKey =
-      'privacyAcknowledgementAccepted_v$appVersion';
   final prefs = await SharedPreferences.getInstance();
-  bool? acknowledged = prefs.getBool(privacyAcknowledgementKey);
+  bool? acknowledged = prefs.getBool(_privacyAcknowledgementKey);
 
   if (acknowledged == true) {
     // Privacy already accepted for this version, no need to show screen

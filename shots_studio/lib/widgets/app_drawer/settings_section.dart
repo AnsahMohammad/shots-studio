@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/utils/theme_manager.dart';
 import 'package:shots_studio/l10n/app_localizations.dart';
+import 'package:shots_studio/services/haptic_service.dart';
 
 class SettingsSection extends StatefulWidget {
   final String? currentApiKey;
@@ -54,12 +55,15 @@ class _SettingsSectionState extends State<SettingsSection> {
   bool _devMode = false;
   bool _hardDeleteEnabled = false;
   bool _safeDeleteEnabled = true;
+  bool _enhancedAnimationsEnabled = true;
   String _selectedLanguage = 'en'; // Default to English
 
   static const String _autoProcessEnabledPrefKey = 'auto_process_enabled';
   static const String _amoledModeEnabledPrefKey = 'amoled_mode_enabled';
   static const String _devModePrefKey = 'dev_mode';
   static const String _hardDeleteEnabledPrefKey = 'hard_delete_enabled';
+  static const String _enhancedAnimationsEnabledPrefKey =
+      'enhanced_animations_enabled';
   static const String _selectedLanguagePrefKey = 'selected_language';
 
   @override
@@ -106,6 +110,9 @@ class _SettingsSectionState extends State<SettingsSection> {
     } else {
       _loadHardDeleteEnabledPref();
     }
+
+    // Initialize enhanced animations state
+    _loadEnhancedAnimationsEnabledPref();
 
     // Initialize language selection
     _loadLanguagePref();
@@ -154,6 +161,16 @@ class _SettingsSectionState extends State<SettingsSection> {
         _hardDeleteEnabled = prefs.getBool(_hardDeleteEnabledPrefKey) ?? false;
         _safeDeleteEnabled =
             !_hardDeleteEnabled; // Safe delete is opposite of hard delete
+      });
+    }
+  }
+
+  void _loadEnhancedAnimationsEnabledPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _enhancedAnimationsEnabled =
+            prefs.getBool(_enhancedAnimationsEnabledPrefKey) ?? true;
       });
     }
   }
@@ -216,6 +233,11 @@ class _SettingsSectionState extends State<SettingsSection> {
   Future<void> _saveHardDeleteEnabled(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_hardDeleteEnabledPrefKey, value);
+  }
+
+  Future<void> _saveEnhancedAnimationsEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_enhancedAnimationsEnabledPrefKey, value);
   }
 
   Future<void> _saveSelectedLanguage(String value) async {
@@ -609,6 +631,39 @@ class _SettingsSectionState extends State<SettingsSection> {
               widget.onHardDeleteChanged!(
                 !value,
               ); // Pass the hard delete value (opposite of safe delete)
+            }
+          },
+        ),
+        SwitchListTile(
+          secondary: Icon(Icons.animation, color: theme.colorScheme.primary),
+          title: Text(
+            'Enhanced Animations',
+            style: TextStyle(color: theme.colorScheme.onSecondaryContainer),
+          ),
+          subtitle: Text(
+            'Enable smooth animations and haptics (beta)',
+            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+          ),
+          value: _enhancedAnimationsEnabled,
+          activeThumbColor: theme.colorScheme.primary,
+          onChanged: (bool value) {
+            setState(() {
+              _enhancedAnimationsEnabled = value;
+            });
+            _saveEnhancedAnimationsEnabled(value);
+
+            HapticService.updateEnhancedAnimationsSetting(value);
+
+            // Track analytics for enhanced animations setting
+            AnalyticsService().logFeatureUsed(
+              'settings_enhanced_animations_${value ? 'enabled' : 'disabled'}',
+            );
+
+            // Haptic feedback when toggling (if enabled)
+            if (value) {
+              HapticService.success();
+            } else {
+              HapticService.lightImpact();
             }
           },
         ),
