@@ -635,37 +635,6 @@ class _SettingsSectionState extends State<SettingsSection> {
           },
         ),
         SwitchListTile(
-          secondary: Icon(
-            Icons.developer_mode,
-            color: theme.colorScheme.primary,
-          ),
-          title: Text(
-            AppLocalizations.of(context)?.developerMode ?? 'Advanced Settings',
-            style: TextStyle(color: theme.colorScheme.onSecondaryContainer),
-          ),
-          subtitle: Text(
-            'Show extra info and enable advanced settings',
-            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-          ),
-          value: _devMode,
-          activeThumbColor: theme.colorScheme.primary,
-          onChanged: (bool value) {
-            setState(() {
-              _devMode = value;
-            });
-            _saveDevMode(value);
-
-            // Track analytics for expert/dev mode setting
-            AnalyticsService().logFeatureUsed(
-              'settings_expert_mode_${value ? 'enabled' : 'disabled'}',
-            );
-
-            if (widget.onDevModeChanged != null) {
-              widget.onDevModeChanged!(value);
-            }
-          },
-        ),
-        SwitchListTile(
           secondary: Icon(Icons.animation, color: theme.colorScheme.primary),
           title: Text(
             'Enhanced Animations',
@@ -695,6 +664,37 @@ class _SettingsSectionState extends State<SettingsSection> {
               HapticService.success();
             } else {
               HapticService.lightImpact();
+            }
+          },
+        ),
+        SwitchListTile(
+          secondary: Icon(
+            Icons.developer_mode,
+            color: theme.colorScheme.primary,
+          ),
+          title: Text(
+            AppLocalizations.of(context)?.developerMode ?? 'Advanced Settings',
+            style: TextStyle(color: theme.colorScheme.onSecondaryContainer),
+          ),
+          subtitle: Text(
+            'Show extra info and enable advanced settings',
+            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+          ),
+          value: _devMode,
+          activeThumbColor: theme.colorScheme.primary,
+          onChanged: (bool value) {
+            setState(() {
+              _devMode = value;
+            });
+            _saveDevMode(value);
+
+            // Track analytics for expert/dev mode setting
+            AnalyticsService().logFeatureUsed(
+              'settings_expert_mode_${value ? 'enabled' : 'disabled'}',
+            );
+
+            if (widget.onDevModeChanged != null) {
+              widget.onDevModeChanged!(value);
             }
           },
         ),

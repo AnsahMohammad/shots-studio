@@ -431,8 +431,8 @@ class _QuickSettingsSectionState extends State<QuickSettingsSection> {
           ),
         ),
 
-        // API Key Input - Hidden for Gemma model
-        if (_selectedModelName.toLowerCase() != 'gemma')
+        // API Key Input - Only shown for Gemini models
+        if (_selectedModelName.toLowerCase().startsWith('gemini'))
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: 16.0,
@@ -604,9 +604,9 @@ class _QuickSettingsSectionState extends State<QuickSettingsSection> {
             ),
           ),
 
-        // Add a helper note about getting an API key - Hidden for Gemma model
+        // Add a helper note about getting an API key - Only shown for Gemini models
         if (_apiKeyController.text.isEmpty &&
-            _selectedModelName.toLowerCase() != 'gemma')
+            _selectedModelName.toLowerCase().startsWith('gemini'))
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: 16.0,

@@ -847,6 +847,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _processWithGemini() async {
     print("Main app: _processWithGemini called");
+    // Check if a valid model is selected
+    if (_selectedModelName.toLowerCase() == 'No AI Model'.toLowerCase()) {
+      print("Main app: No AI model selected");
+      SnackbarService().showWarning(
+        context,
+        'Please select an AI model in settings',
+      );
+      return;
+    }
 
     // Check for API key
     //  if gemma skip API key check
@@ -1633,9 +1642,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   // Helper method to check and auto-process screenshots
   Future<void> _autoProcessWithGemini() async {
-    // Only auto-process if enabled, we have an API key, we're not already processing,
+    // Only auto-process if enabled, a valid model is selected, we have an API key (if needed),
+    // and we're not already processing
     if (_autoProcessEnabled &&
         !_isProcessingAI &&
+        _selectedModelName.toLowerCase() != 'none' &&
         ((_apiKey != null && _apiKey!.isNotEmpty) ||
             _selectedModelName == 'gemma')) {
       // Check if there are any unprocessed screenshots

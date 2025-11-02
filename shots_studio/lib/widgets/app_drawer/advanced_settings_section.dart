@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/services/corrupt_file_service.dart';
-import 'package:shots_studio/services/xmp_metadata_service.dart';
+// import 'package:shots_studio/services/xmp_metadata_service.dart'; // DISABLED - XMP feature not working
 import 'package:shots_studio/models/screenshot_model.dart';
 // import 'package:shots_studio/screens/debug_notifications_screen.dart'; // Uncomment for debugging
 import '../../l10n/app_localizations.dart';
@@ -54,12 +54,12 @@ class _AdvancedSettingsSectionState extends State<AdvancedSettingsSection> {
       !kDebugMode; // Default to false in debug mode, true in production
   bool _serverMessagesEnabled = true;
   bool _betaTestingEnabled = false;
-  bool _xmpWritingEnabled = false;
+  // bool _xmpWritingEnabled = false; // DISABLED - XMP feature not working
 
   static const String _maxParallelPrefKey = 'maxParallel';
   static const String _serverMessagesPrefKey = 'server_messages_enabled';
   static const String _betaTestingPrefKey = 'beta_testing_enabled';
-  static const String _xmpWritingPrefKey = 'xmp_writing_enabled';
+  // static const String _xmpWritingPrefKey = 'xmp_writing_enabled'; // DISABLED
 
   @override
   void initState() {
@@ -86,8 +86,8 @@ class _AdvancedSettingsSectionState extends State<AdvancedSettingsSection> {
       _loadBetaTestingEnabledPref();
     }
 
-    // Initialize XMP writing state
-    _loadXMPWritingEnabledPref();
+    // Initialize XMP writing state - DISABLED
+    // _loadXMPWritingEnabledPref();
   }
 
   void _loadAnalyticsEnabledPref() async {
@@ -111,12 +111,13 @@ class _AdvancedSettingsSectionState extends State<AdvancedSettingsSection> {
     });
   }
 
-  Future<void> _loadXMPWritingEnabledPref() async {
-    final enabled = await XMPMetadataService.isXMPWritingEnabled();
-    setState(() {
-      _xmpWritingEnabled = enabled;
-    });
-  }
+  // DISABLED - XMP feature not working
+  // Future<void> _loadXMPWritingEnabledPref() async {
+  //   final enabled = await XMPMetadataService.isXMPWritingEnabled();
+  //   setState(() {
+  //     _xmpWritingEnabled = enabled;
+  //   });
+  // }
 
   @override
   void didUpdateWidget(covariant AdvancedSettingsSection oldWidget) {
@@ -161,9 +162,10 @@ class _AdvancedSettingsSectionState extends State<AdvancedSettingsSection> {
     await prefs.setBool(_betaTestingPrefKey, value);
   }
 
-  Future<void> _saveXMPWritingEnabled(bool value) async {
-    await XMPMetadataService.setXMPWritingEnabled(value);
-  }
+  // DISABLED - XMP feature not working
+  // Future<void> _saveXMPWritingEnabled(bool value) async {
+  //   await XMPMetadataService.setXMPWritingEnabled(value);
+  // }
 
   /// Clear all corrupt files from the app using the CorruptFileService
   Future<void> _clearCorruptFiles() async {
@@ -413,8 +415,14 @@ class _AdvancedSettingsSectionState extends State<AdvancedSettingsSection> {
             }
           },
         ),
+        // TODO: Fix XMP metadata writing feature - currently failing with permission errors
+        // RecoverableSecurityException when trying to modify files in MediaStore
+        // Either fix the permission handling or remove this feature entirely
         SwitchListTile(
-          secondary: Icon(Icons.tag_outlined, color: theme.colorScheme.primary),
+          secondary: Icon(
+            Icons.tag_outlined,
+            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+          ),
           title: Row(
             children: [
               Expanded(
@@ -425,7 +433,9 @@ class _AdvancedSettingsSectionState extends State<AdvancedSettingsSection> {
                         AppLocalizations.of(context)?.writeTagsToXMP ??
                             'Write Tags to XMP',
                         style: TextStyle(
-                          color: theme.colorScheme.onSecondaryContainer,
+                          color: theme.colorScheme.onSurfaceVariant.withOpacity(
+                            0.5,
+                          ),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -437,7 +447,7 @@ class _AdvancedSettingsSectionState extends State<AdvancedSettingsSection> {
                 icon: Icon(
                   Icons.help_outline,
                   size: 16,
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
                 ),
                 onPressed: () {
                   showDialog(
@@ -459,13 +469,13 @@ class _AdvancedSettingsSectionState extends State<AdvancedSettingsSection> {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: theme.colorScheme.secondary,
+                                  color: theme.colorScheme.error,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  'BETA',
+                                  'DISABLED',
                                   style: TextStyle(
-                                    color: theme.colorScheme.onSecondary,
+                                    color: theme.colorScheme.onError,
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -475,17 +485,10 @@ class _AdvancedSettingsSectionState extends State<AdvancedSettingsSection> {
                           ),
                           content: SingleChildScrollView(
                             child: Text(
-                              '🔧 BETA FEATURE - Be carefully before enabling!\n\n'
-                              'When enabled, AI-generated title will be embedded directly into your image files as searchable metadata.\n\n'
-                              '✅ BENEFITS:\n'
-                              '• Tags become searchable outside shots-studio\n'
-                              '• Works with file managers and photo organizers\n'
-                              '• Metadata travels with the image file\n'
-                              '⚠️ IMPORTANT CHANGES:\n'
-                              '• PNG screenshots → converted to JPEG (95% quality)\n'
-                              '• WebP images → converted to JPEG for compatibility\n'
-                              '• Original image files are permanently modified\n'
-                              '• Existing EXIF data may be replaced\n\n',
+                              '⚠️ TEMPORARILY DISABLED\n\n'
+                              'This feature is currently disabled due to permission issues with Android MediaStore.\n\n'
+                              'The feature was designed to embed AI-generated titles directly into your image files as searchable metadata, but is experiencing compatibility issues.\n\n'
+                              'We are working on a fix. This feature may be removed in a future update if the issues cannot be resolved.',
                               style: TextStyle(
                                 color: theme.colorScheme.onSurfaceVariant,
                                 fontSize: 13,
@@ -512,24 +515,14 @@ class _AdvancedSettingsSectionState extends State<AdvancedSettingsSection> {
             ],
           ),
           subtitle: Text(
-            _xmpWritingEnabled
-                ? 'Metadata embedded in image files (PNG→JPEG conversion)'
-                : 'Embed tags in image files for external searchability',
-            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+            'Temporarily disabled - Permission issues (see help for details)',
+            style: TextStyle(
+              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+            ),
           ),
-          value: _xmpWritingEnabled,
+          value: false, // Always disabled
           activeThumbColor: theme.colorScheme.primary,
-          onChanged: (bool value) {
-            setState(() {
-              _xmpWritingEnabled = value;
-            });
-            _saveXMPWritingEnabled(value);
-
-            // Track analytics for XMP writing setting
-            AnalyticsService().logFeatureUsed(
-              'settings_xmp_writing_${value ? 'enabled' : 'disabled'}',
-            );
-          },
+          onChanged: null, // Disabled - greyed out
         ),
         // Reset AI Processing Button
         Padding(
