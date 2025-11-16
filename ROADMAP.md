@@ -1,6 +1,5 @@
 - Source Tabs like pixel screenshots
 - AI detail info on details Page make it cleaner.
-- accept agreement prompt shown only when there is change in privacy policy doc (can implement with hashes or do manual trigger, or check last time when the file was changed from GitHub / Gitlab / locally)
 - new collection from add collection widget in screenshot details Page itself. 
 - change the select on main screen to 1. remove the delete 2. Multi share, 3. Add to collection
 - opening notification opens the window
@@ -8,3 +7,8 @@
 - add share collection which will copy files into a new folder, either a zip or duplicates
 - onboard Vietnamese 
 - Add backup and restore
+- Add Dated scrollbar
+- Drag and hold to select
+- Source tab rearragnement or helpful message
+- Dynamic section instead of constant feedback
+- Web app or PC App companion
