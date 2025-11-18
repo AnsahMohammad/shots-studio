@@ -2,6 +2,22 @@
   "messages": [
       {
         "show": false,
+        "id": "fdroid_broken_release_Nov16",
+        "title": "Broken F-Droid Pipeline",
+        "message": "Hi everyone!\n\nOur F-Droid pipeline is currently broken for an unknown reason. This is why there have been no recent updates. We are working with the F-Droid team to resolve the issue as soon as possible.\n\nIn the meantime, you can download the F-Droid version (non-F-Droid build) from the official GitLab release below. Thank you.",
+        "type": "info",
+        "priority": "high",
+        "show_once": true,
+        "valid_until": "2026-08-01T00:00:00Z",
+        "is_notification": false,
+        "version": "1.8.148",
+        "beta_only": false,
+        "action_text": "GitLab Release",
+        "dismiss_text": "Dismiss",
+        "action_url": "https://gitlab.com/mohdansah10/shots-studio/-/releases/v1.9.50"
+      },
+      {
+        "show": false,
         "id": "github_outage_announcement_sep09",
         "title": "Temporary GitHub Repository Outage",
         "message": "Hi everyone! \n\nOur GitHub repository is currently unavailable due to an automated flagging issue (similar to what happened during the last release). This means the latest release distribution on GitHub will be delayed by about 2 days.\n\n Please use the gitlab mirror to refer to the source code.\n\n F-Droid users however are not affected since builds are sourced from GitLab.\n\nWe appreciate your patience and support while GitHub is being restored. 🙏",
@@ -17,7 +33,7 @@
         "action_url": "https://gitlab.com/mohdansah10/shots-studio"
       },
      {
-        "show": true,
+        "show": false,
         "id": "play_release_invite",
         "title": "🚀 Join the Google Play Beta Release!",
         "message": "Hey beta testers! 👋\n\nThe Play Store launch is just around the corner, but we need your help first. We're looking for at least 12 awesome people to test the Play Store version of Shots-Studio for 12 days.\nIf you’re up for it, please fill out the form below.\n\nAs a thank you, you’ll get the Play Store version of the app for free! 🎉",

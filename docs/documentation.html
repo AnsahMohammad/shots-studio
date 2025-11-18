@@ -269,6 +269,15 @@
                     <a href="#api-reference" class="docs-nav-link">API Reference</a>
                 </li>
                 <li class="docs-nav-item">
+                    <a href="#ocr-feature" class="docs-nav-link">OCR Feature</a>
+                </li>
+                <li class="docs-nav-item">
+                    <a href="#safety-features" class="docs-nav-link">Safety Features</a>
+                </li>
+                <li class="docs-nav-item">
+                    <a href="#update-installer" class="docs-nav-link">Update Installer</a>
+                </li>
+                <li class="docs-nav-item">
                     <a href="#server-messages" class="docs-nav-link">Server Messages</a>
                 </li>
                 <li class="docs-nav-item">
@@ -545,6 +554,170 @@ Authorization: Bearer YOUR_API_KEY
                     <li>Suggested tags and categories</li>
                     <li>Content description and context</li>
                 </ul>
+            </section>
+
+            <section id="ocr-feature">
+                <h2>OCR (Optical Character Recognition) Feature</h2>
+
+                <h3>Overview</h3>
+                <p>The OCR feature allows you to extract text from screenshots using the Tesseract OCR engine. This feature works completely offline and doesn't require internet connectivity.</p>
+
+                <h3>Key Features</h3>
+                <ul>
+                    <li><strong>Text Extraction</strong>: Extracts text from screenshot images using Tesseract OCR</li>
+                    <li><strong>Offline Processing</strong>: Works completely offline without internet connectivity</li>
+                    <li><strong>Clipboard Integration</strong>: Automatically copies extracted text to clipboard</li>
+                    <li><strong>User-Friendly Dialog</strong>: Shows extracted text in a dialog for review</li>
+                    <li><strong>Platform Support</strong>: Available on Android and iOS</li>
+                </ul>
+
+                <h3>How to Use</h3>
+                <ol>
+                    <li>Open any screenshot in the Screenshot Details screen</li>
+                    <li>Click the text extraction button (🔤) in the bottom navigation bar</li>
+                    <li>The app will process the image and extract any text found</li>
+                    <li>A dialog will display the extracted text</li>
+                    <li>Text is automatically copied to clipboard</li>
+                    <li>You can copy the text again if needed</li>
+                </ol>
+
+                <h3>Supported Image Sources</h3>
+                <ul>
+                    <li>File path-based images (mobile)</li>
+                    <li>Byte array-based images (web)</li>
+                    <li>Automatic temporary file creation when needed</li>
+                </ul>
+
+                <h3>Limitations</h3>
+                <ul>
+                    <li>OCR accuracy depends on image quality and text clarity</li>
+                    <li>Works best with clear, high-contrast text</li>
+                    <li>Processing time depends on image size and complexity</li>
+                    <li>Currently supports English by default (extensible to other languages)</li>
+                    <li>No layout preservation (basic text extraction only)</li>
+                </ul>
+
+                <div class="info-box">
+                    <div class="info-title">💡 Pro Tip</div>
+                    <p>For best OCR results, ensure your screenshots have clear, readable text with good contrast. Screenshots of documents, messages, or text-heavy content work particularly well.</p>
+                </div>
+            </section>
+
+            <section id="safety-features">
+                <h2>Auto-Processing Safety Features</h2>
+
+                <h3>Overview</h3>
+                <p>Shots Studio includes intelligent safety features that protect users from excessive resource usage during background AI processing. These features are model-specific and automatically monitor your device's battery and network conditions.</p>
+
+                <h3>Battery Protection (Gemma Models)</h3>
+                <p>When processing with Gemma models (which run locally on your device):</p>
+                <ul>
+                    <li><strong>Monitoring</strong>: Battery level checked every 2 minutes</li>
+                    <li><strong>Threshold</strong>: Processing automatically stops when battery ≤ 20%</li>
+                    <li><strong>Reason</strong>: Gemma runs locally and can drain battery quickly</li>
+                    <li><strong>Notification</strong>: You'll see a specific "Gemma Processing Stopped" message</li>
+                </ul>
+
+                <h3>Network Protection (Gemini Models)</h3>
+                <p>When processing with Gemini models (which use cloud API):</p>
+                <ul>
+                    <li><strong>Monitoring</strong>: Detects network connectivity changes in real-time</li>
+                    <li><strong>Trigger</strong>: Stops when switching from WiFi to mobile data</li>
+                    <li><strong>Reason</strong>: Gemini uses cloud API and can consume significant mobile data</li>
+                    <li><strong>Notification</strong>: You'll see a specific "Gemini Processing Stopped" message</li>
+                </ul>
+
+                <h3>How It Works</h3>
+                <p>When a safety condition is detected:</p>
+                <ol>
+                    <li><strong>Background Service Detects Issue</strong>: Battery ≤20% (Gemma) or WiFi→Mobile (Gemini)</li>
+                    <li><strong>Processing Stops</strong>: Background processing is immediately halted</li>
+                    <li><strong>Notification Shown</strong>: You see a prominent safety notification</li>
+                    <li><strong>App UI Updated</strong>: The app receives the safety stop event and updates UI</li>
+                    <li><strong>Animation Stops</strong>: Processing animation stops immediately</li>
+                    <li><strong>User Informed</strong>: Appropriate message explains what happened</li>
+                </ol>
+
+                <h3>Key Benefits</h3>
+                <ul>
+                    <li><strong>No Stuck UI</strong>: App never shows "processing" when it's actually stopped</li>
+                    <li><strong>Clear Communication</strong>: You know exactly why processing stopped</li>
+                    <li><strong>Model-Specific</strong>: Different safety rules for different AI models</li>
+                    <li><strong>Instant Response</strong>: UI updates immediately when safety stop occurs</li>
+                    <li><strong>Zero Impact When Idle</strong>: Monitoring only active during processing</li>
+                </ul>
+
+                <div class="warning-box">
+                    <div class="warning-title">⚠️ Important Note</div>
+                    <p>These safety features are designed to protect your battery and data usage. While you can restart processing after addressing the issue (charging or reconnecting to WiFi), the app prioritizes your device's health and your data plan.</p>
+                </div>
+            </section>
+
+            <section id="update-installer">
+                <h2>Update Installer Feature</h2>
+
+                <h3>Overview</h3>
+                <p>The update installer allows you to download and install app updates directly from within the app, without needing to manually download APK files from GitHub.</p>
+
+                <h3>Key Features</h3>
+                <ul>
+                    <li><strong>Automatic Platform Detection</strong>: Only shows install option on Android devices</li>
+                    <li><strong>Download Progress</strong>: Real-time progress tracking during APK download</li>
+                    <li><strong>Permission Management</strong>: Automatically requests and handles install permissions</li>
+                    <li><strong>Error Handling</strong>: Graceful fallback to browser-based download if installation fails</li>
+                    <li><strong>File Size Display</strong>: Shows estimated download size before starting</li>
+                    <li><strong>Analytics Integration</strong>: Tracks user interactions with update dialogs</li>
+                </ul>
+
+                <h3>How It Works</h3>
+                
+                <h4>Update Detection</h4>
+                <p>The app automatically checks for updates by comparing your current version with the latest release on GitHub. You'll see an update dialog when a new version is available.</p>
+
+                <h4>Installation Process (Android)</h4>
+                <ol>
+                    <li><strong>Permission Check</strong>: Verifies if the app has permission to install unknown apps</li>
+                    <li><strong>Permission Request</strong>: If not granted, redirects you to Android settings to enable it</li>
+                    <li><strong>APK Download</strong>: Downloads the APK file from GitHub releases with progress tracking</li>
+                    <li><strong>Installation</strong>: Uses Android's built-in APK installer to install the update</li>
+                    <li><strong>Cleanup</strong>: Temporary files are automatically handled by the system</li>
+                </ol>
+
+                <h4>Other Platforms</h4>
+                <p>On non-Android platforms or if installation fails, the app provides a fallback option to open the GitHub releases page in your browser for manual download.</p>
+
+                <h3>User Experience</h3>
+                
+                <h4>For Android Users</h4>
+                <ol>
+                    <li>Update dialog appears with "Install" button</li>
+                    <li>Shows download size estimate</li>
+                    <li>Click "Install" to start download</li>
+                    <li>Real-time progress indicator</li>
+                    <li>Automatic installation when download completes</li>
+                    <li>Success message with instruction to restart</li>
+                </ol>
+
+                <h4>For Other Platforms</h4>
+                <ol>
+                    <li>Update dialog appears with "Download" button</li>
+                    <li>Click "Download" opens GitHub releases page in browser</li>
+                    <li>Manually download and install</li>
+                </ol>
+
+                <h3>Security Considerations</h3>
+                <ul>
+                    <li>APK files are downloaded directly from official GitHub releases</li>
+                    <li>File integrity is verified by checking download size</li>
+                    <li>Uses Android's built-in installation process for security</li>
+                    <li>Temporary files are stored in app's cache directory</li>
+                    <li>FileProvider ensures secure file access across apps</li>
+                </ul>
+
+                <div class="info-box">
+                    <div class="info-title">💡 First Time Setup</div>
+                    <p>The first time you use the update installer, Android will prompt you to allow the app to install unknown apps. This is a standard security permission required for all apps that want to install APK files.</p>
+                </div>
             </section>
 
             <section id="contributing">

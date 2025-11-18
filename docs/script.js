@@ -117,18 +117,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             });
             
-            // Update hero stats
+            // Update hero stats - set data attributes first, then trigger animation
             const downloadsElement = document.getElementById('downloads-count');
             const starsElement = document.getElementById('stars-count');
             
             if (downloadsElement) {
-                downloadsElement.textContent = totalDownloads.toLocaleString();
                 downloadsElement.dataset.target = totalDownloads;
+                downloadsElement.textContent = '0'; // Start from 0
             }
             
             if (starsElement) {
-                starsElement.textContent = `${data.stargazers_count}★`;
                 starsElement.dataset.target = data.stargazers_count;
+                starsElement.textContent = '0★'; // Start from 0
             }
             
             // Update about section stats
@@ -136,21 +136,34 @@ document.addEventListener('DOMContentLoaded', function() {
             const aboutStarsElement = document.getElementById('about-stars');
             
             if (aboutDownloadsElement) {
-                aboutDownloadsElement.textContent = totalDownloads.toLocaleString();
                 aboutDownloadsElement.dataset.target = totalDownloads;
+                aboutDownloadsElement.textContent = '0'; // Start from 0
             }
             
             if (aboutStarsElement) {
-                aboutStarsElement.textContent = `${data.stargazers_count}★`;
                 aboutStarsElement.dataset.target = data.stargazers_count;
+                aboutStarsElement.textContent = '0★'; // Start from 0
             }
-            
-            // Mark that GitHub stats have been loaded
-            statsAnimationTriggered = false;
             
             // Trigger counter animation if the stats section is visible
             const statsSection = document.querySelector('.hero-stats');
             if (statsSection) {
+                const rect = statsSection.getBoundingClientRect();
+                const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+                
+                if (isVisible && !statsAnimationTriggered) {
+                    setTimeout(() => {
+                        animateCounters();
+                        statsAnimationTriggered = true;
+                    }, 100);
+                }
+            }
+            
+        } catch (error) {
+            console.log('Could not fetch GitHub stats:', error);
+            // On error, trigger animation with fallback HTML values if section is visible
+            const statsSection = document.querySelector('.hero-stats');
+            if (statsSection && !statsAnimationTriggered) {
                 const rect = statsSection.getBoundingClientRect();
                 const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
                 
@@ -161,10 +174,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     }, 100);
                 }
             }
-            
-        } catch (error) {
-            console.log('Could not fetch GitHub stats:', error);
-            // Fallback values are already set in HTML
         }
     }
 
@@ -450,7 +459,12 @@ document.addEventListener('DOMContentLoaded', function() {
         counters.forEach(counter => {
             const originalText = counter.textContent;
             const hasStars = originalText.includes('★');
-            const target = parseInt(originalText.replace(/[^\d]/g, '')) || parseInt(counter.dataset.target) || 0;
+            
+            // Prioritize dataset.target, fallback to text content
+            let target = parseInt(counter.dataset.target);
+            if (!target || isNaN(target)) {
+                target = parseInt(originalText.replace(/[^\d]/g, ''));
+            }
             
             if (target > 0) {
                 const increment = target / 200;
@@ -509,22 +523,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const statsObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting && !statsAnimationTriggered) {
-                    // Only trigger animation if GitHub stats haven't been loaded yet
-                    const downloadsElement = document.getElementById('downloads-count');
-                    const starsElement = document.getElementById('stars-count');
-                    
-                    // If GitHub stats are still loading, wait a bit
-                    if (downloadsElement && !downloadsElement.dataset.target) {
-                        setTimeout(() => {
-                            if (!statsAnimationTriggered) {
-                                animateCounters();
-                                statsAnimationTriggered = true;
-                            }
-                        }, 1000);
-                    } else if (!statsAnimationTriggered) {
-                        animateCounters();
-                        statsAnimationTriggered = true;
-                    }
+                    // Small delay to ensure GitHub stats have loaded
+                    setTimeout(() => {
+                        if (!statsAnimationTriggered) {
+                            animateCounters();
+                            statsAnimationTriggered = true;
+                        }
+                    }, 500);
                     
                     statsObserver.unobserve(entry.target);
                 }
@@ -692,16 +697,6 @@ document.addEventListener('DOMContentLoaded', function() {
             clearInterval(autoplayInterval);
             startAutoplay();
         };
-        
-        // Pause autoplay when user hovers over the carousel
-        const carouselContainer = document.querySelector('.multi-carousel-container');
-        carouselContainer.addEventListener('mouseenter', () => {
-            clearInterval(autoplayInterval);
-        });
-        
-        carouselContainer.addEventListener('mouseleave', () => {
-            startAutoplay();
-        });
         
         // Initialize carousel
         updateSlidePositions();

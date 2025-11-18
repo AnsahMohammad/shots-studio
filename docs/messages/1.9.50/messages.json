@@ -2,6 +2,23 @@
   "messages": [
     {
       "show": true,
+      "id": "hero_nov18",
+      "title": "You are a hero! 🦸‍♂️🦸‍♀️",
+      "message": "Thanks for standing with us through play closed testing. Your feedback helped unlock the green light for release 🎉 none of this would've happened without you!\n\nWith ❤️,\nTeam Shots Studio",
+      "type": "info",
+      "priority": "high",
+      "show_once": true,
+      "valid_until": "2026-12-01T00:00:00Z",
+      "is_notification": false,
+      "version": "1.9.50",
+      "beta_only": false,
+      "action_text": "changelogs",
+      "dismiss_text": "dismiss",
+      "action_url": "https://github.com/AnsahMohammad/shots-studio/releases/tag/v1.9.50",
+      "platform": "playstore"
+    },
+    {
+      "show": true,
       "id": "welcome_1_9_50",
       "title": "Here's what's new in Shots Studio 1.9.50! 🚀",
       "message": "You've made your Screenshot manager! 🎉\n\nWhat's new:\n\n - Collections from search \n Enhanced image zooming in full screen.\n Animations and UI updates \n Fixed the App crash on restart bug \n\nCheck out the changelogs for the full logs!\n\nWith ❤️,\nTeam Shots Studio",
