@@ -132,7 +132,8 @@ android {
 // This addresses the non-deterministic baseline.prof file issue
 // See: https://issuetracker.google.com/issues/231837768
 tasks.whenTaskAdded {
-    if (name.contains("ArtProfile") && name.contains("Fdroid")) {
+    if ((name.contains("ArtProfile", ignoreCase = false) || name.contains("BaselineProfile", ignoreCase = false)) 
+        && name.contains("Fdroid", ignoreCase = false)) {
         enabled = false
     }
 }
