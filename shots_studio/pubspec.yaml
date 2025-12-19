@@ -5,7 +5,7 @@ publish_to: 'none'
 
 # The patch version numbering is automatically incremented by the git hook. 
 # Only update major and minor versions manually. 
-version: 1.9.57+6
+version: 1.9.58+6
 
 environment:
   sdk: ^3.7.2
@@ -50,6 +50,7 @@ dependencies:
   timezone: ^0.9.4
   battery_plus: ^6.0.2
   connectivity_plus: ^6.0.5
+  archive: ^4.0.2
 
 dev_dependencies:
   sentry_dart_plugin: ^2.4.1

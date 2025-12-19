@@ -6,10 +6,12 @@ import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/services/autoCategorization/ai_categorization_service.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
+import 'package:shots_studio/services/export_service.dart';
 import 'package:shots_studio/services/hard_delete_service.dart';
 import 'package:shots_studio/services/snackbar_service.dart';
 import 'package:shots_studio/widgets/screenshots/screenshot_card.dart';
 import 'package:shots_studio/widgets/screenshots/auto-scan_dialogue.dart';
+import 'package:shots_studio/widgets/screenshots/export_dialog.dart';
 import 'package:shots_studio/screens/manage_collection_screenshots_screen.dart';
 import 'package:shots_studio/screens/screenshot_swipe_detail_screen.dart';
 import 'package:shots_studio/screens/edit_collection_screen.dart';
@@ -501,6 +503,61 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
     }
   }
 
+  Future<void> _showExportDialog(List<Screenshot> screenshots) async {
+    final ExportOptions? options = await showDialog<ExportOptions>(
+      context: context,
+      builder: (context) => ExportDialog(
+        collectionName: _nameController.text.isEmpty
+            ? 'Collection'
+            : _nameController.text,
+        screenshotCount: screenshots.length,
+      ),
+    );
+
+    if (options == null) return; // User cancelled
+
+    // Show loading indicator
+    if (!mounted) return;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    ExportResult result;
+
+    if (options.asZip) {
+      result = await ExportService.exportAsZip(
+        screenshots: screenshots,
+        collectionName: _nameController.text.isEmpty
+            ? 'Collection'
+            : _nameController.text,
+      );
+    } else {
+      result = await ExportService.exportAsFiles(
+        screenshots: screenshots,
+        isCut: false, // Always copy, never cut
+      );
+    }
+
+    // Dismiss loading indicator
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+
+    // Show result message
+    if (mounted) {
+      if (result.success) {
+        SnackbarService().showSuccess(context, result.message);
+      } else {
+        SnackbarService().showError(context, result.message);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -532,6 +589,13 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
           backgroundColor: theme.colorScheme.surface,
           elevation: 0,
           actions: [
+            IconButton(
+              icon: const Icon(Icons.share_outlined),
+              onPressed: screenshotsInCollection.isNotEmpty
+                  ? () => _showExportDialog(screenshotsInCollection)
+                  : null,
+              tooltip: 'Export Collection',
+            ),
             IconButton(
               icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
               onPressed: _confirmDelete,
