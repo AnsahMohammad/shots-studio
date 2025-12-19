@@ -13,6 +13,7 @@ class RemindersScreen extends StatefulWidget {
   final List<Screenshot> allScreenshots;
   final List<Collection> allCollections;
   final Function(Collection) onUpdateCollection;
+  final Function(Collection)? onCollectionAdded;
   final Function(String) onDeleteScreenshot;
   final VoidCallback? onScreenshotUpdated;
 
@@ -21,6 +22,7 @@ class RemindersScreen extends StatefulWidget {
     required this.allScreenshots,
     required this.allCollections,
     required this.onUpdateCollection,
+    this.onCollectionAdded,
     required this.onDeleteScreenshot,
     this.onScreenshotUpdated,
   });
@@ -101,6 +103,7 @@ class _RemindersScreenState extends State<RemindersScreen>
               allCollections: widget.allCollections,
               allScreenshots: widget.allScreenshots,
               onUpdateCollection: widget.onUpdateCollection,
+              onCollectionAdded: widget.onCollectionAdded,
               onDeleteScreenshot: widget.onDeleteScreenshot,
               onScreenshotUpdated: () {
                 widget.onScreenshotUpdated?.call();

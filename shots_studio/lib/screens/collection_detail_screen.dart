@@ -929,6 +929,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                                     allScreenshots: widget.allScreenshots,
                                     onUpdateCollection:
                                         widget.onUpdateCollection,
+                                    onCollectionAdded:
+                                        null, // Collection detail screen doesn't need to add new collections
                                     onDeleteScreenshot: (screenshotId) {
                                       widget.onDeleteScreenshot(screenshotId);
                                       // Clean up deleted screenshots from current collection

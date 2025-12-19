@@ -1559,6 +1559,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               allScreenshots: _activeScreenshots,
               allCollections: _collections,
               onUpdateCollection: _updateCollection,
+              onCollectionAdded: _addCollection,
               onDeleteScreenshot: _deleteScreenshot,
               onScreenshotUpdated: () {
                 _saveDataToPrefs();
@@ -2020,6 +2021,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     onUpdateCollection: (updatedCollection) {
                       _updateCollection(updatedCollection);
                     },
+                    onCollectionAdded: _addCollection,
                     onDeleteScreenshot: _deleteScreenshot,
                     onScreenshotUpdated: () {
                       setState(() {});
@@ -2155,6 +2157,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   onUpdateCollection: (updatedCollection) {
                     _updateCollection(updatedCollection);
                   },
+                  onCollectionAdded: _addCollection,
                   onDeleteScreenshot: _deleteScreenshot,
                   onScreenshotUpdated: () {
                     setState(() {});

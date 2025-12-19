@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/screens/screenshot_swipe_detail_screen.dart';
+import 'package:shots_studio/screens/collection_detail_screen.dart';
 import 'package:shots_studio/widgets/screenshots/screenshot_card.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/utils/responsive_utils.dart';
@@ -171,6 +172,8 @@ class _SearchScreenState extends State<SearchScreen> {
     // Get the IDs of all filtered screenshots
     final selectedIds = _filteredScreenshots.map((s) => s.id).toList();
 
+    print("Got list of IDs : $selectedIds");
+
     // Create a title from the search query or use a default
     final String collectionTitle =
         _searchQuery.trim().isEmpty
@@ -196,9 +199,31 @@ class _SearchScreenState extends State<SearchScreen> {
     // Add it through the callback
     widget.onCollectionAdded(newCollection);
 
+    print(
+      "Created collection: ${newCollection.name} with ${newCollection.screenshotIds.length} screenshots.",
+    );
+
     // Log analytics
     AnalyticsService().logFeatureUsed(
       'create_collection_from_search_results_quick',
+    );
+
+    // Navigate to the newly created collection detail screen
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder:
+            (context) => CollectionDetailScreen(
+              collection: newCollection,
+              allCollections: widget.allCollections,
+              allScreenshots: widget.allScreenshots,
+              onUpdateCollection: widget.onUpdateCollection,
+              onDeleteCollection: (collectionId) {
+                // Pop back to previous screen if this collection is deleted
+                Navigator.of(context).pop();
+              },
+              onDeleteScreenshot: widget.onDeleteScreenshot,
+            ),
+      ),
     );
   }
 
@@ -267,6 +292,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         allCollections: widget.allCollections,
                         allScreenshots: widget.allScreenshots,
                         onUpdateCollection: widget.onUpdateCollection,
+                        onCollectionAdded: widget.onCollectionAdded,
                         onDeleteScreenshot: widget.onDeleteScreenshot,
                         onScreenshotUpdated: () {
                           setState(() {});

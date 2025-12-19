@@ -494,7 +494,15 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
               allScreenshots: widget.allScreenshots,
               allCollections: widget.allCollections,
               onUpdateCollection: widget.onUpdateCollection,
-              onCollectionAdded: widget.onCollectionAdded ?? (_) {},
+              onCollectionAdded:
+                  widget.onCollectionAdded ??
+                  (_) {
+                    // If onCollectionAdded is null, log a warning
+                    // This should not happen anymore since we're passing it through the widget tree
+                    print(
+                      'WARNING: onCollectionAdded is null in tag search, collection will not be saved!',
+                    );
+                  },
               onDeleteScreenshot: widget.onDeleteScreenshot,
               initialSearchQuery: tag,
             ),
