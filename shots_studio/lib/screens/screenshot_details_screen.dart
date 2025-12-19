@@ -1656,7 +1656,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
                         ),
                       ),
                       Text(
-                        'Analyzed on: ${DateFormat('MMM d, yyyy HH:mm a').format(widget.screenshot.aiMetadata!.processingTime)}',
+                        'Analyzed on: ${DateFormat('MMM d, yyyy, HH:mm').format(widget.screenshot.aiMetadata!.processingTime)}',
                         style: TextStyle(
                           fontSize: 12,
                           color:
