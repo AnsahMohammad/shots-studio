@@ -172,8 +172,6 @@ class _SearchScreenState extends State<SearchScreen> {
     // Get the IDs of all filtered screenshots
     final selectedIds = _filteredScreenshots.map((s) => s.id).toList();
 
-    print("Got list of IDs : $selectedIds");
-
     // Create a title from the search query or use a default
     final String collectionTitle =
         _searchQuery.trim().isEmpty
@@ -198,10 +196,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
     // Add it through the callback
     widget.onCollectionAdded(newCollection);
-
-    print(
-      "Created collection: ${newCollection.name} with ${newCollection.screenshotIds.length} screenshots.",
-    );
 
     // Log analytics
     AnalyticsService().logFeatureUsed(

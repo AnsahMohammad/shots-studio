@@ -510,10 +510,16 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
             .toList();
 
     return PopScope(
-      canPop: !_isSelectionMode,
+      canPop: false,
       onPopInvokedWithResult: (didPop, result) {
-        if (_isSelectionMode && !didPop) {
+        if (didPop) return;
+
+        if (_isSelectionMode) {
+          // If in selection mode, just exit selection mode
           _exitSelectionMode();
+        } else {
+          // If not in selection mode, pop all the way to home
+          Navigator.of(context).popUntil((route) => route.isFirst);
         }
       },
       child: Scaffold(
