@@ -98,7 +98,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _filterScreenshots() {
     if (_searchQuery.isEmpty) {
-      _filteredScreenshots = widget.allScreenshots;
+      _filteredScreenshots =
+          widget.allScreenshots
+              .where((screenshot) => !screenshot.isDeleted)
+              .toList();
     } else {
       // Match if it's a whole word OR starts with the word OR ends with the word
       final RegExp wordPattern = RegExp(
@@ -116,6 +119,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
       _filteredScreenshots =
           widget.allScreenshots.where((screenshot) {
+            // Exclude deleted screenshots
+            if (screenshot.isDeleted) return false;
+
             final titleMatch =
                 screenshot.title != null &&
                 wordPattern.hasMatch(screenshot.title!.toLowerCase());
