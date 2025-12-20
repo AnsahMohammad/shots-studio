@@ -563,13 +563,24 @@ class ScreenshotAnalysisService extends AIService {
       item['collections'] ?? [],
     );
 
-    final List<String> links = List<String>.from(item['links'] ?? []);
+    // Only update fields if AI response has non-empty values
+    // This preserves existing data when AI models (like OCR) only provide partial data
+    final String? newTitle =
+        (item['title'] != null && item['title'].toString().isNotEmpty)
+            ? item['title']
+            : null;
+    final String? newDescription =
+        (item['desc'] != null && item['desc'].toString().isNotEmpty)
+            ? item['desc']
+            : null;
+    final List<String> newTags = List<String>.from(item['tags'] ?? []);
+    final List<String> newLinks = List<String>.from(item['links'] ?? []);
 
     final updatedScreenshot = screenshot.copyWith(
-      title: item['title'] ?? screenshot.title,
-      description: item['desc'] ?? screenshot.description,
-      tags: List<String>.from(item['tags'] ?? []),
-      links: links,
+      title: newTitle ?? screenshot.title,
+      description: newDescription ?? screenshot.description,
+      tags: newTags.isNotEmpty ? newTags : screenshot.tags,
+      links: newLinks.isNotEmpty ? newLinks : screenshot.links,
       aiProcessed: true,
       aiMetadata: aiMetaData,
     );
@@ -623,15 +634,30 @@ class ScreenshotAnalysisService extends AIService {
           matchedAiItem['collections'] ?? [],
         );
 
-        final List<String> links = List<String>.from(
+        // Only update fields if AI response has non-empty values
+        // This preserves existing data when AI models (like OCR) only provide partial data
+        final String? newTitle =
+            (matchedAiItem['title'] != null &&
+                    matchedAiItem['title'].toString().isNotEmpty)
+                ? matchedAiItem['title']
+                : null;
+        final String? newDescription =
+            (matchedAiItem['desc'] != null &&
+                    matchedAiItem['desc'].toString().isNotEmpty)
+                ? matchedAiItem['desc']
+                : null;
+        final List<String> newTags = List<String>.from(
+          matchedAiItem['tags'] ?? [],
+        );
+        final List<String> newLinks = List<String>.from(
           matchedAiItem['links'] ?? [],
         );
 
         final updatedScreenshot = screenshot.copyWith(
-          title: matchedAiItem['title'] ?? screenshot.title,
-          description: matchedAiItem['desc'] ?? screenshot.description,
-          tags: List<String>.from(matchedAiItem['tags'] ?? []),
-          links: links,
+          title: newTitle ?? screenshot.title,
+          description: newDescription ?? screenshot.description,
+          tags: newTags.isNotEmpty ? newTags : screenshot.tags,
+          links: newLinks.isNotEmpty ? newLinks : screenshot.links,
           aiProcessed: true,
           aiMetadata: aiMetaData,
         );
