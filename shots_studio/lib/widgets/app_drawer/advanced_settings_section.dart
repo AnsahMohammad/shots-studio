@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shots_studio/models/collection_model.dart';
-import 'package:shots_studio/services/analytics/analytics_service.dart';
-import 'package:shots_studio/services/corrupt_file_service.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/widgets/backup_and_restore.dart';
+import 'package:shots_studio/widgets/app_drawer/advanced_settings/index.dart';
 import '../../l10n/app_localizations.dart';
 
-class AdvancedSettingsSection extends StatefulWidget {
+/// The advanced settings section of the app drawer.
+///
+/// This section contains various advanced configuration options including:
+/// - Performance Menu (navigation to performance monitor)
+/// - Max Parallel AI Processes (slider)
+/// - Analytics & Telemetry toggle
+/// - Server Messages toggle
+/// - Beta Testing toggle
+/// - XMP Settings (disabled)
+/// - Backup & Restore card
+/// - Action buttons (Reset AI, Clear Corrupt Files)
+class AdvancedSettingsSection extends StatelessWidget {
   final int currentLimit;
   final Function(int) onLimitChanged;
   final int currentMaxParallel;
@@ -49,138 +57,6 @@ class AdvancedSettingsSection extends StatefulWidget {
   });
 
   @override
-  State<AdvancedSettingsSection> createState() =>
-      _AdvancedSettingsSectionState();
-}
-
-class _AdvancedSettingsSectionState extends State<AdvancedSettingsSection> {
-  bool _analyticsEnabled =
-      !kDebugMode; // Default to false in debug mode, true in production
-  bool _serverMessagesEnabled = true;
-  bool _betaTestingEnabled = false;
-  // bool _xmpWritingEnabled = false; // DISABLED - XMP feature not working
-
-  static const String _maxParallelPrefKey = 'maxParallel';
-  static const String _serverMessagesPrefKey = 'server_messages_enabled';
-  static const String _betaTestingPrefKey = 'beta_testing_enabled';
-  // static const String _xmpWritingPrefKey = 'xmp_writing_enabled'; // DISABLED
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Initialize analytics consent state
-    if (widget.currentAnalyticsEnabled != null) {
-      _analyticsEnabled = widget.currentAnalyticsEnabled!;
-    } else {
-      _loadAnalyticsEnabledPref();
-    }
-
-    // Initialize server messages state
-    if (widget.currentServerMessagesEnabled != null) {
-      _serverMessagesEnabled = widget.currentServerMessagesEnabled!;
-    } else {
-      _loadServerMessagesEnabledPref();
-    }
-
-    // Initialize beta testing state
-    if (widget.currentBetaTestingEnabled != null) {
-      _betaTestingEnabled = widget.currentBetaTestingEnabled!;
-    } else {
-      _loadBetaTestingEnabledPref();
-    }
-
-    // Initialize XMP writing state - DISABLED
-    // _loadXMPWritingEnabledPref();
-  }
-
-  void _loadAnalyticsEnabledPref() async {
-    final analyticsService = AnalyticsService();
-    setState(() {
-      _analyticsEnabled = analyticsService.analyticsEnabled;
-    });
-  }
-
-  Future<void> _loadServerMessagesEnabledPref() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _serverMessagesEnabled = prefs.getBool(_serverMessagesPrefKey) ?? true;
-    });
-  }
-
-  Future<void> _loadBetaTestingEnabledPref() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _betaTestingEnabled = prefs.getBool(_betaTestingPrefKey) ?? false;
-    });
-  }
-
-  // DISABLED - XMP feature not working
-  // Future<void> _loadXMPWritingEnabledPref() async {
-  //   final enabled = await XMPMetadataService.isXMPWritingEnabled();
-  //   setState(() {
-  //     _xmpWritingEnabled = enabled;
-  //   });
-  // }
-
-  @override
-  void didUpdateWidget(covariant AdvancedSettingsSection oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.currentAnalyticsEnabled != oldWidget.currentAnalyticsEnabled &&
-        widget.currentAnalyticsEnabled != null) {
-      _analyticsEnabled = widget.currentAnalyticsEnabled!;
-    }
-    if (widget.currentServerMessagesEnabled !=
-            oldWidget.currentServerMessagesEnabled &&
-        widget.currentServerMessagesEnabled != null) {
-      _serverMessagesEnabled = widget.currentServerMessagesEnabled!;
-    }
-    if (widget.currentBetaTestingEnabled !=
-            oldWidget.currentBetaTestingEnabled &&
-        widget.currentBetaTestingEnabled != null) {
-      _betaTestingEnabled = widget.currentBetaTestingEnabled!;
-    }
-  }
-
-  Future<void> _saveMaxParallel(int value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_maxParallelPrefKey, value);
-  }
-
-  Future<void> _saveAnalyticsEnabled(bool value) async {
-    final analyticsService = AnalyticsService();
-    if (value) {
-      await analyticsService.enableAnalytics();
-    } else {
-      await analyticsService.disableAnalytics();
-    }
-  }
-
-  Future<void> _saveServerMessagesEnabled(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_serverMessagesPrefKey, value);
-  }
-
-  Future<void> _saveBetaTestingEnabled(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_betaTestingPrefKey, value);
-  }
-
-  // DISABLED - XMP feature not working
-  // Future<void> _saveXMPWritingEnabled(bool value) async {
-  //   await XMPMetadataService.setXMPWritingEnabled(value);
-  // }
-
-  /// Clear all corrupt files from the app using the CorruptFileService
-  Future<void> _clearCorruptFiles() async {
-    await CorruptFileService.clearCorruptFiles(
-      context,
-      widget.allScreenshots,
-      widget.onClearCorruptFiles,
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
@@ -188,6 +64,7 @@ class _AdvancedSettingsSectionState extends State<AdvancedSettingsSection> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Divider(color: theme.colorScheme.outline),
+        // Section Header
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Text(
@@ -200,404 +77,42 @@ class _AdvancedSettingsSectionState extends State<AdvancedSettingsSection> {
             ),
           ),
         ),
-        ListTile(
-          leading: Icon(Icons.sync_alt, color: theme.colorScheme.primary),
-          title: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  AppLocalizations.of(context)?.maxParallelAI ??
-                      'Max Parallel AI Processes',
-                  style: TextStyle(
-                    color: theme.colorScheme.onSecondaryContainer,
-                  ),
-                ),
-              ),
-              IconButton(
-                icon: Icon(
-                  Icons.help_outline,
-                  size: 16,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder:
-                        (context) => AlertDialog(
-                          title: Text(
-                            'Max Parallel AI Processes',
-                            style: TextStyle(
-                              color: theme.colorScheme.onSurface,
-                            ),
-                          ),
-                          content: Text(
-                            'Controls the maximum number of images sent in one AI request.\n\n'
-                            '• Default: 4 (recommended for most users)\n'
-                            '• Maximum: 8 (recommended for faster processing)\n'
-                            '• Higher values require more internet bandwidth\n'
-                            '• Gemma AI only supports 1 image regardless of this setting\n'
-                            '• Adjust based on your internet connection speed',
-                            style: TextStyle(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              child: Text(
-                                'Got it',
-                                style: TextStyle(
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                  );
-                },
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${widget.currentMaxParallel}',
-                  style: TextStyle(
-                    color: theme.colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Controls parallel image processing. Higher values need more bandwidth. '
-                'Default: 4. \nNote: Gemma only supports 1 image.',
-                style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Text(
-                    '1',
-                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                  Expanded(
-                    child: Slider(
-                      value: widget.currentMaxParallel.toDouble(),
-                      min: 1,
-                      max: 8,
-                      divisions: 7,
-                      label: widget.currentMaxParallel.toString(),
-                      activeColor: theme.colorScheme.primary,
-                      onChanged: (value) {
-                        final intValue = value.round();
-                        widget.onMaxParallelChanged(intValue);
-                        _saveMaxParallel(intValue);
-
-                        // Track analytics for max parallel processes change
-                        AnalyticsService().logFeatureUsed(
-                          'settings_max_parallel_changed',
-                        );
-                      },
-                    ),
-                  ),
-                  Text(
-                    '8',
-                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                ],
-              ),
-            ],
-          ),
+        // Max Parallel AI Processes
+        MaxParallelTile(
+          currentMaxParallel: currentMaxParallel,
+          onMaxParallelChanged: onMaxParallelChanged,
         ),
-        SwitchListTile(
-          secondary: Icon(
-            Icons.analytics_outlined,
-            color: theme.colorScheme.primary,
-          ),
-          title: Text(
-            AppLocalizations.of(context)?.analyticsAndTelemetry ??
-                'Analytics & Telemetry',
-            style: TextStyle(color: theme.colorScheme.onSecondaryContainer),
-          ),
-          subtitle: Text(
-            _analyticsEnabled
-                ? 'Help improve the app by sharing usage data'
-                : 'Analytics and crash reporting disabled',
-            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-          ),
-          value: _analyticsEnabled,
-          activeThumbColor: theme.colorScheme.primary,
-          onChanged: (bool value) {
-            setState(() {
-              _analyticsEnabled = value;
-            });
-            _saveAnalyticsEnabled(value);
-
-            // Track analytics for analytics setting (meta-analytics!)
-            AnalyticsService().logFeatureUsed(
-              'settings_analytics_${value ? 'enabled' : 'disabled'}',
-            );
-
-            if (widget.onAnalyticsEnabledChanged != null) {
-              widget.onAnalyticsEnabledChanged!(value);
-            }
-          },
+        // Analytics & Telemetry Toggle
+        AnalyticsToggle(
+          currentAnalyticsEnabled: currentAnalyticsEnabled,
+          onAnalyticsEnabledChanged: onAnalyticsEnabledChanged,
         ),
-        SwitchListTile(
-          secondary: Icon(
-            Icons.notifications_outlined,
-            color: theme.colorScheme.primary,
-          ),
-          title: Text(
-            AppLocalizations.of(context)?.serverMessages ?? 'Server Messages',
-            style: TextStyle(color: theme.colorScheme.onSecondaryContainer),
-          ),
-          subtitle: Text(
-            _serverMessagesEnabled
-                ? 'Receive important updates and notifications'
-                : 'Server messages and notifications disabled',
-            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-          ),
-          value: _serverMessagesEnabled,
-          activeThumbColor: theme.colorScheme.primary,
-          onChanged: (bool value) {
-            setState(() {
-              _serverMessagesEnabled = value;
-            });
-            _saveServerMessagesEnabled(value);
-
-            // Track analytics for server messages setting
-            AnalyticsService().logFeatureUsed(
-              'settings_server_messages_${value ? 'enabled' : 'disabled'}',
-            );
-
-            if (widget.onServerMessagesEnabledChanged != null) {
-              widget.onServerMessagesEnabledChanged!(value);
-            }
-          },
+        // Server Messages Toggle
+        ServerMessagesToggle(
+          currentServerMessagesEnabled: currentServerMessagesEnabled,
+          onServerMessagesEnabledChanged: onServerMessagesEnabledChanged,
         ),
-        SwitchListTile(
-          secondary: Icon(
-            Icons.science_outlined,
-            color: theme.colorScheme.primary,
-          ),
-          title: Text(
-            AppLocalizations.of(context)?.betaTesting ?? 'Beta Testing',
-            style: TextStyle(color: theme.colorScheme.onSecondaryContainer),
-          ),
-          subtitle: Text(
-            _betaTestingEnabled
-                ? 'Receive pre-release updates'
-                : 'Only receive stable updates',
-            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-          ),
-          value: _betaTestingEnabled,
-          activeThumbColor: theme.colorScheme.primary,
-          onChanged: (bool value) {
-            setState(() {
-              _betaTestingEnabled = value;
-            });
-            _saveBetaTestingEnabled(value);
-
-            // Track analytics for beta testing setting
-            AnalyticsService().logFeatureUsed(
-              'settings_beta_testing_${value ? 'enabled' : 'disabled'}',
-            );
-
-            if (widget.onBetaTestingEnabledChanged != null) {
-              widget.onBetaTestingEnabledChanged!(value);
-            }
-          },
+        // Beta Testing Toggle
+        BetaTestingToggle(
+          currentBetaTestingEnabled: currentBetaTestingEnabled,
+          onBetaTestingEnabledChanged: onBetaTestingEnabledChanged,
         ),
-        // TODO: Fix XMP metadata writing feature - currently failing with permission errors
-        // RecoverableSecurityException when trying to modify files in MediaStore
-        // Either fix the permission handling or remove this feature entirely
-        SwitchListTile(
-          secondary: Icon(
-            Icons.tag_outlined,
-            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
-          ),
-          title: Row(
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        AppLocalizations.of(context)?.writeTagsToXMP ??
-                            'Write Tags to XMP',
-                        style: TextStyle(
-                          color: theme.colorScheme.onSurfaceVariant.withOpacity(
-                            0.5,
-                          ),
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: Icon(
-                  Icons.help_outline,
-                  size: 16,
-                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
-                ),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder:
-                        (context) => AlertDialog(
-                          title: Row(
-                            children: [
-                              Text(
-                                'XMP Metadata',
-                                style: TextStyle(
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.error,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  'DISABLED',
-                                  style: TextStyle(
-                                    color: theme.colorScheme.onError,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          content: SingleChildScrollView(
-                            child: Text(
-                              '⚠️ TEMPORARILY DISABLED\n\n'
-                              'This feature is currently disabled due to permission issues with Android MediaStore.\n\n'
-                              'The feature was designed to embed AI-generated titles directly into your image files as searchable metadata, but is experiencing compatibility issues.\n\n'
-                              'We are working on a fix. This feature may be removed in a future update if the issues cannot be resolved.',
-                              style: TextStyle(
-                                color: theme.colorScheme.onSurfaceVariant,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              child: Text(
-                                'Got it',
-                                style: TextStyle(
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                  );
-                },
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-            ],
-          ),
-          subtitle: Text(
-            'Temporarily disabled - Permission issues (see help for details)',
-            style: TextStyle(
-              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
-            ),
-          ),
-          value: false, // Always disabled
-          activeThumbColor: theme.colorScheme.primary,
-          onChanged: null, // Disabled - greyed out
-        ),
+        // XMP Settings (disabled)
+        const XmpSettingsTile(),
+        // Performance Menu
+        const PerformanceMenuTile(),
         // Data Management Card (Backup & Restore)
         BackupRestoreCard(
-          allScreenshots: widget.allScreenshots,
-          allCollections: widget.allCollections,
-          onDataRestored: widget.onDataRestored,
+          allScreenshots: allScreenshots,
+          allCollections: allCollections,
+          onDataRestored: onDataRestored,
         ),
-        // Reset AI Processing Button
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                // Track analytics for reset AI processing
-                AnalyticsService().logFeatureUsed(
-                  'settings_reset_ai_processing',
-                );
-
-                if (widget.onResetAiProcessing != null) {
-                  widget.onResetAiProcessing!();
-                }
-              },
-              icon: Icon(Icons.refresh, color: theme.colorScheme.onPrimary),
-              label: Text(
-                'Reset AI Processing',
-                style: TextStyle(color: theme.colorScheme.onPrimary),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(vertical: 12.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-              ),
-            ),
-          ),
+        // Action Buttons (Reset AI Processing, Clear Corrupt Files)
+        ActionButtons(
+          onResetAiProcessing: onResetAiProcessing,
+          allScreenshots: allScreenshots,
+          onClearCorruptFiles: onClearCorruptFiles,
         ),
-        // Clear Corrupt Files Button (only in debug mode)
-        if (kDebugMode)
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 4.0,
-            ),
-            child: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  _clearCorruptFiles();
-                },
-                icon: Icon(
-                  Icons.delete_sweep_outlined,
-                  color: theme.colorScheme.error,
-                ),
-                label: Text(
-                  AppLocalizations.of(context)?.clearCorruptFiles ??
-                      'Clear Corrupt Files',
-                  style: TextStyle(color: theme.colorScheme.error),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: theme.colorScheme.error),
-                  padding: const EdgeInsets.symmetric(vertical: 12.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-              ),
-            ),
-          ),
       ],
     );
   }

@@ -206,7 +206,6 @@ class _AppDrawerState extends State<AppDrawer> {
               ),
               onTap: _navigateToSettings,
             ),
-            if (widget.currentDevMode == true) ...[const PerformanceSection()],
             AboutSection(
               appVersion: _appVersion,
               onTap: _handleAboutTap,
