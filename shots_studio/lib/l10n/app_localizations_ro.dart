@@ -188,7 +188,7 @@ class AppLocalizationsRo extends AppLocalizations {
   String get size => 'Dimensiune';
 
   @override
-  String get addDescription => 'Adăugare descriere';
+  String get awaitingAiProcessing => 'Se așteaptă procesarea AI...';
 
   @override
   String get addTag => 'Adăugare etichetă';
@@ -438,22 +438,22 @@ class AppLocalizationsRo extends AppLocalizations {
   }
 
   @override
-  String get dataManagement => 'Data Management';
+  String get dataManagement => 'Gestionare Date';
 
   @override
   String get dataManagementDescription =>
-      'Backup and restore your screenshots metadata, collections, and settings.';
+      'Faceți backup și restaurați metadatele capturilor de ecran, colecțiile și setările.';
 
   @override
   String get backup => 'Backup';
 
   @override
-  String get restore => 'Restore';
+  String get restore => 'Restaurare';
 
   @override
-  String get restoreData => 'Restore Data';
+  String get restoreData => 'Restaurare Date';
 
   @override
   String get restoreWarning =>
-      'This will replace all your current data with the backup. Make sure you have a current backup before proceeding.\n\nImages that no longer exist on your device will be skipped.';
+      'Aceasta va înlocui toate datele curente cu backup-ul. Asigurați-vă că aveți un backup actual înainte de a continua.\n\nImaginile care nu mai există pe dispozitiv vor fi ignorate.';
 }

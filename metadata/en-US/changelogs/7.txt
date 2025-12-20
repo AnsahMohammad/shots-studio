@@ -1,0 +1,23 @@
+### ✨ Features
+- Introduced a new **onboarding experience** for first-time users.
+- Added **Tesseract OCR** as an AI provider for simple text extraction.
+- **Export collections** as ZIP or copy them to device folders.
+- New **personal notes** section in screenshot details screen.
+- Added **Backup & Restore** functionality to keep your data safe.
+
+---
+
+### 🐛 Bug Fixes
+- Fixed ghost photos appearing in tag search results.
+- Fixed Quick Collection creation from search screen.
+- Fixed incorrect screenshot count in collections.
+- Fixed UI bug on All Collections screen.
+
+---
+
+### ⚙️ Improvements
+- **Settings page** has been redesigned for better UX.
+- Settings restructured for easier navigation.
+- Enhanced privacy controls.
+
+---

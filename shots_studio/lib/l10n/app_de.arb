@@ -144,5 +144,12 @@
   "dontShowAgain": "Nicht mehr anzeigen",
   "create": "Erstellen",
   "createCollectionFromSearchResults": "Sammlung aus Suchergebnissen erstellen",
-  "noScreenshotsFoundFor": "Keine Screenshots für \"{query}\" gefunden"
+  "noScreenshotsFoundFor": "Keine Screenshots für \"{query}\" gefunden",
+  "awaitingAiProcessing": "Warten auf KI-Verarbeitung...",
+  "dataManagement": "Datenverwaltung",
+  "dataManagementDescription": "Sichern und wiederherstellen Sie Ihre Screenshots-Metadaten, Sammlungen und Einstellungen.",
+  "backup": "Sichern",
+  "restore": "Wiederherstellen",
+  "restoreData": "Daten wiederherstellen",
+  "restoreWarning": "Dies ersetzt alle Ihre aktuellen Daten durch das Backup. Stellen Sie sicher, dass Sie ein aktuelles Backup haben, bevor Sie fortfahren.\n\nBilder, die nicht mehr auf Ihrem Gerät existieren, werden übersprungen."
 }

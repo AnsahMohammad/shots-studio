@@ -474,11 +474,11 @@ abstract class AppLocalizations {
   /// **'Size'**
   String get size;
 
-  /// No description provided for @addDescription.
+  /// Placeholder text shown in description field when screenshot has not been AI processed yet
   ///
   /// In en, this message translates to:
-  /// **'Add a description'**
-  String get addDescription;
+  /// **'Awaiting AI processing...'**
+  String get awaitingAiProcessing;
 
   /// No description provided for @addTag.
   ///

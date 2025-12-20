@@ -522,5 +522,12 @@
   "close": "Închidere",
   "@close": {
     "description": "Close button text"
-  }
+  },
+  "awaitingAiProcessing": "Se așteaptă procesarea AI...",
+  "dataManagement": "Gestionare Date",
+  "dataManagementDescription": "Faceți backup și restaurați metadatele capturilor de ecran, colecțiile și setările.",
+  "backup": "Backup",
+  "restore": "Restaurare",
+  "restoreData": "Restaurare Date",
+  "restoreWarning": "Aceasta va înlocui toate datele curente cu backup-ul. Asigurați-vă că aveți un backup actual înainte de a continua.\n\nImaginile care nu mai există pe dispozitiv vor fi ignorate."
 }

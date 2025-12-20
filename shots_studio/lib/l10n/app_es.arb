@@ -144,5 +144,12 @@
   "dontShowAgain": "No mostrar esto de nuevo",
   "create": "Crear",
   "createCollectionFromSearchResults": "Crear colección desde resultados de búsqueda",
-  "noScreenshotsFoundFor": "No se encontraron capturas de pantalla para \"{query}\""
+  "noScreenshotsFoundFor": "No se encontraron capturas de pantalla para \"{query}\"",
+  "awaitingAiProcessing": "Esperando procesamiento de IA...",
+  "dataManagement": "Gestión de Datos",
+  "dataManagementDescription": "Haga una copia de seguridad y restaure los metadatos de sus capturas, colecciones y configuración.",
+  "backup": "Copia de Seguridad",
+  "restore": "Restaurar",
+  "restoreData": "Restaurar Datos",
+  "restoreWarning": "Esto reemplazará todos sus datos actuales con la copia de seguridad. Asegúrese de tener una copia de seguridad actual antes de continuar.\n\nLas imágenes que ya no existan en su dispositivo se omitirán."
 }

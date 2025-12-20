@@ -1,0 +1,21 @@
+{
+  "messages": [
+    {
+      "show": true,
+      "id": "welcome_1_9_70",
+      "title": "Here's what's new in Shots Studio 1.9.70! 🚀",
+      "message": "Thanks for updating to the latest version! 🎉\n\nWhat's new:\n\n Features:\n• You can now export collections as ZIP or copy to folders\n• Backup & Restore your data so you can migrate devices or secure your library\n• Personal notes in screenshot details for your own thoughts and links\n• Explore Tesseract OCR as an AI provider if you don't need full AI suite\n\n🐛 Bug Fixes:\n• Fixed ghost photos in tag search\n• Fixed Quick Collection from search\n• Fixed collection screenshot count\n• Fixed All Collections screen UI\n\nCheck out the changelogs for the full logs!\n\nWith ❤️,\nTeam Shots Studio",
+      "type": "info",
+      "priority": "high",
+      "show_once": true,
+      "valid_until": "2026-12-01T00:00:00Z",
+      "is_notification": false,
+      "version": "1.9.70",
+      "beta_only": false,
+      "action_text": "changelogs",
+      "dismiss_text": "dismiss",
+      "action_url": "https://github.com/AnsahMohammad/shots-studio/releases/tag/v1.9.70",
+      "platform": "all"
+    }
+  ]
+}

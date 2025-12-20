@@ -188,7 +188,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get size => 'Tamaño';
 
   @override
-  String get addDescription => 'Agregar descripción';
+  String get awaitingAiProcessing => 'Esperando procesamiento de IA...';
 
   @override
   String get addTag => 'Agregar etiqueta';
@@ -438,22 +438,22 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get dataManagement => 'Data Management';
+  String get dataManagement => 'Gestión de Datos';
 
   @override
   String get dataManagementDescription =>
-      'Backup and restore your screenshots metadata, collections, and settings.';
+      'Haga una copia de seguridad y restaure los metadatos de sus capturas, colecciones y configuración.';
 
   @override
-  String get backup => 'Backup';
+  String get backup => 'Copia de Seguridad';
 
   @override
-  String get restore => 'Restore';
+  String get restore => 'Restaurar';
 
   @override
-  String get restoreData => 'Restore Data';
+  String get restoreData => 'Restaurar Datos';
 
   @override
   String get restoreWarning =>
-      'This will replace all your current data with the backup. Make sure you have a current backup before proceeding.\n\nImages that no longer exist on your device will be skipped.';
+      'Esto reemplazará todos sus datos actuales con la copia de seguridad. Asegúrese de tener una copia de seguridad actual antes de continuar.\n\nLas imágenes que ya no existan en su dispositivo se omitirán.';
 }
