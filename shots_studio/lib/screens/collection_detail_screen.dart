@@ -63,6 +63,9 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
     _currentScreenshotIds = List.from(widget.collection.screenshotIds);
     _isAutoAddEnabled = widget.collection.isAutoAddEnabled;
     _loadHardDeleteSetting();
+
+    // Sync collection count with actual valid screenshots
+    _syncCollectionCountIfNeeded();
   }
 
   @override
@@ -77,6 +80,41 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
     if (mounted) {
       setState(() {
         _hardDeleteEnabled = prefs.getBool('hard_delete_enabled') ?? false;
+      });
+    }
+  }
+
+  /// Sync collection's screenshotIds with actual valid screenshots
+  /// This removes any orphaned/deleted screenshot IDs and updates the count
+  void _syncCollectionCountIfNeeded() {
+    // Get the actual valid screenshot IDs (non-deleted screenshots that exist)
+    final validScreenshotIds =
+        widget.allScreenshots
+            .where((s) => !s.isDeleted && _currentScreenshotIds.contains(s.id))
+            .map((s) => s.id)
+            .toList();
+
+    // Check if there's a mismatch
+    if (validScreenshotIds.length != _currentScreenshotIds.length ||
+        validScreenshotIds.length != widget.collection.screenshotCount) {
+      // Update local state with only valid IDs (no setState needed in initState)
+      _currentScreenshotIds = validScreenshotIds;
+
+      // Defer the parent update to after the build phase to avoid setState during build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+
+        // Update the collection with corrected count
+        final updatedCollection = widget.collection.copyWith(
+          screenshotIds: validScreenshotIds,
+          screenshotCount: validScreenshotIds.length,
+          lastModified: DateTime.now(),
+        );
+        widget.onUpdateCollection(updatedCollection);
+
+        print(
+          'CollectionDetailScreen: Synced collection count from ${widget.collection.screenshotCount} to ${validScreenshotIds.length}',
+        );
       });
     }
   }
@@ -506,25 +544,25 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
   Future<void> _showExportDialog(List<Screenshot> screenshots) async {
     final ExportOptions? options = await showDialog<ExportOptions>(
       context: context,
-      builder: (context) => ExportDialog(
-        collectionName: _nameController.text.isEmpty
-            ? 'Collection'
-            : _nameController.text,
-        screenshotCount: screenshots.length,
-      ),
+      builder:
+          (context) => ExportDialog(
+            collectionName:
+                _nameController.text.isEmpty
+                    ? 'Collection'
+                    : _nameController.text,
+            screenshotCount: screenshots.length,
+          ),
     );
 
     if (options == null) return; // User cancelled
 
     // Show loading indicator
     if (!mounted) return;
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     ExportResult result;
@@ -532,9 +570,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
     if (options.asZip) {
       result = await ExportService.exportAsZip(
         screenshots: screenshots,
-        collectionName: _nameController.text.isEmpty
-            ? 'Collection'
-            : _nameController.text,
+        collectionName:
+            _nameController.text.isEmpty ? 'Collection' : _nameController.text,
       );
     } else {
       result = await ExportService.exportAsFiles(
@@ -591,9 +628,10 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
           actions: [
             IconButton(
               icon: const Icon(Icons.share_outlined),
-              onPressed: screenshotsInCollection.isNotEmpty
-                  ? () => _showExportDialog(screenshotsInCollection)
-                  : null,
+              onPressed:
+                  screenshotsInCollection.isNotEmpty
+                      ? () => _showExportDialog(screenshotsInCollection)
+                      : null,
               tooltip: 'Export Collection',
             ),
             IconButton(

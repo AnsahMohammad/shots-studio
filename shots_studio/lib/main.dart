@@ -1802,8 +1802,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     // Fire and forget - run completely in background without blocking
     Future.microtask(() {
       try {
-        final clearedCount = CorruptFileService.clearCorruptFilesSilently(
+        final result = CorruptFileService.clearCorruptFilesSilently(
           _screenshots,
+          _collections,
           () {
             // Callback when corrupt files are cleared - refresh the UI
             if (mounted) {
@@ -1814,9 +1815,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             }
           },
         );
-        if (clearedCount > 0) {
+
+        // Update collections with synced versions
+        if (result.deletedCount > 0 && mounted) {
+          setState(() {
+            _collections.clear();
+            _collections.addAll(result.syncedCollections);
+          });
+          _saveDataToPrefs();
           print(
-            "FileWatcher: Silently cleared $clearedCount corrupt files in background",
+            "FileWatcher: Silently cleared ${result.deletedCount} corrupt files and synced ${result.syncedCollections.length} collections in background",
           );
         } else {
           print("FileWatcher: No corrupt files found during background check");

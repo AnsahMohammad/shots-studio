@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/services/corrupt_file_service.dart';
 import 'package:shots_studio/services/snackbar_service.dart';
+import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/l10n/app_localizations.dart';
 
@@ -11,22 +12,32 @@ import 'package:shots_studio/l10n/app_localizations.dart';
 class ActionButtons extends StatelessWidget {
   final VoidCallback? onResetAiProcessing;
   final List<Screenshot>? allScreenshots;
+  final List<Collection>? allCollections;
+  final void Function(List<Collection>)? onCollectionsSynced;
   final VoidCallback? onClearCorruptFiles;
 
   const ActionButtons({
     super.key,
     this.onResetAiProcessing,
     this.allScreenshots,
+    this.allCollections,
+    this.onCollectionsSynced,
     this.onClearCorruptFiles,
   });
 
   /// Clear all corrupt files from the app using the CorruptFileService
   Future<void> _clearCorruptFiles(BuildContext context) async {
-    await CorruptFileService.clearCorruptFiles(
+    final result = await CorruptFileService.clearCorruptFiles(
       context,
       allScreenshots,
+      allCollections,
       onClearCorruptFiles,
     );
+
+    // If cleanup was successful, sync collections
+    if (result.success && onCollectionsSynced != null) {
+      onCollectionsSynced!(result.syncedCollections);
+    }
   }
 
   @override

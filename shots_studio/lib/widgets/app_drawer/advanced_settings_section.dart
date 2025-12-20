@@ -33,6 +33,7 @@ class AdvancedSettingsSection extends StatelessWidget {
   final List<Screenshot>? allScreenshots;
   final VoidCallback? onClearCorruptFiles;
   final List<Collection>? allCollections;
+  final void Function(List<Collection>)? onCollectionsSynced;
   final Function(List<Screenshot>, List<Collection>)? onDataRestored;
 
   const AdvancedSettingsSection({
@@ -53,6 +54,7 @@ class AdvancedSettingsSection extends StatelessWidget {
     this.allScreenshots,
     this.onClearCorruptFiles,
     this.allCollections,
+    this.onCollectionsSynced,
     this.onDataRestored,
   });
 
@@ -111,6 +113,8 @@ class AdvancedSettingsSection extends StatelessWidget {
         ActionButtons(
           onResetAiProcessing: onResetAiProcessing,
           allScreenshots: allScreenshots,
+          allCollections: allCollections,
+          onCollectionsSynced: onCollectionsSynced,
           onClearCorruptFiles: onClearCorruptFiles,
         ),
       ],
