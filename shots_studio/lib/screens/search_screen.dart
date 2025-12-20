@@ -130,11 +130,15 @@ class _SearchScreenState extends State<SearchScreen> {
                 screenshot.description != null &&
                 wordPattern.hasMatch(screenshot.description!.toLowerCase());
 
+            final notesMatch =
+                screenshot.notes != null &&
+                wordPattern.hasMatch(screenshot.notes!.toLowerCase());
+
             final tagsMatch = screenshot.tags.any(
               (tag) => tag.toLowerCase() == _searchQuery,
             );
 
-            return titleMatch || descriptionMatch || tagsMatch;
+            return titleMatch || descriptionMatch || notesMatch || tagsMatch;
           }).toList();
     }
   }
@@ -238,7 +242,7 @@ class _SearchScreenState extends State<SearchScreen> {
           controller: _searchController,
           autofocus: true,
           decoration: InputDecoration(
-            hintText: 'Search by title, description, tags...',
+            hintText: 'Search by title, description, notes, tags...',
             border: InputBorder.none,
             hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant),
           ),
