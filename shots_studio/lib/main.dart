@@ -16,7 +16,7 @@ import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/screens/search_screen.dart';
 import 'package:shots_studio/screens/reminders_screen.dart';
 import 'package:shots_studio/screens/privacy_screen.dart';
-import 'package:shots_studio/widgets/onboarding/api_key_guide_dialog.dart';
+import 'package:shots_studio/widgets/onboarding/ai_setup_onboarding_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:shots_studio/services/notification_service.dart';
@@ -309,16 +309,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
 
     if (!kIsWeb) {
-      _loadAndroidScreenshotsIfNeeded().then((_) {
-        // Setup FileWatcher only AFTER initial loading is complete
-        // This ensures no duplicates from initial scan
-        _setupFileWatcher();
-      });
       _setupBackgroundServiceListeners();
     }
-    // Show privacy dialog after the first frame
+    // Show onboarding dialogs after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Show privacy dialog and only proceed to API key guide if accepted
+      // Show AI setup onboarding first (includes permissions)
+      await showAISetupOnboardingIfNeeded(context, _apiKey, _updateApiKey);
+
+      if (!context.mounted) return;
+
+      // Show privacy dialog after onboarding
       bool privacyAccepted = await showPrivacyScreenIfNeeded(context);
       if (privacyAccepted && context.mounted) {
         // Log install info when onboarding is completed
@@ -326,8 +326,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         // Log install source analytics
         AnalyticsService().logInstallSource(BuildSource.current.value);
 
-        // API key guide will only show after privacy is accepted
-        await showApiKeyGuideIfNeeded(context, _apiKey, _updateApiKey);
+        // Now load screenshots (permission was requested in onboarding)
+        if (!kIsWeb) {
+          _loadAndroidScreenshotsIfNeeded().then((_) {
+            // Setup FileWatcher only AFTER initial loading is complete
+            _setupFileWatcher();
+          });
+        }
 
         _checkForUpdates();
         _checkForServerMessages();
