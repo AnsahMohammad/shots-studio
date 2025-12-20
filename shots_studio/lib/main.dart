@@ -863,9 +863,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
 
     // Check for API key
-    //  if gemma skip API key check
-    if (_selectedModelName == 'gemma') {
-      print("Main app: Using Gemma model, no API key required");
+    //  if gemma or tesseract-ocr skip API key check
+    if (_selectedModelName == 'gemma' ||
+        _selectedModelName == 'tesseract-ocr') {
+      print("Main app: Using ${_selectedModelName} model, no API key required");
     } else if (_apiKey == null || _apiKey!.isEmpty) {
       print("Main app: No API key configured");
       SnackbarService().showError(
@@ -1654,7 +1655,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         !_isProcessingAI &&
         _selectedModelName.toLowerCase() != 'none' &&
         ((_apiKey != null && _apiKey!.isNotEmpty) ||
-            _selectedModelName == 'gemma')) {
+            _selectedModelName == 'gemma' ||
+            _selectedModelName == 'tesseract-ocr')) {
       // Check if there are any unprocessed screenshots
       final unprocessedScreenshots =
           _activeScreenshots.where((s) => !s.aiProcessed).toList();
