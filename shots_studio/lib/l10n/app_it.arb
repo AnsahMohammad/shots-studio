@@ -146,5 +146,12 @@
   "dontShowAgain": "Non mostrare più",
   "create": "Crea",
   "createCollectionFromSearchResults": "Crea raccolta dai risultati di ricerca",
-  "noScreenshotsFoundFor": "Nessuno screenshot trovato per \"{query}\""
+  "noScreenshotsFoundFor": "Nessuno screenshot trovato per \"{query}\"",
+  "awaitingAiProcessing": "In attesa dell'elaborazione AI...",
+  "dataManagement": "Gestione Dati",
+  "dataManagementDescription": "Esegui il backup e ripristina i metadati degli screenshot, le collezioni e le impostazioni.",
+  "backup": "Backup",
+  "restore": "Ripristina",
+  "restoreData": "Ripristina Dati",
+  "restoreWarning": "Questo sostituirà tutti i tuoi dati attuali con il backup. Assicurati di avere un backup corrente prima di procedere.\n\nLe immagini che non esistono più sul tuo dispositivo verranno ignorate."
 }

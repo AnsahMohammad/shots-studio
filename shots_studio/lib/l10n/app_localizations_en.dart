@@ -188,7 +188,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get size => 'Size';
 
   @override
-  String get addDescription => 'Add a description';
+  String get awaitingAiProcessing => 'Awaiting AI processing...';
 
   @override
   String get addTag => 'Add tag';

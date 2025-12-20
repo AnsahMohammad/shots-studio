@@ -188,7 +188,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get size => '大小';
 
   @override
-  String get addDescription => '添加描述';
+  String get awaitingAiProcessing => '等待AI处理...';
 
   @override
   String get addTag => '添加标签';
@@ -427,22 +427,21 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get dataManagement => 'Data Management';
+  String get dataManagement => '数据管理';
 
   @override
-  String get dataManagementDescription =>
-      'Backup and restore your screenshots metadata, collections, and settings.';
+  String get dataManagementDescription => '备份和恢复您的截图元数据、收藏夹和设置。';
 
   @override
-  String get backup => 'Backup';
+  String get backup => '备份';
 
   @override
-  String get restore => 'Restore';
+  String get restore => '恢复';
 
   @override
-  String get restoreData => 'Restore Data';
+  String get restoreData => '恢复数据';
 
   @override
   String get restoreWarning =>
-      'This will replace all your current data with the backup. Make sure you have a current backup before proceeding.\n\nImages that no longer exist on your device will be skipped.';
+      '这将用备份替换所有当前数据。请确保在继续之前拥有当前备份。\n\n设备上不再存在的图像将被跳过。';
 }

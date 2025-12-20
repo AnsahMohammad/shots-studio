@@ -3,19 +3,6 @@ import '../models/sponsorship_option.dart';
 
 class SponsorshipService {
   static const List<SponsorshipOption> _defaultOptions = [
-    // Buy me a coffee (enabled)
-    SponsorshipOption(
-      id: 'buymeacoffee',
-      title: 'Buy Me a Coffee',
-      subtitle: 'A quick and simple way to support the project ☕',
-      url: 'https://www.buymeacoffee.com/ansahk',
-      icon: Icons.coffee_rounded,
-      iconColor: Color(0xFFFFDD00), // Coffee yellow
-      enabled: true,
-      badge: 'Active',
-      badgeColor: Color(0xFF10B981), // Green
-    ),
-
     // GitHub Sponsors (Primary - enabled)
     SponsorshipOption(
       id: 'github',
@@ -27,6 +14,19 @@ class SponsorshipService {
       enabled: true,
       badge: 'Active',
       badgeColor: Color(0xFF10B981), // Emerald green
+    ),
+
+    // Buy me a coffee (enabled)
+    SponsorshipOption(
+      id: 'buymeacoffee',
+      title: 'Buy Me a Coffee',
+      subtitle: 'A quick and simple way to support the project ☕',
+      url: 'https://www.buymeacoffee.com/ansahk',
+      icon: Icons.coffee_rounded,
+      iconColor: Color(0xFFFFDD00), // Coffee yellow
+      enabled: true,
+      badge: 'Active',
+      badgeColor: Color(0xFF10B981), // Green
     ),
 
     // // PayPal (Future option - disabled for now)

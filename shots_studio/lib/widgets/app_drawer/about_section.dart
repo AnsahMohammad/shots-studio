@@ -302,7 +302,6 @@ class AboutSection extends StatelessWidget {
 
             Navigator.pop(context);
             _showSponsorshipDialog(context);
-            _openDonationPage(context);
           },
         ),
         ListTile(

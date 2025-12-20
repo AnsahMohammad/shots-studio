@@ -522,5 +522,12 @@
   "xmpMetadataWritten": "Metadane XMP zapisane do pliku",
   "@xmpMetadataWritten": {
     "description": "Indicator showing XMP metadata has been written to the image file"
-  }
+  },
+  "awaitingAiProcessing": "Oczekiwanie na przetwarzanie AI...",
+  "dataManagement": "Zarządzanie Danymi",
+  "dataManagementDescription": "Twórz kopie zapasowe i przywracaj metadane zrzutów ekranu, kolekcje i ustawienia.",
+  "backup": "Kopia zapasowa",
+  "restore": "Przywróć",
+  "restoreData": "Przywróć Dane",
+  "restoreWarning": "Spowoduje to zastąpienie wszystkich bieżących danych kopią zapasową. Upewnij się, że masz aktualną kopię zapasową przed kontynuowaniem.\n\nObrazki, które nie istnieją już na urządzeniu, zostaną pominięte."
 }

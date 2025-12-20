@@ -188,7 +188,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get size => 'Размер';
 
   @override
-  String get addDescription => 'Добавить описание';
+  String get awaitingAiProcessing => 'Ожидание обработки ИИ...';
 
   @override
   String get addTag => 'Добавить тег';
@@ -439,22 +439,22 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get dataManagement => 'Data Management';
+  String get dataManagement => 'Управление данными';
 
   @override
   String get dataManagementDescription =>
-      'Backup and restore your screenshots metadata, collections, and settings.';
+      'Создавайте резервные копии и восстанавливайте метаданные скриншотов, коллекции и настройки.';
 
   @override
-  String get backup => 'Backup';
+  String get backup => 'Резервная копия';
 
   @override
-  String get restore => 'Restore';
+  String get restore => 'Восстановить';
 
   @override
-  String get restoreData => 'Restore Data';
+  String get restoreData => 'Восстановить данные';
 
   @override
   String get restoreWarning =>
-      'This will replace all your current data with the backup. Make sure you have a current backup before proceeding.\n\nImages that no longer exist on your device will be skipped.';
+      'Это заменит все ваши текущие данные резервной копией. Убедитесь, что у вас есть актуальная резервная копия перед продолжением.\n\nИзображения, которые больше не существуют на вашем устройстве, будут пропущены.';
 }

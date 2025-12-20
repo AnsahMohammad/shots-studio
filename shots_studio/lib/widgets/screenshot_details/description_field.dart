@@ -65,8 +65,8 @@ class DescriptionField extends StatelessWidget {
                 readOnly: readOnly,
                 decoration: InputDecoration(
                   hintText:
-                      AppLocalizations.of(context)?.addDescription ??
-                      'Add a description...',
+                      AppLocalizations.of(context)?.awaitingAiProcessing ??
+                      'Awaiting AI processing...',
                   filled: true,
                   fillColor: Theme.of(context).colorScheme.secondaryContainer,
                   border: OutlineInputBorder(

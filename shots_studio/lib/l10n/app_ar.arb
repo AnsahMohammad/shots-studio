@@ -144,5 +144,12 @@
   "dontShowAgain": "لا تظهر هذا مرة أخرى",
   "create": "إنشاء",
   "createCollectionFromSearchResults": "إنشاء مجموعة من نتائج البحث",
-  "noScreenshotsFoundFor": "لم يتم العثور على لقطات شاشة لـ \"{query}\""
+  "noScreenshotsFoundFor": "لم يتم العثور على لقطات شاشة لـ \"{query}\"",
+  "awaitingAiProcessing": "في انتظار معالجة الذكاء الاصطناعي...",
+  "dataManagement": "إدارة البيانات",
+  "dataManagementDescription": "نسخ احتياطي واستعادة بيانات لقطات الشاشة والمجموعات والإعدادات.",
+  "backup": "نسخ احتياطي",
+  "restore": "استعادة",
+  "restoreData": "استعادة البيانات",
+  "restoreWarning": "سيؤدي هذا إلى استبدال جميع بياناتك الحالية بالنسخة الاحتياطية. تأكد من وجود نسخة احتياطية حالية قبل المتابعة.\n\nسيتم تخطي الصور غير الموجودة على جهازك."
 }

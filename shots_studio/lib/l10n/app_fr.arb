@@ -144,5 +144,12 @@
   "dontShowAgain": "Ne plus afficher",
   "create": "Créer",
   "createCollectionFromSearchResults": "Créer une collection à partir des résultats de recherche",
-  "noScreenshotsFoundFor": "Aucune capture d'écran trouvée pour \"{query}\""
+  "noScreenshotsFoundFor": "Aucune capture d'écran trouvée pour \"{query}\"",
+  "awaitingAiProcessing": "En attente du traitement IA...",
+  "dataManagement": "Gestion des Données",
+  "dataManagementDescription": "Sauvegardez et restaurez les métadonnées de vos captures d'écran, collections et paramètres.",
+  "backup": "Sauvegarder",
+  "restore": "Restaurer",
+  "restoreData": "Restaurer les Données",
+  "restoreWarning": "Cela remplacera toutes vos données actuelles par la sauvegarde. Assurez-vous d'avoir une sauvegarde actuelle avant de continuer.\n\nLes images qui n'existent plus sur votre appareil seront ignorées."
 }

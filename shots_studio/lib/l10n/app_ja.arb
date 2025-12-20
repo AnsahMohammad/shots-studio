@@ -146,5 +146,12 @@
   "dontShowAgain": "今後表示しない",
   "create": "作成",
   "createCollectionFromSearchResults": "検索結果からコレクションを作成",
-  "noScreenshotsFoundFor": "\"{query}\"に一致するスクリーンショットが見つかりません"
+  "noScreenshotsFoundFor": "\"{query}\"に一致するスクリーンショットが見つかりません",
+  "awaitingAiProcessing": "AI処理を待機中...",
+  "dataManagement": "データ管理",
+  "dataManagementDescription": "スクリーンショットのメタデータ、コレクション、設定のバックアップと復元を行います。",
+  "backup": "バックアップ",
+  "restore": "復元",
+  "restoreData": "データを復元",
+  "restoreWarning": "これにより、すべての現在のデータがバックアップで置き換えられます。続行する前に現在のバックアップがあることを確認してください。\n\nデバイスに存在しなくなった画像はスキップされます。"
 }

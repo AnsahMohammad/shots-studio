@@ -205,7 +205,10 @@
   "aiDetails": "AI Details",
   "collections": "Collections",
   "size": "Size",
-  "addDescription": "Add a description",
+  "awaitingAiProcessing": "Awaiting AI processing...",
+  "@awaitingAiProcessing": {
+    "description": "Placeholder text shown in description field when screenshot has not been AI processed yet"
+  },
   "addTag": "Add tag",
   "@developerMode": {
     "description": "Advanced settings mode setting"
@@ -379,7 +382,7 @@
   "aiDetails": "AI Details",
   "collections": "Collections",
   "size": "Size",
-  "addDescription": "Add a description",
+  "awaitingAiProcessing": "Awaiting AI processing...",
   "addTag": "Add tag",
   "aiSettings": "AI Settings",
   "clearCorruptFiles": "Clear Corrupt Files",
