@@ -78,11 +78,26 @@ class AIServiceManager {
       throw StateError('AI Service not initialized. Call initialize() first.');
     }
 
+    // OCR provider does not support categorization
+    if (_isOCRProvider()) {
+      return AIResult.error(
+        'Categorization is not supported with OCR provider. OCR only extracts text from images.',
+        statusCode: 400,
+      );
+    }
+
     return await _categorizationService!.categorizeScreenshots(
       collection: collection,
       screenshots: screenshots,
       onBatchProcessed: onBatchProcessed,
     );
+  }
+
+  // Check if current model is OCR-based
+  bool _isOCRProvider() {
+    if (_analysisService == null) return false;
+    final modelName = _analysisService!.config.modelName.toLowerCase();
+    return modelName.contains('ocr') || modelName.contains('tesseract');
   }
 
   // Control Methods

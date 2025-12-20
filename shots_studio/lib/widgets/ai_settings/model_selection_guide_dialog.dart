@@ -48,74 +48,48 @@ class ModelSelectionGuideDialog {
                   ),
                   const SizedBox(height: 16),
 
-                  // Gemini 2.0 Flash
+                  // Gemini Models
                   const ModelCard(
-                    modelName: 'Gemini 2.0 Flash',
-                    description: '2.0 model, least expensive',
-                    icon: Icons.flash_on,
-                    iconColor: Colors.yellow,
-                    useCases: [
-                      'Basic screenshot analysis',
-                      'Limited daily processing',
-                      'Cost-conscious users',
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Gemini 2.5 Flash Lite
-                  const ModelCard(
-                    modelName: 'Gemini 2.5 Flash Lite',
-                    description: 'Better than 2.0 and cost effective',
-                    icon: Icons.flash_auto,
-                    iconColor: Colors.orange,
-                    useCases: [
-                      'Lots of images without hitting free quota',
-                      'Good balance of quality and cost',
-                      'Regular daily usage',
-                    ],
-                    recommended: true,
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Gemini 2.5 Flash
-                  const ModelCard(
-                    modelName: 'Gemini 2.5 Flash',
-                    description: 'High quality analysis with fast processing',
-                    icon: Icons.flash_on,
+                    modelName: 'Gemini (Cloud)',
+                    description: 'Fast, accurate, requires API key',
+                    icon: Icons.cloud,
                     iconColor: Colors.blue,
                     useCases: [
-                      'High volume processing',
-                      'Better accuracy for complex screenshots',
-                      'Professional use cases',
+                      '2.0 Flash - Basic, least expensive',
+                      '2.5 Flash Lite - Best balance (recommended)',
+                      '2.5 Flash - High quality, fast',
+                      '2.5 Pro - Maximum accuracy',
                     ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Gemini 2.5 Pro
-                  const ModelCard(
-                    modelName: 'Gemini 2.5 Pro',
-                    description: 'Premium model with highest accuracy',
-                    icon: Icons.star,
-                    iconColor: Colors.purple,
-                    useCases: [
-                      'Maximum accuracy needed',
-                      'Complex screenshot analysis',
-                      'Professional/enterprise use',
-                    ],
+                    recommended: true,
                   ),
                   const SizedBox(height: 12),
 
                   // Gemma (Local)
                   const ModelCard(
                     modelName: 'Gemma (Local)',
-                    description: 'Offline processing, completely private',
+                    description: 'Offline, private, no API costs',
                     icon: Icons.security,
                     iconColor: Colors.green,
                     useCases: [
                       'Complete privacy (no data sent online)',
-                      'Works without internet connection',
-                      'Takes more time to process',
-                      'No API costs',
+                      'Works without internet',
+                      'Slower processing',
+                    ],
+                    isLocal: true,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // OCR (Tesseract)
+                  const ModelCard(
+                    modelName: 'OCR (Tesseract)',
+                    description: 'Text extraction only, no AI analysis',
+                    icon: Icons.text_fields,
+                    iconColor: Colors.teal,
+                    useCases: [
+                      'Extracts visible text from screenshots',
+                      'Sets text as description only',
+                      'No auto-categorization support',
+                      'Offline, fast, no API needed',
                     ],
                     isLocal: true,
                   ),

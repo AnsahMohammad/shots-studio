@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/services/gemma_service.dart';
+import 'package:shots_studio/services/ocr_service.dart';
 
 typedef ShowMessageCallback =
     void Function({
@@ -584,11 +585,189 @@ class GemmaAPIProvider implements APIProvider {
   }
 }
 
+// OCR API provider implementation - uses Tesseract OCR for text extraction only
+class OcrAPIProvider implements APIProvider {
+  @override
+  bool canHandleModel(String modelName) {
+    final lowerName = modelName.toLowerCase();
+    return lowerName.contains('ocr') || lowerName.contains('tesseract');
+  }
+
+  @override
+  Future<Map<String, dynamic>> makeRequest(
+    Map<String, dynamic> requestData,
+    AIConfig config,
+  ) async {
+    try {
+      // Import OCR service dynamically to avoid circular dependencies
+      final ocrService = _getOCRService();
+
+      // Extract image data from request
+      if (!requestData.containsKey('imageData') ||
+          requestData['imageData'] == null) {
+        return {
+          'error': 'No image data provided for OCR processing',
+          'statusCode': 400,
+        };
+      }
+
+      final imageData = requestData['imageData'] as Map<String, dynamic>;
+      final identifier = imageData['identifier'] as String? ?? 'unknown';
+
+      // Convert image data to file for OCR processing
+      File? tempFile;
+      try {
+        tempFile = await _convertImageDataToFile(imageData);
+        if (tempFile == null) {
+          return {
+            'error': 'Failed to process image data for OCR',
+            'statusCode': 400,
+          };
+        }
+
+        // Create a minimal Screenshot object for OCR service
+        final screenshot = _createMinimalScreenshot(identifier, tempFile.path);
+
+        // Extract text using OCR
+        final extractedText = await ocrService.extractTextFromScreenshot(
+          screenshot,
+        );
+
+        // Format response as JSON matching expected structure
+        final responseData = [
+          {
+            'filename': identifier,
+            'title': '',
+            'desc': extractedText ?? '',
+            'tags': <String>[],
+            'links': <String>[],
+            'collections': <String>[],
+          },
+        ];
+
+        return {'data': jsonEncode(responseData), 'statusCode': 200};
+      } finally {
+        // Clean up temporary file
+        if (tempFile != null) {
+          try {
+            if (await tempFile.exists()) {
+              await tempFile.delete();
+            }
+          } catch (e) {
+            print('Warning: Could not delete temporary OCR file: $e');
+          }
+        }
+      }
+    } catch (e) {
+      return {
+        'error': 'OCR processing error: ${e.toString()}',
+        'statusCode': 500,
+      };
+    }
+  }
+
+  @override
+  Map<String, dynamic> prepareScreenshotAnalysisRequest({
+    required String prompt,
+    required List<Map<String, dynamic>> imageData,
+    Map<String, dynamic> additionalParams = const {},
+  }) {
+    // OCR processes one image at a time
+    Map<String, dynamic>? firstImageData;
+    if (imageData.isNotEmpty) {
+      firstImageData = imageData.first;
+    }
+
+    return {
+      'prompt': prompt, // Prompt is ignored for OCR
+      'imageData': firstImageData,
+      'type': 'ocr_extraction',
+      ...additionalParams,
+    };
+  }
+
+  @override
+  Map<String, dynamic> prepareCategorizationRequest({
+    required String prompt,
+    required List<Map<String, String>> screenshotMetadata,
+    Map<String, dynamic> additionalParams = const {},
+  }) {
+    // OCR does not support categorization - return error structure
+    return {
+      'error': 'OCR provider does not support categorization',
+      'type': 'unsupported',
+    };
+  }
+
+  dynamic _getOCRService() {
+    return OCRService();
+  }
+
+  // Create minimal Screenshot object for OCR processing
+  Screenshot _createMinimalScreenshot(String id, String path) {
+    return Screenshot(
+      id: id,
+      path: path,
+      tags: [],
+      aiProcessed: false,
+      addedOn: DateTime.now(),
+    );
+  }
+
+  Future<File?> _convertImageDataToFile(Map<String, dynamic> imageData) async {
+    try {
+      if (imageData.containsKey('data') && imageData['data'] is Map) {
+        final data = imageData['data'] as Map<String, dynamic>;
+        if (data.containsKey('mime_type') && data.containsKey('data')) {
+          return await _createTempFileFromBase64(
+            data['data'] as String,
+            data['mime_type'] as String,
+          );
+        }
+      }
+    } catch (e) {
+      print('Error converting image data to file for OCR: $e');
+    }
+    return null;
+  }
+
+  Future<File> _createTempFileFromBase64(
+    String base64Data,
+    String mimeType,
+  ) async {
+    final bytes = base64Decode(base64Data);
+    final tempDir = Directory.systemTemp;
+    final extension = _getExtensionFromMimeType(mimeType);
+    final tempFile = File(
+      '${tempDir.path}/ocr_temp_${DateTime.now().millisecondsSinceEpoch}.$extension',
+    );
+
+    await tempFile.writeAsBytes(bytes);
+    return tempFile;
+  }
+
+  String _getExtensionFromMimeType(String mimeType) {
+    switch (mimeType.toLowerCase()) {
+      case 'image/jpeg':
+        return 'jpg';
+      case 'image/png':
+        return 'png';
+      case 'image/gif':
+        return 'gif';
+      case 'image/webp':
+        return 'webp';
+      default:
+        return 'jpg';
+    }
+  }
+}
+
 // Factory for API providers
 class APIProviderFactory {
   static final List<APIProvider> _providers = [
     GeminiAPIProvider(),
-    GemmaAPIProvider(), // Add Gemma provider
+    GemmaAPIProvider(),
+    OcrAPIProvider(),
     // Future providers can be added here:
     // LocalLlamaAPIProvider(),
   ];

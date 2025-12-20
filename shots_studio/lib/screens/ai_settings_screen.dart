@@ -537,6 +537,119 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
     }
   }
 
+  Future<void> _showOCRInfoDialog(String provider) async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                Icons.text_fields,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              const Text('About OCR'),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'What is OCR?',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'OCR (Optical Character Recognition) is a model that reads and extracts visible text from images.',
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'What OCR does:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text('• Extracts text visible in your screenshots'),
+                const Text('• Saves extracted text as the description'),
+                const Text('• Works offline with no API required'),
+                const SizedBox(height: 16),
+                Text(
+                  'What OCR does NOT do:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text('• Generate intelligent titles or summaries'),
+                const Text('• Create searchable tags'),
+                const Text('• Auto-categorize screenshots into collections'),
+                const Text('• Understand image context or meaning'),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'For intelligent analysis and auto-categorization, use Gemini or Gemma instead.',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              ),
+              child: const Text('Enable OCR'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      setState(() {
+        _providerStates[provider] = true;
+      });
+
+      await _saveProviderSetting(provider, true);
+
+      AnalyticsService().logFeatureUsed('ai_provider_ocr_enabled_with_info');
+    }
+  }
+
   void _onProviderToggle(String provider, bool enabled) async {
     // For Gemma provider, check if model file is available before enabling
     if (provider == 'gemma' &&
@@ -554,6 +667,12 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
     // Show warning dialog when enabling Gemma
     if (provider == 'gemma' && enabled) {
       await _showGemmaWarningDialog(provider);
+      return;
+    }
+
+    // Show info dialog when enabling OCR
+    if (provider == 'ocr' && enabled) {
+      await _showOCRInfoDialog(provider);
       return;
     }
 
