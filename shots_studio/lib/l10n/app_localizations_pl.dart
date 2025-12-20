@@ -437,4 +437,24 @@ class AppLocalizationsPl extends AppLocalizations {
   String noScreenshotsFoundFor(String query) {
     return 'Nie znaleziono zrzutów ekranu dla \"$query\"';
   }
+
+  @override
+  String get dataManagement => 'Data Management';
+
+  @override
+  String get dataManagementDescription =>
+      'Backup and restore your screenshots metadata, collections, and settings.';
+
+  @override
+  String get backup => 'Backup';
+
+  @override
+  String get restore => 'Restore';
+
+  @override
+  String get restoreData => 'Restore Data';
+
+  @override
+  String get restoreWarning =>
+      'This will replace all your current data with the backup. Make sure you have a current backup before proceeding.\n\nImages that no longer exist on your device will be skipped.';
 }

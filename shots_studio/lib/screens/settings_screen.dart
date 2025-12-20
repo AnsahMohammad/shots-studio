@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shots_studio/widgets/app_drawer/settings_section.dart';
 import 'package:shots_studio/widgets/app_drawer/advanced_settings_section.dart';
 import 'package:shots_studio/l10n/app_localizations.dart';
+import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -34,6 +35,8 @@ class SettingsScreen extends StatefulWidget {
   final Function(Locale)? onLocaleChanged;
   final List<Screenshot>? allScreenshots;
   final VoidCallback? onClearCorruptFiles;
+  final List<Collection>? allCollections;
+  final Function(List<Screenshot>, List<Collection>)? onDataRestored;
 
   const SettingsScreen({
     super.key,
@@ -66,6 +69,8 @@ class SettingsScreen extends StatefulWidget {
     this.onLocaleChanged,
     this.allScreenshots,
     this.onClearCorruptFiles,
+    this.allCollections,
+    this.onDataRestored,
   });
 
   @override
@@ -162,6 +167,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onResetAiProcessing: widget.onResetAiProcessing,
                 allScreenshots: widget.allScreenshots,
                 onClearCorruptFiles: widget.onClearCorruptFiles,
+                allCollections: widget.allCollections,
+                onDataRestored: widget.onDataRestored,
               ),
             ],
           ],

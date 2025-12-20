@@ -10,6 +10,7 @@ class ScreenshotSwipeDetailScreen extends StatefulWidget {
   final List<Collection> allCollections;
   final List<Screenshot> allScreenshots;
   final Function(Collection) onUpdateCollection;
+  final Function(Collection)? onCollectionAdded;
   final Function(String) onDeleteScreenshot;
   final VoidCallback? onScreenshotUpdated;
 
@@ -20,6 +21,7 @@ class ScreenshotSwipeDetailScreen extends StatefulWidget {
     required this.allCollections,
     required this.allScreenshots,
     required this.onUpdateCollection,
+    this.onCollectionAdded,
     required this.onDeleteScreenshot,
     this.onScreenshotUpdated,
   });
@@ -137,6 +139,7 @@ class _ScreenshotSwipeDetailScreenState
         allScreenshots: widget.allScreenshots,
         contextualScreenshots: widget.screenshots,
         onUpdateCollection: widget.onUpdateCollection,
+        onCollectionAdded: widget.onCollectionAdded,
         onDeleteScreenshot: _onScreenshotDeleted,
         onScreenshotUpdated: widget.onScreenshotUpdated,
         currentIndex: index,

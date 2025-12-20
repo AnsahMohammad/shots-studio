@@ -3,7 +3,6 @@ import 'dart:math';
 import '../../services/sponsorship_service.dart';
 import '../../services/analytics/analytics_service.dart';
 import '../sponsorship/sponsorship_dialog.dart';
-import '../../l10n/app_localizations.dart';
 
 class AppDrawerHeader extends StatefulWidget {
   const AppDrawerHeader({super.key});
@@ -27,13 +26,13 @@ class _AppDrawerHeaderState extends State<AppDrawerHeader>
   String _getCurrentGiftText(BuildContext context) {
     switch (_currentTextIndex) {
       case 0:
-        return AppLocalizations.of(context)?.supportTheProject ?? 'Support Us';
+        return 'Gift \$10';
       case 1:
-        return 'Gift \$1';
+        return 'Gift \$15';
       case 2:
-        return 'Gift \$5';
+        return 'Gift \$20';
       default:
-        return AppLocalizations.of(context)?.supportTheProject ?? 'Support Us';
+        return 'Gift \$10';
     }
   }
 

@@ -41,6 +41,23 @@ class CollectionsSection extends StatelessWidget {
 
     if (newCollection != null) {
       onCollectionAdded(newCollection);
+
+      // Navigate to the newly created collection detail screen
+      if (context.mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder:
+                (context) => CollectionDetailScreen(
+                  collection: newCollection,
+                  allCollections: collections,
+                  allScreenshots: screenshots,
+                  onUpdateCollection: onUpdateCollection,
+                  onDeleteCollection: onDeleteCollection,
+                  onDeleteScreenshot: onDeleteScreenshot,
+                ),
+          ),
+        );
+      }
     }
   }
 

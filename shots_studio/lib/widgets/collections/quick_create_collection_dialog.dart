@@ -105,7 +105,7 @@ class _QuickCreateCollectionDialogState
                   const SizedBox(height: 4),
                   Text(
                     l10n?.quickCreateExplanation ??
-                        'All screenshots from your search results will be added to this new collection. You can customize the collection name and settings later.',
+                        'All screenshots from this search will be added to this new collection. You will be able to customize the collection name and settings later.',
                     style: TextStyle(
                       color: theme.colorScheme.onSurfaceVariant,
                       fontSize: 13,

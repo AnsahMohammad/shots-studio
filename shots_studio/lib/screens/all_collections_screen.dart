@@ -157,9 +157,9 @@ class _AllCollectionsScreenState extends State<AllCollectionsScreen> {
                 onReorder: _onReorder,
                 itemBuilder: (context, index) {
                   final collection = _sortedCollections[index];
-                  return Container(
+                  return Padding(
                     key: ValueKey(collection.id),
-                    margin: const EdgeInsets.only(bottom: 16.0),
+                    padding: const EdgeInsets.only(bottom: 16.0),
                     child: Card(
                       color: Theme.of(context).colorScheme.secondaryContainer,
                       child: ListTile(
@@ -180,6 +180,8 @@ class _AllCollectionsScreenState extends State<AllCollectionsScreen> {
                                   context,
                                 ).colorScheme.onSecondaryContainer,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         subtitle:
                             collection.description != null &&

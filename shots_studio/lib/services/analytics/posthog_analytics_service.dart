@@ -22,15 +22,12 @@ class PostHogAnalyticsService {
     // Load consent preference
     await _loadAnalyticsConsent();
 
-    // PostHog is automatically initialized via platform-specific configurations
-    // But we can set user properties and configure it here
-
+    // Explicitly enable or disable PostHog based on consent
+    // Since we set OPT_OUT = true in native config, it starts disabled.
     if (_analyticsEnabled) {
-      // PostHog is enabled by default when initialized
-      // No explicit opt-in needed as it's controlled via platform configs
+      await Posthog().enable();
     } else {
-      // Disable PostHog by resetting the instance
-      await Posthog().reset();
+      await Posthog().disable();
     }
 
     _initialized = true;
@@ -62,7 +59,9 @@ class PostHogAnalyticsService {
     await _saveAnalyticsConsent(true);
 
     if (_initialized) {
-      // PostHog is enabled by default - no explicit action needed
+      // Explicitly enable PostHog SDK
+      await Posthog().enable();
+      
       // Log that analytics was re-enabled
       await logFeatureUsed('analytics_enabled');
     }
@@ -79,7 +78,9 @@ class PostHogAnalyticsService {
     await _saveAnalyticsConsent(false);
 
     if (_initialized) {
-      // Reset PostHog to clear all data
+      // Disable PostHog SDK (stops tracking)
+      await Posthog().disable();
+      // Also reset to clear any cached data/ID
       await Posthog().reset();
     }
   }

@@ -941,6 +941,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No screenshots found for \"{query}\"'**
   String noScreenshotsFoundFor(String query);
+
+  /// Title for data management section
+  ///
+  /// In en, this message translates to:
+  /// **'Data Management'**
+  String get dataManagement;
+
+  /// Description for data management section
+  ///
+  /// In en, this message translates to:
+  /// **'Backup and restore your screenshots metadata, collections, and settings.'**
+  String get dataManagementDescription;
+
+  /// Backup button text
+  ///
+  /// In en, this message translates to:
+  /// **'Backup'**
+  String get backup;
+
+  /// Restore button text
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get restore;
+
+  /// Restore data dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Data'**
+  String get restoreData;
+
+  /// Warning message before restoring data
+  ///
+  /// In en, this message translates to:
+  /// **'This will replace all your current data with the backup. Make sure you have a current backup before proceeding.\n\nImages that no longer exist on your device will be skipped.'**
+  String get restoreWarning;
 }
 
 class _AppLocalizationsDelegate

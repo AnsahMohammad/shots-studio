@@ -6,10 +6,12 @@ import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/services/autoCategorization/ai_categorization_service.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
+import 'package:shots_studio/services/export_service.dart';
 import 'package:shots_studio/services/hard_delete_service.dart';
 import 'package:shots_studio/services/snackbar_service.dart';
 import 'package:shots_studio/widgets/screenshots/screenshot_card.dart';
 import 'package:shots_studio/widgets/screenshots/auto-scan_dialogue.dart';
+import 'package:shots_studio/widgets/screenshots/export_dialog.dart';
 import 'package:shots_studio/screens/manage_collection_screenshots_screen.dart';
 import 'package:shots_studio/screens/screenshot_swipe_detail_screen.dart';
 import 'package:shots_studio/screens/edit_collection_screen.dart';
@@ -61,6 +63,9 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
     _currentScreenshotIds = List.from(widget.collection.screenshotIds);
     _isAutoAddEnabled = widget.collection.isAutoAddEnabled;
     _loadHardDeleteSetting();
+
+    // Sync collection count with actual valid screenshots
+    _syncCollectionCountIfNeeded();
   }
 
   @override
@@ -75,6 +80,41 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
     if (mounted) {
       setState(() {
         _hardDeleteEnabled = prefs.getBool('hard_delete_enabled') ?? false;
+      });
+    }
+  }
+
+  /// Sync collection's screenshotIds with actual valid screenshots
+  /// This removes any orphaned/deleted screenshot IDs and updates the count
+  void _syncCollectionCountIfNeeded() {
+    // Get the actual valid screenshot IDs (non-deleted screenshots that exist)
+    final validScreenshotIds =
+        widget.allScreenshots
+            .where((s) => !s.isDeleted && _currentScreenshotIds.contains(s.id))
+            .map((s) => s.id)
+            .toList();
+
+    // Check if there's a mismatch
+    if (validScreenshotIds.length != _currentScreenshotIds.length ||
+        validScreenshotIds.length != widget.collection.screenshotCount) {
+      // Update local state with only valid IDs (no setState needed in initState)
+      _currentScreenshotIds = validScreenshotIds;
+
+      // Defer the parent update to after the build phase to avoid setState during build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+
+        // Update the collection with corrected count
+        final updatedCollection = widget.collection.copyWith(
+          screenshotIds: validScreenshotIds,
+          screenshotCount: validScreenshotIds.length,
+          lastModified: DateTime.now(),
+        );
+        widget.onUpdateCollection(updatedCollection);
+
+        print(
+          'CollectionDetailScreen: Synced collection count from ${widget.collection.screenshotCount} to ${validScreenshotIds.length}',
+        );
       });
     }
   }
@@ -501,6 +541,60 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
     }
   }
 
+  Future<void> _showExportDialog(List<Screenshot> screenshots) async {
+    final ExportOptions? options = await showDialog<ExportOptions>(
+      context: context,
+      builder:
+          (context) => ExportDialog(
+            collectionName:
+                _nameController.text.isEmpty
+                    ? 'Collection'
+                    : _nameController.text,
+            screenshotCount: screenshots.length,
+          ),
+    );
+
+    if (options == null) return; // User cancelled
+
+    // Show loading indicator
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    ExportResult result;
+
+    if (options.asZip) {
+      result = await ExportService.exportAsZip(
+        screenshots: screenshots,
+        collectionName:
+            _nameController.text.isEmpty ? 'Collection' : _nameController.text,
+      );
+    } else {
+      result = await ExportService.exportAsFiles(
+        screenshots: screenshots,
+        isCut: false, // Always copy, never cut
+      );
+    }
+
+    // Dismiss loading indicator
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+
+    // Show result message
+    if (mounted) {
+      if (result.success) {
+        SnackbarService().showSuccess(context, result.message);
+      } else {
+        SnackbarService().showError(context, result.message);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -510,10 +604,16 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
             .toList();
 
     return PopScope(
-      canPop: !_isSelectionMode,
+      canPop: false,
       onPopInvokedWithResult: (didPop, result) {
-        if (_isSelectionMode && !didPop) {
+        if (didPop) return;
+
+        if (_isSelectionMode) {
+          // If in selection mode, just exit selection mode
           _exitSelectionMode();
+        } else {
+          // If not in selection mode, pop all the way to home
+          Navigator.of(context).popUntil((route) => route.isFirst);
         }
       },
       child: Scaffold(
@@ -526,6 +626,14 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
           backgroundColor: theme.colorScheme.surface,
           elevation: 0,
           actions: [
+            IconButton(
+              icon: const Icon(Icons.share_outlined),
+              onPressed:
+                  screenshotsInCollection.isNotEmpty
+                      ? () => _showExportDialog(screenshotsInCollection)
+                      : null,
+              tooltip: 'Export Collection',
+            ),
             IconButton(
               icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
               onPressed: _confirmDelete,
@@ -929,6 +1037,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                                     allScreenshots: widget.allScreenshots,
                                     onUpdateCollection:
                                         widget.onUpdateCollection,
+                                    onCollectionAdded:
+                                        null, // Collection detail screen doesn't need to add new collections
                                     onDeleteScreenshot: (screenshotId) {
                                       widget.onDeleteScreenshot(screenshotId);
                                       // Clean up deleted screenshots from current collection

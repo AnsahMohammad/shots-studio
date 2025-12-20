@@ -8,6 +8,7 @@ class AIProviderConfig {
       'gemini-2.5-pro',
     ],
     'gemma': ['gemma'],
+    'ocr': ['tesseract-ocr'],
     'none': ['No AI Model'],
   };
 
@@ -18,6 +19,7 @@ class AIProviderConfig {
     'gemini-2.5-flash-lite': 16,
     'gemini-2.5-pro': 32,
     'gemma': 1,
+    'tesseract-ocr': 1,
   };
 
   // Model-specific max categorization limits (for batch processing text analysis)
@@ -27,12 +29,14 @@ class AIProviderConfig {
     'gemini-2.5-flash-lite': 50,
     'gemini-2.5-pro': 50,
     'gemma': 10,
+    'tesseract-ocr': 0,
   };
 
   // Preference keys for provider settings
   static const Map<String, String> providerPrefKeys = {
     'gemini': 'ai_provider_gemini_enabled',
     'gemma': 'ai_provider_gemma_enabled',
+    'ocr': 'ai_provider_ocr_enabled',
   };
 
   // Get all available providers (excluding 'none')

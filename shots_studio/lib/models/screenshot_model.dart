@@ -19,6 +19,7 @@ class Screenshot {
   bool isDeleted;
   DateTime? reminderTime;
   String? reminderText;
+  String? notes; // Personal notes added by user
 
   Screenshot({
     required this.id,
@@ -36,6 +37,7 @@ class Screenshot {
     this.isDeleted = false,
     this.reminderTime,
     this.reminderText,
+    this.notes,
   }) : links = links ?? [],
        collectionIds = collectionIds ?? [];
 
@@ -79,6 +81,7 @@ class Screenshot {
       'isDeleted': isDeleted,
       'reminderTime': reminderTime?.toIso8601String(),
       'reminderText': reminderText,
+      'notes': notes,
     };
   }
 
@@ -113,6 +116,7 @@ class Screenshot {
               ? DateTime.parse(json['reminderTime'] as String)
               : null,
       reminderText: json['reminderText'] as String?,
+      notes: json['notes'] as String?,
     );
   }
 
@@ -181,6 +185,7 @@ class Screenshot {
     bool? isDeleted,
     DateTime? reminderTime,
     String? reminderText,
+    String? notes,
   }) {
     return Screenshot(
       id: id,
@@ -198,6 +203,7 @@ class Screenshot {
       isDeleted: isDeleted ?? this.isDeleted,
       reminderTime: reminderTime ?? this.reminderTime,
       reminderText: reminderText ?? this.reminderText,
+      notes: notes ?? this.notes,
     );
   }
 

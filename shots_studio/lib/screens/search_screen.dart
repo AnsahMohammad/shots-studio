@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/screens/screenshot_swipe_detail_screen.dart';
+import 'package:shots_studio/screens/collection_detail_screen.dart';
 import 'package:shots_studio/widgets/screenshots/screenshot_card.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/utils/responsive_utils.dart';
@@ -97,7 +98,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _filterScreenshots() {
     if (_searchQuery.isEmpty) {
-      _filteredScreenshots = widget.allScreenshots;
+      _filteredScreenshots =
+          widget.allScreenshots
+              .where((screenshot) => !screenshot.isDeleted)
+              .toList();
     } else {
       // Match if it's a whole word OR starts with the word OR ends with the word
       final RegExp wordPattern = RegExp(
@@ -115,6 +119,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
       _filteredScreenshots =
           widget.allScreenshots.where((screenshot) {
+            // Exclude deleted screenshots
+            if (screenshot.isDeleted) return false;
+
             final titleMatch =
                 screenshot.title != null &&
                 wordPattern.hasMatch(screenshot.title!.toLowerCase());
@@ -123,11 +130,15 @@ class _SearchScreenState extends State<SearchScreen> {
                 screenshot.description != null &&
                 wordPattern.hasMatch(screenshot.description!.toLowerCase());
 
+            final notesMatch =
+                screenshot.notes != null &&
+                wordPattern.hasMatch(screenshot.notes!.toLowerCase());
+
             final tagsMatch = screenshot.tags.any(
               (tag) => tag.toLowerCase() == _searchQuery,
             );
 
-            return titleMatch || descriptionMatch || tagsMatch;
+            return titleMatch || descriptionMatch || notesMatch || tagsMatch;
           }).toList();
     }
   }
@@ -200,6 +211,24 @@ class _SearchScreenState extends State<SearchScreen> {
     AnalyticsService().logFeatureUsed(
       'create_collection_from_search_results_quick',
     );
+
+    // Navigate to the newly created collection detail screen
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder:
+            (context) => CollectionDetailScreen(
+              collection: newCollection,
+              allCollections: widget.allCollections,
+              allScreenshots: widget.allScreenshots,
+              onUpdateCollection: widget.onUpdateCollection,
+              onDeleteCollection: (collectionId) {
+                // Pop back to previous screen if this collection is deleted
+                Navigator.of(context).pop();
+              },
+              onDeleteScreenshot: widget.onDeleteScreenshot,
+            ),
+      ),
+    );
   }
 
   @override
@@ -213,7 +242,7 @@ class _SearchScreenState extends State<SearchScreen> {
           controller: _searchController,
           autofocus: true,
           decoration: InputDecoration(
-            hintText: 'Search by title, description, tags...',
+            hintText: 'Search by title, description, notes, tags...',
             border: InputBorder.none,
             hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant),
           ),
@@ -267,6 +296,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         allCollections: widget.allCollections,
                         allScreenshots: widget.allScreenshots,
                         onUpdateCollection: widget.onUpdateCollection,
+                        onCollectionAdded: widget.onCollectionAdded,
                         onDeleteScreenshot: widget.onDeleteScreenshot,
                         onScreenshotUpdated: () {
                           setState(() {});

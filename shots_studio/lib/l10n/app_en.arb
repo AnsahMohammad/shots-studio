@@ -561,5 +561,29 @@
         "example": "invoice"
       }
     }
+  },
+  "dataManagement": "Data Management",
+  "@dataManagement": {
+    "description": "Title for data management section"
+  },
+  "dataManagementDescription": "Backup and restore your screenshots metadata, collections, and settings.",
+  "@dataManagementDescription": {
+    "description": "Description for data management section"
+  },
+  "backup": "Backup",
+  "@backup": {
+    "description": "Backup button text"
+  },
+  "restore": "Restore",
+  "@restore": {
+    "description": "Restore button text"
+  },
+  "restoreData": "Restore Data",
+  "@restoreData": {
+    "description": "Restore data dialog title"
+  },
+  "restoreWarning": "This will replace all your current data with the backup. Make sure you have a current backup before proceeding.\n\nImages that no longer exist on your device will be skipped.",
+  "@restoreWarning": {
+    "description": "Warning message before restoring data"
   }
 }

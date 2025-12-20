@@ -45,12 +45,8 @@ class NotificationService {
     // Create notification channels explicitly
     await _createNotificationChannels();
 
-    // Request notification permissions (but not exact alarm permission yet)
-    final permissionResult = await requestNotificationPermissions();
-
-    if (kDebugMode) {
-      print('Notification permissions: $permissionResult');
-    }
+    // NOTE: Notification permissions are now requested in the onboarding flow
+    // to give users context about why we need them
   }
 
   Future<void> _createNotificationChannels() async {
