@@ -181,8 +181,7 @@ class _AISetupOnboardingScreenState extends State<AISetupOnboardingScreen> {
   Future<void> _completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // First, disable ALL providers
-    await prefs.setBool(AIProviderConfig.providerPrefKeys['gemini']!, false);
+    // First, disable most providers (keep Gemini enabled by default so users can access Gemini models)
     await prefs.setBool(AIProviderConfig.providerPrefKeys['gemma']!, false);
     await prefs.setBool(AIProviderConfig.providerPrefKeys['ocr']!, false);
 

@@ -403,11 +403,11 @@ class ScreenshotAnalysisService extends AIService {
 
     basePrompt += """
 
-      Additionally, extract any clickable information from the screenshot that you can see on the image (if useful) such as:
+      Additionally, extract any copyable information from the screenshot that you can see on the image (if useful) such as:
       - Phone numbers (format them properly with country codes when possible)
       - Email addresses
       - Website URLs/links
-      - Any other clickable or actionable text that users might want to copy or interact with
+      - Any other copyable text that users might want to copy or store for later
       Include these in a "links" field as a list of strings. eg : ["tel:+1234567890", "mailto:example@example.com"]
     """;
 
