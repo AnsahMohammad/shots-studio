@@ -1,1 +1,109 @@
-{}
+{
+  "ar": [
+    "dataManagement",
+    "dataManagementDescription",
+    "backup",
+    "restore",
+    "restoreData",
+    "restoreWarning"
+  ],
+
+  "de": [
+    "dataManagement",
+    "dataManagementDescription",
+    "backup",
+    "restore",
+    "restoreData",
+    "restoreWarning"
+  ],
+
+  "es": [
+    "dataManagement",
+    "dataManagementDescription",
+    "backup",
+    "restore",
+    "restoreData",
+    "restoreWarning"
+  ],
+
+  "fr": [
+    "dataManagement",
+    "dataManagementDescription",
+    "backup",
+    "restore",
+    "restoreData",
+    "restoreWarning"
+  ],
+
+  "hi": [
+    "dataManagement",
+    "dataManagementDescription",
+    "backup",
+    "restore",
+    "restoreData",
+    "restoreWarning"
+  ],
+
+  "it": [
+    "dataManagement",
+    "dataManagementDescription",
+    "backup",
+    "restore",
+    "restoreData",
+    "restoreWarning"
+  ],
+
+  "ja": [
+    "dataManagement",
+    "dataManagementDescription",
+    "backup",
+    "restore",
+    "restoreData",
+    "restoreWarning"
+  ],
+
+  "pl": [
+    "dataManagement",
+    "dataManagementDescription",
+    "backup",
+    "restore",
+    "restoreData",
+    "restoreWarning"
+  ],
+
+  "pt": [
+    "dataManagement",
+    "dataManagementDescription",
+    "backup",
+    "restore",
+    "restoreData",
+    "restoreWarning"
+  ],
+
+  "ro": [
+    "dataManagement",
+    "dataManagementDescription",
+    "backup",
+    "restore",
+    "restoreData",
+    "restoreWarning"
+  ],
+
+  "ru": [
+    "dataManagement",
+    "dataManagementDescription",
+    "backup",
+    "restore",
+    "restoreData",
+    "restoreWarning"
+  ],
+
+  "zh": [
+    "dataManagement",
+    "dataManagementDescription",
+    "backup",
+    "restore",
+    "restoreData",
+    "restoreWarning"
+  ]
+}

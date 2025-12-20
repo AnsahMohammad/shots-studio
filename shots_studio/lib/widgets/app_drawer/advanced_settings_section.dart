@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/services/corrupt_file_service.dart';
-// import 'package:shots_studio/services/xmp_metadata_service.dart'; // DISABLED - XMP feature not working
 import 'package:shots_studio/models/screenshot_model.dart';
-// import 'package:shots_studio/screens/debug_notifications_screen.dart'; // Uncomment for debugging
+import 'package:shots_studio/widgets/backup_and_restore.dart';
 import '../../l10n/app_localizations.dart';
 
 class AdvancedSettingsSection extends StatefulWidget {
@@ -24,6 +24,8 @@ class AdvancedSettingsSection extends StatefulWidget {
   final VoidCallback? onResetAiProcessing;
   final List<Screenshot>? allScreenshots;
   final VoidCallback? onClearCorruptFiles;
+  final List<Collection>? allCollections;
+  final Function(List<Screenshot>, List<Collection>)? onDataRestored;
 
   const AdvancedSettingsSection({
     super.key,
@@ -42,6 +44,8 @@ class AdvancedSettingsSection extends StatefulWidget {
     this.onResetAiProcessing,
     this.allScreenshots,
     this.onClearCorruptFiles,
+    this.allCollections,
+    this.onDataRestored,
   });
 
   @override
@@ -524,6 +528,12 @@ class _AdvancedSettingsSectionState extends State<AdvancedSettingsSection> {
           activeThumbColor: theme.colorScheme.primary,
           onChanged: null, // Disabled - greyed out
         ),
+        // Data Management Card (Backup & Restore)
+        BackupRestoreCard(
+          allScreenshots: widget.allScreenshots,
+          allCollections: widget.allCollections,
+          onDataRestored: widget.onDataRestored,
+        ),
         // Reset AI Processing Button
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -588,37 +598,6 @@ class _AdvancedSettingsSectionState extends State<AdvancedSettingsSection> {
               ),
             ),
           ),
-        // Debug Notifications Button (only in debug mode)
-        // Temporarily commented out - uncomment for debugging notification issues
-        // if (kDebugMode)
-        //   Padding(
-        //     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-        //     child: SizedBox(
-        //       width: double.infinity,
-        //       child: OutlinedButton.icon(
-        //         onPressed: () {
-        //           Navigator.push(
-        //             context,
-        //             MaterialPageRoute(
-        //               builder: (context) => const DebugNotificationsScreen(),
-        //             ),
-        //           );
-        //         },
-        //         icon: Icon(Icons.bug_report, color: theme.colorScheme.secondary),
-        //         label: Text(
-        //           'Debug Notifications',
-        //           style: TextStyle(color: theme.colorScheme.secondary),
-        //         ),
-        //         style: OutlinedButton.styleFrom(
-        //           side: BorderSide(color: theme.colorScheme.secondary),
-        //           padding: const EdgeInsets.symmetric(vertical: 12.0),
-        //           shape: RoundedRectangleBorder(
-        //             borderRadius: BorderRadius.circular(8.0),
-        //           ),
-        //         ),
-        //       ),
-        //     ),
-        //   ),
       ],
     );
   }

@@ -425,4 +425,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String noScreenshotsFoundFor(String query) {
     return '未找到与 \"$query\" 相关的截图';
   }
+
+  @override
+  String get dataManagement => 'Data Management';
+
+  @override
+  String get dataManagementDescription =>
+      'Backup and restore your screenshots metadata, collections, and settings.';
+
+  @override
+  String get backup => 'Backup';
+
+  @override
+  String get restore => 'Restore';
+
+  @override
+  String get restoreData => 'Restore Data';
+
+  @override
+  String get restoreWarning =>
+      'This will replace all your current data with the backup. Make sure you have a current backup before proceeding.\n\nImages that no longer exist on your device will be skipped.';
 }

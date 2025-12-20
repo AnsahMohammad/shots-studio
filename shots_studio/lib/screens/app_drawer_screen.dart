@@ -4,6 +4,7 @@ import 'package:shots_studio/widgets/app_drawer/index.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/services/snackbar_service.dart';
 import 'package:shots_studio/l10n/app_localizations.dart';
+import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/screens/settings_screen.dart';
 
@@ -37,6 +38,8 @@ class AppDrawer extends StatefulWidget {
   final Function(Locale)? onLocaleChanged;
   final List<Screenshot>? allScreenshots;
   final VoidCallback? onClearCorruptFiles;
+  final List<Collection>? allCollections;
+  final Function(List<Screenshot>, List<Collection>)? onDataRestored;
 
   const AppDrawer({
     super.key,
@@ -69,6 +72,8 @@ class AppDrawer extends StatefulWidget {
     this.onLocaleChanged,
     this.allScreenshots,
     this.onClearCorruptFiles,
+    this.allCollections,
+    this.onDataRestored,
   });
 
   @override
@@ -136,6 +141,8 @@ class _AppDrawerState extends State<AppDrawer> {
               onLocaleChanged: widget.onLocaleChanged,
               allScreenshots: widget.allScreenshots,
               onClearCorruptFiles: widget.onClearCorruptFiles,
+              allCollections: widget.allCollections,
+              onDataRestored: widget.onDataRestored,
             ),
       ),
     );

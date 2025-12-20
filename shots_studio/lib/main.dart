@@ -2070,6 +2070,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         onLocaleChanged: widget.onLocaleChanged,
         allScreenshots: _screenshots,
         onClearCorruptFiles: _clearCorruptFiles,
+        allCollections: _collections,
+        onDataRestored: (restoredScreenshots, restoredCollections) {
+          setState(() {
+            _screenshots.clear();
+            _screenshots.addAll(restoredScreenshots);
+            _collections.clear();
+            _collections.addAll(restoredCollections);
+          });
+          _saveDataToPrefs();
+          SnackbarService().showSuccess(context, 'Data restored successfully');
+        },
       ),
       body: Stack(
         children: [
