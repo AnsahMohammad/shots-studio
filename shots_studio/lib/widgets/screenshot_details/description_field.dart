@@ -8,6 +8,7 @@ class DescriptionField extends StatelessWidget {
   final FocusNode focusNode;
   final bool isExpanded;
   final bool enhancedAnimationsEnabled;
+  final bool readOnly;
   final VoidCallback onExpand;
   final VoidCallback onCollapse;
   final ValueChanged<String> onChanged;
@@ -19,6 +20,7 @@ class DescriptionField extends StatelessWidget {
     required this.focusNode,
     required this.isExpanded,
     required this.enhancedAnimationsEnabled,
+    this.readOnly = false,
     required this.onExpand,
     required this.onCollapse,
     required this.onChanged,
@@ -49,15 +51,18 @@ class DescriptionField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AnimatedSize(
-          duration: enhancedAnimationsEnabled
-              ? const Duration(milliseconds: 500)
-              : const Duration(milliseconds: 200),
-          curve: enhancedAnimationsEnabled ? Curves.easeOutBack : Curves.easeInOut,
+          duration:
+              enhancedAnimationsEnabled
+                  ? const Duration(milliseconds: 500)
+                  : const Duration(milliseconds: 200),
+          curve:
+              enhancedAnimationsEnabled ? Curves.easeOutBack : Curves.easeInOut,
           child: Stack(
             children: [
               TextField(
                 controller: controller,
                 focusNode: focusNode,
+                readOnly: readOnly,
                 decoration: InputDecoration(
                   hintText:
                       AppLocalizations.of(context)?.addDescription ??
@@ -97,13 +102,9 @@ class DescriptionField extends StatelessWidget {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Theme.of(context)
-                                .colorScheme
-                                .secondaryContainer
+                            Theme.of(context).colorScheme.secondaryContainer
                                 .withValues(alpha: 0.0),
-                            Theme.of(context)
-                                .colorScheme
-                                .secondaryContainer
+                            Theme.of(context).colorScheme.secondaryContainer
                                 .withValues(alpha: 0.7),
                             Theme.of(context).colorScheme.secondaryContainer,
                           ],
@@ -129,7 +130,8 @@ class DescriptionField extends StatelessWidget {
                                   Text(
                                     'Read more',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -138,7 +140,8 @@ class DescriptionField extends StatelessWidget {
                                   Icon(
                                     Icons.keyboard_arrow_down_rounded,
                                     size: 20,
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
                                   ),
                                 ],
                               ),

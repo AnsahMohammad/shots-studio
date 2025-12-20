@@ -63,10 +63,12 @@ class ScreenshotDetailScreen extends StatefulWidget {
 }
 
 class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late List<String> _tags;
   late TextEditingController _descriptionController;
   late FocusNode _descriptionFocusNode;
+  late TextEditingController _notesController;
+  late FocusNode _notesFocusNode;
   bool _isProcessingAI = false;
   bool _isProcessingOCR = false;
   final AIServiceManager _aiServiceManager = AIServiceManager();
@@ -74,6 +76,8 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
   bool _hardDeleteEnabled = false;
   bool _isDescriptionExpanded = false;
   bool _enhancedAnimationsEnabled = true;
+  double _lastKeyboardHeight = 0;
+  bool _isKeyboardVisible = false;
 
   // Animation controller for simple bounce
   late AnimationController _animationController;
@@ -82,6 +86,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _tags = List.from(widget.screenshot.tags);
     _descriptionController = TextEditingController(
       text: widget.screenshot.description,
@@ -96,6 +101,12 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
         });
       }
     });
+
+    // Initialize notes controller and focus node
+    _notesController = TextEditingController(
+      text: widget.screenshot.notes,
+    );
+    _notesFocusNode = FocusNode();
 
     // Track screenshot details screen access
     AnalyticsService().logScreenView('screenshot_details_screen');
@@ -170,6 +181,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     if (oldWidget.screenshot.id != widget.screenshot.id) {
       _tags = List.from(widget.screenshot.tags);
       _descriptionController.text = widget.screenshot.description ?? '';
+      _notesController.text = widget.screenshot.notes ?? '';
 
       _checkExpiredReminders();
       if (mounted) {
@@ -185,8 +197,11 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _descriptionController.dispose();
     _descriptionFocusNode.dispose();
+    _notesController.dispose();
+    _notesFocusNode.dispose();
     _animationController.dispose();
 
     WakelockPlus.disable().catchError((e) {
@@ -194,6 +209,38 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     });
 
     super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    // Get current keyboard height using the recommended approach
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    final keyboardHeight = view.viewInsets.bottom / view.devicePixelRatio;
+    
+    // Check if keyboard visibility changed and update state
+    final isVisible = keyboardHeight > 0;
+    if (_isKeyboardVisible != isVisible) {
+      setState(() {
+        _isKeyboardVisible = isVisible;
+      });
+      // If keyboard is hiding, play the bounce animation for the toolbar
+      if (!isVisible) {
+        _animationController.reset();
+        _animationController.forward();
+      }
+    }
+    
+    // If keyboard was visible and is now hidden, unfocus text fields
+    if (_lastKeyboardHeight > 0 && keyboardHeight == 0) {
+      if (_descriptionFocusNode.hasFocus) {
+        _descriptionFocusNode.unfocus();
+      }
+      if (_notesFocusNode.hasFocus) {
+        _notesFocusNode.unfocus();
+      }
+    }
+    _lastKeyboardHeight = keyboardHeight;
   }
 
   void _updateScreenshotDetails() {
@@ -836,21 +883,26 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     }
   }
 
-  Widget _buildFloatingToolbar() {
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        return FloatingToolbar(
-          scaleAnimation: _scaleAnimation,
-          screenshot: widget.screenshot,
-          isProcessingOCR: _isProcessingOCR,
-          onShare: _handleShare,
-          onReminderPressed: _handleReminder,
-          onOCRPressed: _processScreenshotWithOCR,
-          onDeletePressed: _confirmDeleteScreenshot,
-          onAddToCollectionPressed: _showAddToCollectionDialog,
-        );
-      },
+  Widget? _buildFloatingToolbar() {
+    // Hide floating toolbar when keyboard is visible to prevent obstruction
+    // Using Visibility instead of returning null prevents Scaffold from running its own exit/enter animations
+    return Visibility(
+      visible: !_isKeyboardVisible,
+      child: AnimatedBuilder(
+        animation: _animationController,
+        builder: (context, child) {
+          return FloatingToolbar(
+            scaleAnimation: _scaleAnimation,
+            screenshot: widget.screenshot,
+            isProcessingOCR: _isProcessingOCR,
+            onShare: _handleShare,
+            onReminderPressed: _handleReminder,
+            onOCRPressed: _processScreenshotWithOCR,
+            onDeletePressed: _confirmDeleteScreenshot,
+            onAddToCollectionPressed: _showAddToCollectionDialog,
+          );
+        },
+      ),
     );
   }
 
@@ -1018,6 +1070,17 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
       },
       onDescriptionEditingComplete: () {
         widget.screenshot.description = _descriptionController.text;
+        _updateScreenshotDetails();
+        FocusScope.of(context).unfocus();
+      },
+      notesController: _notesController,
+      notesFocusNode: _notesFocusNode,
+      onNotesChanged: (value) {
+        widget.screenshot.notes = value;
+        setState(() {});
+      },
+      onNotesEditingComplete: () {
+        widget.screenshot.notes = _notesController.text;
         _updateScreenshotDetails();
         FocusScope.of(context).unfocus();
       },
