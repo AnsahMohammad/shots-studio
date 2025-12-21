@@ -16,6 +16,23 @@
       "dismiss_text": "dismiss",
       "action_url": "https://github.com/AnsahMohammad/shots-studio/releases/tag/v1.9.70",
       "platform": "all"
+    },
+    {
+      "show": true,
+      "id": "playstore_release_1_9_70",
+      "title": "We're officially on Google Play! 🚀✨",
+      "message": "Big news! Thanks to your incredible support and feedback, Shots Studio has officially landed on the Google Play Store 🎉🎉!\n\n If you love the convenience of automatic updates, you can now find us there. Otherwise, feel free to keep rocking your current version, we'll keep supporting all the platforms!\n\n(Note: If you do switch, remember to BACKUP your data in Settings first so you can restore it seamlessly!) \n Settings > Advanced settings > Data Management > Backup \n\nThank you for being part of this journey. We're just getting started! ❤️",
+      "type": "info",
+      "priority": "high",
+      "show_once": true,
+      "valid_until": "2026-12-01T00:00:00Z",
+      "is_notification": false,
+      "version": "1.9.70",
+      "beta_only": false,
+      "action_text": "View on Play Store",
+      "dismiss_text": "Awesome!",
+      "action_url": "https://play.google.com/store/apps/details?id=com.ansah.shots_studio",
+      "platform": "github"
     }
   ]
 }
