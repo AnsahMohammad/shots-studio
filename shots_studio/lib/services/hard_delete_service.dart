@@ -1,12 +1,16 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/services.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 
 /// Service for handling hard deletion of screenshot files from device storage
+/// Uses native MediaStore API on Android 11+ for batch delete with single confirmation dialog
 class HardDeleteService {
   static const bool _kDebugMode = kDebugMode;
+  static const MethodChannel _mediaDeleteChannel = MethodChannel(
+    'media_delete',
+  );
 
   /// Check if hard delete is available on the current platform
   static bool isHardDeleteAvailable() {
@@ -14,108 +18,24 @@ class HardDeleteService {
     return !kIsWeb && (Platform.isAndroid || Platform.isIOS);
   }
 
-  /// Check and request necessary permissions for hard delete
-  static Future<bool> checkAndRequestPermissions() async {
-    if (!isHardDeleteAvailable()) {
-      if (_kDebugMode) {
-        print('HardDeleteService: Hard delete not available on this platform');
-      }
-      return false;
-    }
-
+  /// Check if native batch delete with single dialog is supported
+  static Future<bool> isBatchDeleteSupported() async {
+    if (!Platform.isAndroid) return false;
     try {
-      if (Platform.isAndroid) {
-        // Check Android SDK version to determine which permissions to use
-        // For Android 11+ (API 30+), we need MANAGE_EXTERNAL_STORAGE
-        // For older versions, WRITE_EXTERNAL_STORAGE is sufficient
-
-        if (_kDebugMode) {
-          print('HardDeleteService: Checking Android permissions...');
-        }
-
-        // First try MANAGE_EXTERNAL_STORAGE for Android 11+
-        var manageStorageStatus = await Permission.manageExternalStorage.status;
-        if (_kDebugMode) {
-          print(
-            'HardDeleteService: Initial MANAGE_EXTERNAL_STORAGE status: $manageStorageStatus',
-          );
-        }
-
-        if (!manageStorageStatus.isGranted) {
-          if (_kDebugMode) {
-            print(
-              'HardDeleteService: Requesting MANAGE_EXTERNAL_STORAGE permission...',
-            );
-          }
-          manageStorageStatus =
-              await Permission.manageExternalStorage.request();
-          if (_kDebugMode) {
-            print(
-              'HardDeleteService: MANAGE_EXTERNAL_STORAGE permission after request: $manageStorageStatus',
-            );
-          }
-        }
-
-        // If MANAGE_EXTERNAL_STORAGE is granted, we're good
-        if (manageStorageStatus.isGranted) {
-          if (_kDebugMode) {
-            print(
-              'HardDeleteService: MANAGE_EXTERNAL_STORAGE permission granted',
-            );
-          }
-          return true;
-        }
-
-        // Fallback to traditional storage permission for older Android versions
-        var storageStatus = await Permission.storage.status;
-        if (_kDebugMode) {
-          print('HardDeleteService: Storage permission status: $storageStatus');
-        }
-
-        if (!storageStatus.isGranted) {
-          if (_kDebugMode) {
-            print('HardDeleteService: Requesting storage permission...');
-          }
-          storageStatus = await Permission.storage.request();
-          if (_kDebugMode) {
-            print(
-              'HardDeleteService: Storage permission after request: $storageStatus',
-            );
-          }
-        }
-
-        final bool hasPermission =
-            manageStorageStatus.isGranted || storageStatus.isGranted;
-
-        if (_kDebugMode) {
-          print('HardDeleteService: Final permission result: $hasPermission');
-          print(
-            'HardDeleteService: MANAGE_EXTERNAL_STORAGE: ${manageStorageStatus.isGranted}',
-          );
-          print('HardDeleteService: STORAGE: ${storageStatus.isGranted}');
-        }
-
-        return hasPermission;
-      }
-
-      // For iOS, we typically don't need special permissions for app-created files
-      if (Platform.isIOS) {
-        if (_kDebugMode) {
-          print('HardDeleteService: iOS platform - permissions not required');
-        }
-        return true;
-      }
-
-      return false;
+      final result = await _mediaDeleteChannel.invokeMethod<bool>(
+        'isSupported',
+      );
+      return result ?? false;
     } catch (e) {
       if (_kDebugMode) {
-        print('HardDeleteService: Error checking permissions: $e');
+        print('HardDeleteService: Error checking batch delete support: $e');
       }
       return false;
     }
   }
 
   /// Attempt to hard delete a screenshot file from device storage
+  /// For single file deletion, uses the batch method internally
   static Future<HardDeleteResult> hardDeleteScreenshot(
     Screenshot screenshot,
   ) async {
@@ -142,17 +62,14 @@ class HardDeleteService {
     }
 
     try {
-      final filePath =
-          screenshot.path!; // Safe to use ! here since we checked above
+      final filePath = screenshot.path!;
       final file = File(filePath);
 
       // Check if file exists before attempting deletion
       final bool fileExisted = await file.exists();
 
       if (_kDebugMode) {
-        print(
-          'HardDeleteService: Attempting to delete file: ${screenshot.path}',
-        );
+        print('HardDeleteService: Attempting to delete file: $filePath');
         print('HardDeleteService: File exists: $fileExisted');
       }
 
@@ -165,51 +82,26 @@ class HardDeleteService {
         );
       }
 
-      // Check permissions before attempting deletion
-      final bool hasPermission = await checkAndRequestPermissions();
-      if (!hasPermission) {
+      // Use batch delete method (works for single file too)
+      final bulkResult = await hardDeleteScreenshots([screenshot]);
+
+      if (bulkResult.successCount > 0) {
+        AnalyticsService().logFeatureUsed('screenshot_hard_deleted');
+        return HardDeleteResult(
+          success: true,
+          error: null,
+          fileExisted: fileExisted,
+          message: 'File successfully deleted from device',
+        );
+      } else {
         return HardDeleteResult(
           success: false,
-          error: 'Insufficient permissions for file deletion',
+          error:
+              bulkResult.overallError ??
+              'Deletion failed or was denied by user',
           fileExisted: fileExisted,
         );
       }
-
-      // Attempt to delete the file
-      await file.delete();
-
-      // Verify deletion was successful
-      final bool stillExists = await file.exists();
-
-      if (_kDebugMode) {
-        print(
-          'HardDeleteService: File still exists after deletion attempt: $stillExists',
-        );
-      }
-
-      if (stillExists) {
-        return HardDeleteResult(
-          success: false,
-          error: 'File deletion failed - file still exists',
-          fileExisted: fileExisted,
-        );
-      }
-
-      // Log successful hard delete
-      AnalyticsService().logFeatureUsed('screenshot_hard_deleted');
-
-      if (_kDebugMode) {
-        print(
-          'HardDeleteService: Successfully hard deleted file: ${screenshot.path}',
-        );
-      }
-
-      return HardDeleteResult(
-        success: true,
-        error: null,
-        fileExisted: fileExisted,
-        message: 'File successfully deleted from device',
-      );
     } catch (e) {
       if (_kDebugMode) {
         print('HardDeleteService: Error during hard delete: $e');
@@ -218,12 +110,68 @@ class HardDeleteService {
       return HardDeleteResult(
         success: false,
         error: 'Failed to delete file: ${e.toString()}',
-        fileExisted: true, // Assume it existed if we got an error
+        fileExisted: true,
       );
     }
   }
 
-  /// Perform hard delete on multiple screenshots
+  /// Delete a single file using native MediaStore API (for use by other services like ExportService)
+  /// Returns true if deletion was successful, false otherwise
+  static Future<bool> deleteFileWithMediaStore(String filePath) async {
+    if (!isHardDeleteAvailable()) {
+      return false;
+    }
+
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) {
+        return true; // Already deleted
+      }
+
+      if (Platform.isAndroid) {
+        try {
+          final result = await _mediaDeleteChannel
+              .invokeMethod<Map<dynamic, dynamic>>('deleteMediaFiles', {
+                'filePaths': [filePath],
+              });
+
+          final success = result?['success'] == true;
+          if (_kDebugMode) {
+            print(
+              'HardDeleteService.deleteFileWithMediaStore: result=$result, success=$success',
+            );
+          }
+          return success;
+        } catch (e) {
+          if (_kDebugMode) {
+            print(
+              'HardDeleteService.deleteFileWithMediaStore: Native delete error: $e',
+            );
+          }
+          // Fallback to direct deletion
+          try {
+            await file.delete();
+            return !await file.exists();
+          } catch (_) {
+            return false;
+          }
+        }
+      } else if (Platform.isIOS) {
+        await file.delete();
+        return !await file.exists();
+      }
+
+      return false;
+    } catch (e) {
+      if (_kDebugMode) {
+        print('HardDeleteService.deleteFileWithMediaStore: Error: $e');
+      }
+      return false;
+    }
+  }
+
+  /// Perform hard delete on multiple screenshots with a SINGLE confirmation dialog
+  /// On Android 11+, shows one dialog: "Delete X files?" instead of asking for each file
   static Future<BulkHardDeleteResult> hardDeleteScreenshots(
     List<Screenshot> screenshots,
   ) async {
@@ -237,19 +185,12 @@ class HardDeleteService {
       );
     }
 
-    final List<HardDeleteResult> results = [];
-    int successCount = 0;
-    int failureCount = 0;
-
-    // Check permissions once for all deletions
-    final bool hasPermission = await checkAndRequestPermissions();
-    if (!hasPermission) {
+    if (screenshots.isEmpty) {
       return BulkHardDeleteResult(
-        totalAttempted: screenshots.length,
+        totalAttempted: 0,
         successCount: 0,
-        failureCount: screenshots.length,
+        failureCount: 0,
         results: [],
-        overallError: 'Insufficient permissions for file deletion',
       );
     }
 
@@ -259,38 +200,168 @@ class HardDeleteService {
       );
     }
 
-    for (final screenshot in screenshots) {
-      final result = await hardDeleteScreenshot(screenshot);
-      results.add(result);
+    // Collect valid file paths
+    final List<String> filePaths = [];
+    final List<HardDeleteResult> results = [];
 
-      if (result.success) {
-        successCount++;
+    for (final screenshot in screenshots) {
+      if (screenshot.path != null && screenshot.path!.isNotEmpty) {
+        final file = File(screenshot.path!);
+        if (await file.exists()) {
+          filePaths.add(screenshot.path!);
+        } else {
+          // File already gone - count as success
+          results.add(
+            HardDeleteResult(
+              success: true,
+              fileExisted: false,
+              message: 'File was already deleted',
+            ),
+          );
+        }
       } else {
-        failureCount++;
+        results.add(
+          HardDeleteResult(
+            success: false,
+            error: 'No file path',
+            fileExisted: false,
+          ),
+        );
       }
     }
 
-    // Log bulk hard delete analytics
-    AnalyticsService().logFeatureUsed('screenshots_bulk_hard_deleted');
-    AnalyticsService().logFeatureUsed(
-      'hard_delete_success_count_$successCount',
-    );
-    AnalyticsService().logFeatureUsed(
-      'hard_delete_failure_count_$failureCount',
-    );
-
-    if (_kDebugMode) {
-      print(
-        'HardDeleteService: Bulk hard delete completed - Success: $successCount, Failed: $failureCount',
+    if (filePaths.isEmpty) {
+      // All files were already deleted or had no path
+      final successCount = results.where((r) => r.success).length;
+      return BulkHardDeleteResult(
+        totalAttempted: screenshots.length,
+        successCount: successCount,
+        failureCount: screenshots.length - successCount,
+        results: results,
       );
     }
 
-    return BulkHardDeleteResult(
-      totalAttempted: screenshots.length,
-      successCount: successCount,
-      failureCount: failureCount,
-      results: results,
-    );
+    try {
+      if (Platform.isAndroid) {
+        // Use native batch delete with single confirmation dialog
+        final result = await _mediaDeleteChannel
+            .invokeMethod<Map<dynamic, dynamic>>('deleteMediaFiles', {
+              'filePaths': filePaths,
+            });
+
+        if (_kDebugMode) {
+          print('HardDeleteService: Native batch delete result: $result');
+        }
+
+        final success = result?['success'] == true;
+        final userApproved = result?['userApproved'] as bool? ?? false;
+        final error = result?['error'] as String?;
+
+        // Add results for the files we attempted to delete
+        for (int i = 0; i < filePaths.length; i++) {
+          if (success) {
+            results.add(
+              HardDeleteResult(
+                success: true,
+                fileExisted: true,
+                message: 'File deleted',
+              ),
+            );
+          } else {
+            results.add(
+              HardDeleteResult(
+                success: false,
+                error:
+                    userApproved ? 'Deletion failed' : 'User denied deletion',
+                fileExisted: true,
+              ),
+            );
+          }
+        }
+
+        final totalSuccessCount = results.where((r) => r.success).length;
+        final totalFailureCount = results.where((r) => !r.success).length;
+
+        // Log analytics
+        AnalyticsService().logFeatureUsed('screenshots_bulk_hard_deleted');
+        AnalyticsService().logFeatureUsed(
+          'hard_delete_success_count_$totalSuccessCount',
+        );
+        AnalyticsService().logFeatureUsed(
+          'hard_delete_failure_count_$totalFailureCount',
+        );
+
+        if (_kDebugMode) {
+          print(
+            'HardDeleteService: Bulk hard delete completed - Success: $totalSuccessCount, Failed: $totalFailureCount',
+          );
+        }
+
+        return BulkHardDeleteResult(
+          totalAttempted: screenshots.length,
+          successCount: totalSuccessCount,
+          failureCount: totalFailureCount,
+          results: results,
+          overallError: success ? null : error,
+        );
+      } else if (Platform.isIOS) {
+        // iOS - delete files directly one by one
+        for (final path in filePaths) {
+          try {
+            final file = File(path);
+            await file.delete();
+            final stillExists = await file.exists();
+            results.add(
+              HardDeleteResult(
+                success: !stillExists,
+                fileExisted: true,
+                error: stillExists ? 'File still exists after delete' : null,
+              ),
+            );
+          } catch (e) {
+            results.add(
+              HardDeleteResult(
+                success: false,
+                error: e.toString(),
+                fileExisted: true,
+              ),
+            );
+          }
+        }
+
+        final successCount = results.where((r) => r.success).length;
+        final failureCount = results.where((r) => !r.success).length;
+
+        AnalyticsService().logFeatureUsed('screenshots_bulk_hard_deleted');
+
+        return BulkHardDeleteResult(
+          totalAttempted: screenshots.length,
+          successCount: successCount,
+          failureCount: failureCount,
+          results: results,
+        );
+      }
+
+      return BulkHardDeleteResult(
+        totalAttempted: screenshots.length,
+        successCount: 0,
+        failureCount: screenshots.length,
+        results: [],
+        overallError: 'Unsupported platform',
+      );
+    } catch (e) {
+      if (_kDebugMode) {
+        print('HardDeleteService: Error during bulk delete: $e');
+      }
+
+      return BulkHardDeleteResult(
+        totalAttempted: screenshots.length,
+        successCount: 0,
+        failureCount: screenshots.length,
+        results: [],
+        overallError: 'Failed to delete files: ${e.toString()}',
+      );
+    }
   }
 }
 
