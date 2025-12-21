@@ -37,6 +37,9 @@ With Shots Studio, you can:
 [<img src="docs/assets/get-it-on-github.png"
     alt="Get it on GitHub" height="80">](https://github.com/AnsahMohammad/shots-studio/releases/latest)
 
+[<img src="docs/assets/get-it-on-play.svg"
+    alt="Get it on Playstore" height="55">](https://play.google.com/store/apps/details?id=com.ansah.shots_studio)
+
 [<img src="https://f-droid.org/badge/get-it-on.png"
     alt="Get it on F-Droid" height="80">](https://f-droid.org/en/packages/com.ansah.shots_studio/)
 
