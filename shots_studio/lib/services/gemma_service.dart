@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:flutter_gemma/core/model.dart';
 import 'package:flutter_gemma/pigeon.g.dart';
+import 'package:flutter_gemma/core/api/flutter_gemma.dart' as gemma_api;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class GemmaService {
@@ -30,8 +31,15 @@ class GemmaService {
   int? _lastProcessingTimeMs; // Track last processing time for analytics
   static const int _maxGenerationsBeforeCleanup = 2;
 
-  // Initialize Gemma plugin
-  void initialize() {
+  // Initialize Gemma plugin (lazy - only when needed)
+  static bool _isFlutterGemmaInitialized = false;
+
+  Future<void> initialize() async {
+    // Initialize FlutterGemma once (required since version 0.11.10)
+    if (!_isFlutterGemmaInitialized) {
+      await FlutterGemma.initialize();
+      _isFlutterGemmaInitialized = true;
+    }
     _gemma = FlutterGemmaPlugin.instance;
     _modelManager = _gemma!.modelManager;
   }
@@ -39,7 +47,7 @@ class GemmaService {
   // Load model from file path
   Future<bool> loadModel(String modelFilePath) async {
     if (_gemma == null) {
-      initialize();
+      await initialize();
     }
 
     _isLoading = true;
@@ -54,11 +62,16 @@ class GemmaService {
       // Clean up existing resources before loading new model
       await _cleanupExistingModel();
 
-      // Set the model path - this tells flutter_gemma where to find the model
-      await _modelManager!.setModelPath(modelFilePath);
+      // Install the model using the new FileSource API (references file without copying)
+      final modelFileName = modelFilePath.split('/').last;
+      await gemma_api.FlutterGemma.installModel(
+        modelType: ModelType.gemmaIt,
+      ).fromFile(modelFilePath).install();
 
-      // Verify the model is properly set
-      final isInstalled = await _modelManager!.isModelInstalled;
+      // Verify the model is properly installed
+      final isInstalled = await gemma_api.FlutterGemma.isModelInstalled(
+        modelFileName,
+      );
       if (!isInstalled) {
         throw Exception('Model not properly installed at path: $modelFilePath');
       }
@@ -116,11 +129,8 @@ class GemmaService {
       _inferenceModel = null;
     }
 
-    try {
-      await _modelManager!.deleteModel();
-    } catch (e) {
-      print('Error deleting existing model: $e');
-    }
+    // Note: FileSource models don't need deletion as they reference the original file
+    // The model can be uninstalled if needed using the new API
 
     _forceGarbageCollection();
   }
