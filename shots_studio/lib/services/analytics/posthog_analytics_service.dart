@@ -522,17 +522,6 @@ class PostHogAnalyticsService {
   // Additional PostHog-specific methods
 
   // Identify a user (useful for authenticated users)
-  // TODO: Remove this if not used (privacy)
-  Future<void> identifyUser(
-    String userId, [
-    Map<String, dynamic>? properties,
-  ]) async {
-    if (!_shouldLog()) return;
-
-    final Map<String, Object>? objectProperties =
-        properties?.cast<String, Object>();
-    await Posthog().identify(userId: userId, userProperties: objectProperties);
-  }
 
   // Set person properties by identifying the current user with new properties
   Future<void> setPersonProperties(Map<String, dynamic> properties) async {

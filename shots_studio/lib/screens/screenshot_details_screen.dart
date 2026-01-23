@@ -7,7 +7,6 @@ import 'package:shots_studio/screens/full_screen_image_viewer.dart';
 import 'package:shots_studio/screens/search_screen.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/services/snackbar_service.dart';
-import '../l10n/app_localizations.dart';
 import 'package:shots_studio/services/hard_delete_service.dart';
 import 'package:shots_studio/widgets/screenshots/screenshot_collection_dialog.dart';
 import 'package:share_plus/share_plus.dart';

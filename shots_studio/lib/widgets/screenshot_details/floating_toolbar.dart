@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
-import 'package:share_plus/share_plus.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
-import 'package:shots_studio/services/analytics/analytics_service.dart';
-import 'package:shots_studio/services/snackbar_service.dart';
-import 'package:shots_studio/utils/reminder_utils.dart';
 import 'toolbar_button.dart';
 
 /// A floating action toolbar with share, reminder, OCR, delete, and collection buttons.
@@ -69,9 +64,10 @@ class FloatingToolbar extends StatelessWidget {
                     onPressed: onShare,
                   ),
                   ToolbarButton(
-                    icon: screenshot.reminderTime != null
-                        ? Icons.alarm
-                        : Icons.alarm_outlined,
+                    icon:
+                        screenshot.reminderTime != null
+                            ? Icons.alarm
+                            : Icons.alarm_outlined,
                     tooltip: 'Set reminder',
                     isHighlighted: screenshot.reminderTime != null,
                     onPressed: onReminderPressed,
@@ -100,18 +96,16 @@ class FloatingToolbar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.3),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.3),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
                   BoxShadow(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.1),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),

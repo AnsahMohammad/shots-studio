@@ -224,14 +224,6 @@ class AnalyticsService {
 
   // Additional PostHog-specific methods (optional to use)
 
-  /// Identify a user (useful for authenticated users)
-  Future<void> identifyUser(
-    String userId, [
-    Map<String, dynamic>? properties,
-  ]) async {
-    await _postHogService.identifyUser(userId, properties);
-  }
-
   /// Set person properties for better user analytics
   Future<void> setPersonProperties(Map<String, dynamic> properties) async {
     await _postHogService.setPersonProperties(properties);
@@ -245,11 +237,6 @@ class AnalyticsService {
   /// Check if a feature flag is enabled
   Future<bool> isFeatureEnabled(String featureKey) async {
     return await _postHogService.isFeatureEnabled(featureKey);
-  }
-
-  /// Alias user (link anonymous user to identified user)
-  Future<void> alias(String alias) async {
-    await _postHogService.alias(alias);
   }
 
   /// Group analytics (for organization-level analytics)
