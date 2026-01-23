@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shots_studio/services/logger_service.dart';
 
 // TODO: Add don't show again functionality for messages
 
@@ -24,7 +25,7 @@ class UpdateCheckerService {
       // Fetch recent releases from GitHub (up to 3)
       final releases = await _getRecentReleases();
       if (releases.isEmpty) {
-        print('No releases found or error fetching them.');
+        LoggerService.error('No releases found or error fetching them.');
         return null;
       }
 
@@ -100,11 +101,11 @@ class UpdateCheckerService {
             json.decode(response.body) as List<dynamic>;
         return releases.cast<Map<String, dynamic>>();
       } else {
-        print('GitHub API error: ${response.statusCode}');
+        LoggerService.error('GitHub API error: ${response.statusCode}');
         return [];
       }
     } catch (e) {
-      print('Network error fetching releases: $e');
+      LoggerService.error('Network error fetching releases', e);
       return [];
     }
   }
@@ -156,7 +157,7 @@ class UpdateCheckerService {
 
       return false; // Versions are equal
     } catch (e) {
-      print('Error comparing versions: $e');
+      LoggerService.error('Error comparing versions', e);
       return false;
     }
   }

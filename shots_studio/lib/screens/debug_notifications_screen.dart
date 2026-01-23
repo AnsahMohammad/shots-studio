@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shots_studio/services/notification_service.dart';
+import 'package:shots_studio/services/logger_service.dart';
 import 'package:intl/intl.dart';
 
 class DebugNotificationsScreen extends StatefulWidget {
@@ -18,7 +19,7 @@ class _DebugNotificationsScreenState extends State<DebugNotificationsScreen> {
     setState(() {
       _debugOutput += '$text\n';
     });
-    print(text); // Also print to console
+    LoggerService.log(text); // Also print to console
   }
 
   Future<void> _clearOutput() async {

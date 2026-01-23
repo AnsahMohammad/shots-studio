@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/services/file_watcher_service.dart';
+import 'package:shots_studio/services/logger_service.dart';
 
 /// Result class for image loading operations
 class ImageLoadResult {
@@ -87,7 +88,7 @@ class ImageLoaderService {
         }
 
         if (exists) {
-          print(
+          LoggerService.log(
             'Skipping already loaded image: ${image.path.isNotEmpty ? image.path : imageName}',
           );
           continue;
@@ -121,7 +122,7 @@ class ImageLoaderService {
     } catch (e) {
       // Log error analytics
       AnalyticsService().logNetworkError(e.toString(), 'image_picker');
-      print('Error picking images: $e');
+      LoggerService.error('Error picking images', e);
       return ImageLoadResult.error('Error picking images: $e');
     }
   }
@@ -211,7 +212,9 @@ class ImageLoaderService {
 
           // Skip if already exists by path
           if (existingScreenshots.any((s) => s.path == file.path)) {
-            print('Skipping already loaded file via path check: ${file.path}');
+            LoggerService.log(
+              'Skipping already loaded file via path check: ${file.path}',
+            );
             progress++;
             onProgress?.call(progress, limitedFiles.length);
             continue;
@@ -219,7 +222,7 @@ class ImageLoaderService {
 
           // Check if the file is in trash and skip if it is
           if (FileWatcherService.isFileInTrash(file.path)) {
-            print('Skipping trashed file: ${file.path}');
+            LoggerService.log('Skipping trashed file: ${file.path}');
             progress++;
             onProgress?.call(progress, limitedFiles.length);
             continue;
@@ -230,7 +233,9 @@ class ImageLoaderService {
           // Skip very large files to prevent memory issues
           if (fileSize > 50 * 1024 * 1024) {
             // Skip files larger than 50MB
-            print('Skipping large file: ${file.path} ($fileSize bytes)');
+            LoggerService.log(
+              'Skipping large file: ${file.path} ($fileSize bytes)',
+            );
             progress++;
             onProgress?.call(progress, limitedFiles.length);
             continue;
@@ -256,7 +261,7 @@ class ImageLoaderService {
 
       return ImageLoadResult.success(loadedScreenshots);
     } catch (e) {
-      print('Error loading Android screenshots: $e');
+      LoggerService.error('Error loading Android screenshots', e);
       return ImageLoadResult.error('Error loading Android screenshots: $e');
     }
   }
@@ -278,7 +283,7 @@ class ImageLoaderService {
         ]);
       }
     } catch (e) {
-      print('Error getting screenshot paths: $e');
+      LoggerService.error('Error getting screenshot paths', e);
     }
 
     return paths;

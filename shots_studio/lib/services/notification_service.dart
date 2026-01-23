@@ -5,6 +5,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:intl/intl.dart';
 import 'dart:io';
+import 'package:shots_studio/services/logger_service.dart';
 
 class NotificationService {
   static final NotificationService _notificationService =
@@ -32,14 +33,12 @@ class NotificationService {
     final initResult = await flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse details) {
-        if (kDebugMode) {
-          print('Notification response received: ${details.payload}');
-        }
+        LoggerService.log('Notification response received: ${details.payload}');
       },
     );
 
-    if (kDebugMode && initResult != true) {
-      print('Notification plugin initialization failed');
+    if (initResult != true) {
+      LoggerService.error('Notification plugin initialization failed');
     }
 
     // Create notification channels explicitly
@@ -69,6 +68,15 @@ class NotificationService {
             showBadge: true,
           );
 
+      // AI Processing channel
+      const AndroidNotificationChannel
+      aiProcessingChannel = AndroidNotificationChannel(
+        'ai_processing_channel', // id - matches BackgroundProcessingService.notificationChannelId
+        'AI Processing Service',
+        description: 'Channel for AI screenshot processing notifications',
+        importance: Importance.low,
+      );
+
       // Server messages channel
       const AndroidNotificationChannel serverChannel =
           AndroidNotificationChannel(
@@ -94,16 +102,17 @@ class NotificationService {
           );
 
       await androidImplementation.createNotificationChannel(reminderChannel);
+      await androidImplementation.createNotificationChannel(
+        aiProcessingChannel,
+      );
       await androidImplementation.createNotificationChannel(serverChannel);
       await androidImplementation.createNotificationChannel(
         urgentServerChannel,
       );
     } else {
-      if (kDebugMode) {
-        print(
-          'WARNING: Could not get Android implementation for notification channels',
-        );
-      }
+      LoggerService.log(
+        'WARNING: Could not get Android implementation for notification channels',
+      );
     }
   }
 
@@ -143,26 +152,22 @@ class NotificationService {
     String? imagePath,
     Uint8List? imageBytes,
   }) async {
-    if (kDebugMode) {
-      print('Scheduling notification - ID: $id, Time: $scheduledTime');
-    }
+    LoggerService.log(
+      'Scheduling notification - ID: $id, Time: $scheduledTime',
+    );
 
     // Check if scheduled time is in the future
     if (!scheduledTime.isAfter(DateTime.now())) {
-      if (kDebugMode) {
-        print('ERROR: Scheduled time is not in the future!');
-      }
+      LoggerService.error('ERROR: Scheduled time is not in the future!');
       return;
     }
 
     // Check exact alarm permission only when actually scheduling a reminder
     final hasPermission = await hasExactAlarmPermission();
     if (!hasPermission) {
-      if (kDebugMode) {
-        print(
-          'Exact alarm permission not granted - notification may not work reliably',
-        );
-      }
+      LoggerService.log(
+        'Exact alarm permission not granted - notification may not work reliably',
+      );
       // Continue with scheduling anyway, but it may not be as reliable
       // The permission request should be handled at the UI level when user sets a reminder
     }
@@ -194,13 +199,9 @@ class NotificationService {
             UILocalNotificationDateInterpretation.absoluteTime,
       );
 
-      if (kDebugMode) {
-        print('Notification scheduled successfully');
-      }
+      LoggerService.log('Notification scheduled successfully');
     } catch (e) {
-      if (kDebugMode) {
-        print('Error scheduling notification: $e');
-      }
+      LoggerService.error('Error scheduling notification', e);
       // Fallback: try with simple scheduling if zonedSchedule fails
       try {
         await _scheduleWithFallback(
@@ -212,9 +213,7 @@ class NotificationService {
           imageBytes: imageBytes,
         );
       } catch (fallbackError) {
-        if (kDebugMode) {
-          print('Fallback scheduling also failed: $fallbackError');
-        }
+        LoggerService.error('Fallback scheduling also failed', fallbackError);
       }
     }
   }
@@ -256,9 +255,7 @@ class NotificationService {
           );
         }
       } catch (e) {
-        if (kDebugMode) {
-          print('Error creating big picture style: $e');
-        }
+        LoggerService.error('Error creating big picture style', e);
       }
     }
 
@@ -297,18 +294,17 @@ class NotificationService {
 
       return tzDateTime;
     } catch (e) {
-      if (kDebugMode) {
-        print('Error in timezone conversion, falling back to UTC: $e');
-      }
+      LoggerService.error(
+        'Error in timezone conversion, falling back to UTC',
+        e,
+      );
       // Fallback to UTC if local timezone fails
       try {
         final utcDateTime = dateTime.isUtc ? dateTime : dateTime.toUtc();
         final result = tz.TZDateTime.from(utcDateTime, tz.UTC);
         return result;
       } catch (utcError) {
-        if (kDebugMode) {
-          print('UTC fallback also failed: $utcError');
-        }
+        LoggerService.error('UTC fallback also failed', utcError);
         // Last resort: create TZDateTime manually
         return tz.TZDateTime(
           tz.UTC,
@@ -354,11 +350,9 @@ class NotificationService {
       );
     } else {
       // For longer delays, we can't guarantee persistence without proper scheduling
-      if (kDebugMode) {
-        print(
-          'Warning: Notification scheduling may not persist when app is closed',
-        );
-      }
+      LoggerService.log(
+        'Warning: Notification scheduling may not persist when app is closed',
+      );
     }
   }
 
@@ -388,34 +382,32 @@ class NotificationService {
       final pendingRequests =
           await flutterLocalNotificationsPlugin.pendingNotificationRequests();
       if (kDebugMode) {
-        print('=== NOTIFICATION DEBUG INFO ===');
-        print('Total pending notifications: ${pendingRequests.length}');
+        LoggerService.log('=== NOTIFICATION DEBUG INFO ===');
+        LoggerService.log(
+          'Total pending notifications: ${pendingRequests.length}',
+        );
         for (var request in pendingRequests) {
-          print(
+          LoggerService.log(
             'ID: ${request.id}, Title: ${request.title}, Body: ${request.body}',
           );
-          print('Payload: ${request.payload}');
+          LoggerService.log('Payload: ${request.payload}');
         }
-        print('================================');
+        LoggerService.log('================================');
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('Error getting pending notifications: $e');
-      }
+      LoggerService.error('Error getting pending notifications', e);
     }
   }
 
   Future<void> testScheduleNotificationInMinute() async {
     final testTime = DateTime.now().add(const Duration(minutes: 1));
 
-    if (kDebugMode) {
-      print('=== SCHEDULING TEST NOTIFICATION ===');
-      print('Current time: ${DateTime.now()}');
-      print('Scheduled time: $testTime');
-      print(
-        'Time difference: ${testTime.difference(DateTime.now()).inSeconds} seconds',
-      );
-    }
+    LoggerService.log('=== SCHEDULING TEST NOTIFICATION ===');
+    LoggerService.log('Current time: ${DateTime.now()}');
+    LoggerService.log('Scheduled time: $testTime');
+    LoggerService.log(
+      'Time difference: ${testTime.difference(DateTime.now()).inSeconds} seconds',
+    );
 
     await scheduleNotification(
       id: 998,
@@ -425,9 +417,7 @@ class NotificationService {
       scheduledTime: testTime,
     );
 
-    if (kDebugMode) {
-      print('Test notification scheduled for: $testTime');
-    }
+    LoggerService.log('Test notification scheduled for: $testTime');
   }
 
   Future<void> showServerMessage({
@@ -533,9 +523,7 @@ class NotificationService {
       // Just check the permission status without requesting
       return await Permission.scheduleExactAlarm.isGranted;
     } catch (e) {
-      if (kDebugMode) {
-        print('Error checking exact alarm permission: $e');
-      }
+      LoggerService.error('Error checking exact alarm permission', e);
       return false;
     }
   }
@@ -565,9 +553,7 @@ class NotificationService {
       // Return final permission status
       return await Permission.scheduleExactAlarm.isGranted;
     } catch (e) {
-      if (kDebugMode) {
-        print('Error requesting exact alarm permission: $e');
-      }
+      LoggerService.error('Error requesting exact alarm permission', e);
       return false;
     }
   }

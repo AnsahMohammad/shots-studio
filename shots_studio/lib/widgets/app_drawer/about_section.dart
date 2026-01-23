@@ -11,6 +11,7 @@ import '../sponsorship/sponsorship_dialog.dart';
 import '../update_dialog.dart';
 import '../../l10n/app_localizations.dart';
 import '../../utils/build_source.dart';
+import '../../services/logger_service.dart';
 
 class AboutSection extends StatelessWidget {
   final String appVersion;
@@ -141,7 +142,10 @@ class AboutSection extends StatelessWidget {
         await _launchURL(feedbackUrl);
       } else {
         if (context.mounted) {
-          print('Failed to load feedback form');
+          LoggerService.error(
+            'Failed to load feedback form',
+            Exception('Empty response'),
+          );
         }
       }
     } catch (e) {
@@ -248,7 +252,7 @@ class AboutSection extends StatelessWidget {
         //     duration: const Duration(seconds: 2),
         //   ),
         // );
-        print('Copied to clipboard: $versionText');
+        LoggerService.log('Copied to clipboard: $versionText');
       }
     } catch (e) {
       if (context.mounted) {

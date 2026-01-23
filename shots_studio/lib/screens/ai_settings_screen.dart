@@ -11,6 +11,7 @@ import 'package:shots_studio/l10n/app_localizations.dart';
 import 'package:shots_studio/services/gemma_download_service.dart';
 import 'package:shots_studio/widgets/ai_settings/index.dart';
 import 'dart:io';
+import 'package:shots_studio/services/logger_service.dart';
 
 class AISettingsScreen extends StatefulWidget {
   final String currentModelName;
@@ -229,7 +230,10 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
         }
       } catch (e) {
         // If cleaning up the directory fails, it's not critical
-        print('Warning: Could not clean up gemma_models directory: $e');
+        LoggerService.error(
+          'Warning: Could not clean up gemma_models directory',
+          e,
+        );
       }
 
       // Cancel any ongoing download

@@ -8,6 +8,7 @@ import 'package:shots_studio/services/snackbar_service.dart';
 import 'package:shots_studio/utils/responsive_utils.dart';
 import 'package:shots_studio/services/hard_delete_service.dart';
 import 'package:shots_studio/l10n/app_localizations.dart';
+import 'package:shots_studio/services/logger_service.dart';
 
 class ScreenshotsSection extends StatefulWidget {
   final List<Screenshot> screenshots;
@@ -225,7 +226,7 @@ class _ScreenshotsSectionState extends State<ScreenshotsSection> {
           '${selectedIds.length} screenshot${selectedIds.length > 1 ? 's' : ''} deleted successfully';
 
       if (_hardDeleteEnabled && HardDeleteService.isHardDeleteAvailable()) {
-        print(
+        LoggerService.log(
           'HardDeleteService: Attempting bulk hard delete for ${selectedIds.length} screenshots',
         );
 
@@ -249,21 +250,23 @@ class _ScreenshotsSectionState extends State<ScreenshotsSection> {
               deleteMessage =
                   '${bulkDeleteResult.successCount} screenshot${bulkDeleteResult.successCount > 1 ? 's' : ''} deleted completely, ${bulkDeleteResult.failureCount} removed from app only';
             }
-            print(
+            LoggerService.log(
               'HardDeleteService: Bulk hard delete completed - ${bulkDeleteResult.successCount}/${selectedIds.length} successful',
             );
           } else {
             deleteMessage =
                 '${selectedIds.length} screenshot${selectedIds.length > 1 ? 's' : ''} deleted from app, but file deletion failed';
-            print('HardDeleteService: Bulk hard delete failed for all files');
+            LoggerService.error(
+              'HardDeleteService: Bulk hard delete failed for all files',
+            );
           }
 
-          print(
+          LoggerService.log(
             'HardDeleteService: Bulk hard delete result: $bulkDeleteResult',
           );
         }
       } else {
-        print(
+        LoggerService.log(
           'HardDeleteService: Hard delete not available or disabled for bulk operation',
         );
       }
@@ -276,7 +279,7 @@ class _ScreenshotsSectionState extends State<ScreenshotsSection> {
         SnackbarService().showSuccess(context, deleteMessage);
       }
     } catch (e) {
-      print('Error during bulk delete operation: $e');
+      LoggerService.error('Error during bulk delete operation', e);
 
       // Exit selection mode even on error
       _exitSelectionMode();

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
+import 'package:shots_studio/services/logger_service.dart';
 
 /// Service for handling hard deletion of screenshot files from device storage
 /// Uses native MediaStore API on Android 11+ for batch delete with single confirmation dialog
@@ -28,7 +29,10 @@ class HardDeleteService {
       return result ?? false;
     } catch (e) {
       if (_kDebugMode) {
-        print('HardDeleteService: Error checking batch delete support: $e');
+        LoggerService.error(
+          'HardDeleteService: Error checking batch delete support',
+          e,
+        );
       }
       return false;
     }
@@ -50,7 +54,7 @@ class HardDeleteService {
     // Check if screenshot has a valid file path
     if (screenshot.path == null || screenshot.path?.isEmpty == true) {
       if (_kDebugMode) {
-        print(
+        LoggerService.log(
           'HardDeleteService: Screenshot has no file path, cannot hard delete',
         );
       }
@@ -69,8 +73,10 @@ class HardDeleteService {
       final bool fileExisted = await file.exists();
 
       if (_kDebugMode) {
-        print('HardDeleteService: Attempting to delete file: $filePath');
-        print('HardDeleteService: File exists: $fileExisted');
+        LoggerService.log(
+          'HardDeleteService: Attempting to delete file: $filePath',
+        );
+        LoggerService.log('HardDeleteService: File exists: $fileExisted');
       }
 
       if (!fileExisted) {
@@ -104,7 +110,7 @@ class HardDeleteService {
       }
     } catch (e) {
       if (_kDebugMode) {
-        print('HardDeleteService: Error during hard delete: $e');
+        LoggerService.error('HardDeleteService: Error during hard delete', e);
       }
 
       return HardDeleteResult(
@@ -137,15 +143,16 @@ class HardDeleteService {
 
           final success = result?['success'] == true;
           if (_kDebugMode) {
-            print(
+            LoggerService.log(
               'HardDeleteService.deleteFileWithMediaStore: result=$result, success=$success',
             );
           }
           return success;
         } catch (e) {
           if (_kDebugMode) {
-            print(
-              'HardDeleteService.deleteFileWithMediaStore: Native delete error: $e',
+            LoggerService.error(
+              'HardDeleteService.deleteFileWithMediaStore: Native delete error',
+              e,
             );
           }
           // Fallback to direct deletion
@@ -164,7 +171,10 @@ class HardDeleteService {
       return false;
     } catch (e) {
       if (_kDebugMode) {
-        print('HardDeleteService.deleteFileWithMediaStore: Error: $e');
+        LoggerService.error(
+          'HardDeleteService.deleteFileWithMediaStore: Error',
+          e,
+        );
       }
       return false;
     }
@@ -195,7 +205,7 @@ class HardDeleteService {
     }
 
     if (_kDebugMode) {
-      print(
+      LoggerService.log(
         'HardDeleteService: Starting bulk hard delete of ${screenshots.length} screenshots',
       );
     }
@@ -250,7 +260,9 @@ class HardDeleteService {
             });
 
         if (_kDebugMode) {
-          print('HardDeleteService: Native batch delete result: $result');
+          LoggerService.log(
+            'HardDeleteService: Native batch delete result: $result',
+          );
         }
 
         final success = result?['success'] == true;
@@ -292,7 +304,7 @@ class HardDeleteService {
         );
 
         if (_kDebugMode) {
-          print(
+          LoggerService.log(
             'HardDeleteService: Bulk hard delete completed - Success: $totalSuccessCount, Failed: $totalFailureCount',
           );
         }
@@ -351,7 +363,7 @@ class HardDeleteService {
       );
     } catch (e) {
       if (_kDebugMode) {
-        print('HardDeleteService: Error during bulk delete: $e');
+        LoggerService.error('HardDeleteService: Error during bulk delete', e);
       }
 
       return BulkHardDeleteResult(

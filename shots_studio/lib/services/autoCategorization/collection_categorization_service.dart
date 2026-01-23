@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/services/ai_service.dart';
+import 'package:shots_studio/services/logger_service.dart';
 
 class CollectionCategorizationService extends AIService {
   CollectionCategorizationService(super.config);
@@ -106,7 +107,7 @@ class CollectionCategorizationService extends AIService {
         }
       }
     } catch (e) {
-      print('Error parsing categorization response: $e');
+      LoggerService.error('Error parsing categorization response', e);
     }
 
     return matchingScreenshots;

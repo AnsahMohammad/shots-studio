@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/services/gemma_service.dart';
 import 'package:shots_studio/services/ocr_service.dart';
+import 'package:shots_studio/services/logger_service.dart';
 
 typedef ShowMessageCallback =
     void Function({
@@ -385,7 +386,7 @@ class GemmaAPIProvider implements APIProvider {
             await tempFile.delete();
           }
         } catch (e) {
-          print('Warning: Could not delete temporary file: $e');
+          LoggerService.error('Warning: Could not delete temporary file', e);
         }
       }
     }
@@ -510,7 +511,7 @@ class GemmaAPIProvider implements APIProvider {
         }
       }
     } catch (e) {
-      print('Error extracting image from request: $e');
+      LoggerService.error('Error extracting image from request', e);
     }
 
     return null;
@@ -529,7 +530,7 @@ class GemmaAPIProvider implements APIProvider {
         }
       }
     } catch (e) {
-      print('Error converting image data to file: $e');
+      LoggerService.error('Error converting image data to file', e);
     }
     return null;
   }
@@ -547,7 +548,7 @@ class GemmaAPIProvider implements APIProvider {
         );
       }
     } catch (e) {
-      print('Error converting inline data to file: $e');
+      LoggerService.error('Error converting inline data to file', e);
     }
     return null;
   }
@@ -654,7 +655,10 @@ class OcrAPIProvider implements APIProvider {
               await tempFile.delete();
             }
           } catch (e) {
-            print('Warning: Could not delete temporary OCR file: $e');
+            LoggerService.error(
+              'Warning: Could not delete temporary OCR file',
+              e,
+            );
           }
         }
       }
@@ -726,7 +730,7 @@ class OcrAPIProvider implements APIProvider {
         }
       }
     } catch (e) {
-      print('Error converting image data to file for OCR: $e');
+      LoggerService.error('Error converting image data to file for OCR', e);
     }
     return null;
   }

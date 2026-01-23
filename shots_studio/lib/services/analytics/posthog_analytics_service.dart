@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
+import 'package:shots_studio/services/logger_service.dart';
 
 class PostHogAnalyticsService {
   static final PostHogAnalyticsService _instance =
@@ -61,7 +62,7 @@ class PostHogAnalyticsService {
     if (_initialized) {
       // Explicitly enable PostHog SDK
       await Posthog().enable();
-      
+
       // Log that analytics was re-enabled
       await logFeatureUsed('analytics_enabled');
     }
@@ -488,7 +489,7 @@ class PostHogAnalyticsService {
         },
       );
     } catch (e) {
-      print('Error logging install info: $e');
+      LoggerService.error('Error logging install info', e);
     }
   }
 

@@ -4,6 +4,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shots_studio/services/notification_service.dart';
 import 'package:shots_studio/utils/build_source.dart';
+import 'package:shots_studio/services/logger_service.dart';
 
 // TODO: Add don't show again functionality for messages
 
@@ -91,7 +92,7 @@ class ServerMessageService {
         }
       } catch (e) {
         // Continue to the next URL in the list if an error occurs
-        print("error $e");
+        LoggerService.error("ServerMessageService: error fetching messages", e);
         continue;
       }
     }

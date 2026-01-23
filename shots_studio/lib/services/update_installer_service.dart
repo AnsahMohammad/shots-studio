@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'update_checker_service.dart';
 import 'package:shots_studio/utils/build_source.dart';
+import 'package:shots_studio/services/logger_service.dart';
 
 /// Progress callback type for download progress
 typedef ProgressCallback = void Function(double progress, String status);
@@ -68,7 +69,7 @@ class UpdateInstallerService {
       try {
         final buildSource = BuildSource.current;
         if (!buildSource.allowsInAppUpdates) {
-          print(
+          LoggerService.log(
             'MainApp: In-App update disabled for ${buildSource.displayName} builds',
           );
           return false;
@@ -98,7 +99,7 @@ class UpdateInstallerService {
       try {
         final buildSource = BuildSource.current;
         if (!buildSource.allowsInAppUpdates) {
-          print(
+          LoggerService.log(
             'MainApp: In-App update disabled for ${buildSource.displayName} builds',
           );
           return false;
@@ -154,7 +155,7 @@ class UpdateInstallerService {
 
       return null;
     } catch (e) {
-      print('Error getting APK download URL: $e');
+      LoggerService.error('Error getting APK download URL', e);
       return null;
     }
   }
@@ -238,7 +239,7 @@ class UpdateInstallerService {
 
     final buildSource = BuildSource.current;
     if (!buildSource.allowsInAppUpdates) {
-      print(
+      LoggerService.log(
         'MainApp: In-App update disabled for ${buildSource.displayName} builds',
       );
       return false;
@@ -287,20 +288,20 @@ class UpdateInstallerService {
           try {
             await file.delete();
             deletedCount++;
-            print('Deleted APK: ${file.path}');
+            LoggerService.log('Deleted APK: ${file.path}');
           } catch (e) {
-            print('Failed to delete APK ${file.path}: $e');
+            LoggerService.error('Failed to delete APK ${file.path}', e);
           }
         }
       }
 
       if (deletedCount > 0) {
-        print('Cleaned up $deletedCount downloaded APK file(s)');
+        LoggerService.log('Cleaned up $deletedCount downloaded APK file(s)');
       } else {
-        print('No downloaded APK files found to clean up');
+        LoggerService.log('No downloaded APK files found to clean up');
       }
     } catch (e) {
-      print('Error cleaning up downloaded APKs: $e');
+      LoggerService.error('Error cleaning up downloaded APKs', e);
     }
   }
 }

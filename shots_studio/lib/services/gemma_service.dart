@@ -2,10 +2,10 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter_gemma/flutter_gemma.dart';
-import 'package:flutter_gemma/core/model.dart';
-import 'package:flutter_gemma/pigeon.g.dart';
+
 import 'package:flutter_gemma/core/api/flutter_gemma.dart' as gemma_api;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shots_studio/services/logger_service.dart';
 
 class GemmaService {
   static GemmaService? _instance;
@@ -19,7 +19,7 @@ class GemmaService {
   static const String _isModelLoadedPrefKey = 'gemma_model_loaded';
 
   FlutterGemmaPlugin? _gemma;
-  ModelFileManager? _modelManager;
+
   InferenceModel? _inferenceModel;
   InferenceModelSession? _session;
 
@@ -41,7 +41,6 @@ class GemmaService {
       _isFlutterGemmaInitialized = true;
     }
     _gemma = FlutterGemmaPlugin.instance;
-    _modelManager = _gemma!.modelManager;
   }
 
   // Load model from file path
@@ -115,7 +114,7 @@ class GemmaService {
       try {
         await _session!.close();
       } catch (e) {
-        print('Error closing existing session: $e');
+        LoggerService.error('Error closing existing session', e);
       }
       _session = null;
     }
@@ -124,7 +123,7 @@ class GemmaService {
       try {
         await _inferenceModel!.close();
       } catch (e) {
-        print('Error closing existing model: $e');
+        LoggerService.error('Error closing existing model', e);
       }
       _inferenceModel = null;
     }
@@ -148,31 +147,31 @@ class GemmaService {
   // Load model from saved preferences
   Future<bool> loadModelFromPreferences() async {
     try {
-      print("\n\n Loading model from preferences...");
+      LoggerService.log("\n\n Loading model from preferences...");
       final prefs = await SharedPreferences.getInstance();
       final savedModelPath = prefs.getString(_modelPathPrefKey);
-      print("Saved model path: $savedModelPath");
+      LoggerService.log("Saved model path: $savedModelPath");
 
       if (savedModelPath != null && savedModelPath.isNotEmpty) {
-        print('Checking if file exists: $savedModelPath');
+        LoggerService.log('Checking if file exists: $savedModelPath');
         final file = File(savedModelPath);
         if (await file.exists()) {
-          print('Loading model from saved path: $savedModelPath');
+          LoggerService.log('Loading model from saved path: $savedModelPath');
           return await loadModel(savedModelPath);
         } else {
-          print('Saved model path does not exist: $savedModelPath');
+          LoggerService.log('Saved model path does not exist: $savedModelPath');
           // Clean up invalid path
           await _removeModelPath();
           await _saveModelLoadedState(false);
         }
       } else {
-        print('No model path found in preferences');
+        LoggerService.log('No model path found in preferences');
       }
     } catch (e) {
-      print('Error loading model from preferences: $e');
+      LoggerService.error('Error loading model from preferences', e);
       await _saveModelLoadedState(false);
     }
-    print('No valid model found in preferences.');
+    LoggerService.log('No valid model found in preferences.');
     return false;
   }
 
@@ -224,7 +223,7 @@ class GemmaService {
 
       return response;
     } catch (e) {
-      print('Error during generation: $e');
+      LoggerService.error('Error during generation', e);
       rethrow;
     } finally {
       stopwatch.stop();
@@ -235,7 +234,7 @@ class GemmaService {
         try {
           await localSession.close();
         } catch (e) {
-          print('Error closing session: $e');
+          LoggerService.error('Error closing session', e);
         }
       }
       _session = null;
@@ -246,7 +245,7 @@ class GemmaService {
 
       // Perform memory cleanup if we've hit the generation limit
       if (_generationCount >= _maxGenerationsBeforeCleanup) {
-        print(
+        LoggerService.log(
           'Performing automatic memory cleanup after $_generationCount generations',
         );
         await performMemoryCleanup();
@@ -322,7 +321,7 @@ class GemmaService {
         try {
           await localSession.close();
         } catch (e) {
-          print('Error closing session: $e');
+          LoggerService.error('Error closing session', e);
         }
       }
       rethrow;
@@ -335,7 +334,7 @@ class GemmaService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_modelPathPrefKey, modelPath);
     } catch (e) {
-      print('Error saving model path: $e');
+      LoggerService.error('Error saving model path', e);
     }
   }
 
@@ -345,7 +344,7 @@ class GemmaService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_isModelLoadedPrefKey, isLoaded);
     } catch (e) {
-      print('Error saving model loaded state: $e');
+      LoggerService.error('Error saving model loaded state', e);
     }
   }
 
@@ -356,7 +355,7 @@ class GemmaService {
       await prefs.remove(_modelPathPrefKey);
       await prefs.remove(_isModelLoadedPrefKey);
     } catch (e) {
-      print('Error removing model path: $e');
+      LoggerService.error('Error removing model path', e);
     }
   }
 
@@ -371,7 +370,7 @@ class GemmaService {
         return await file.exists();
       }
     } catch (e) {
-      print('Error checking model file availability: $e');
+      LoggerService.error('Error checking model file availability', e);
     }
     return false;
   }
@@ -382,7 +381,7 @@ class GemmaService {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getString(_modelPathPrefKey);
     } catch (e) {
-      print('Error getting saved model path: $e');
+      LoggerService.error('Error getting saved model path', e);
       return null;
     }
   }
@@ -393,7 +392,7 @@ class GemmaService {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getBool('gemma_use_cpu') ?? true; // CPU by default
     } catch (e) {
-      print('Error getting CPU/GPU preference: $e');
+      LoggerService.error('Error getting CPU/GPU preference', e);
       return true; // Default to CPU on error
     }
   }
@@ -453,7 +452,7 @@ class GemmaService {
       try {
         _session!.close();
       } catch (e) {
-        print('Error closing session during cleanup: $e');
+        LoggerService.error('Error closing session during cleanup', e);
       }
       _session = null;
     }
@@ -464,7 +463,7 @@ class GemmaService {
 
     // Perform memory cleanup if needed
     if (_generationCount >= _maxGenerationsBeforeCleanup) {
-      print(
+      LoggerService.log(
         'Performing automatic memory cleanup after $_generationCount generations (streaming)',
       );
       performMemoryCleanup(); // Don't await here as this is called from transform
@@ -476,7 +475,7 @@ class GemmaService {
 
   // Method to preemptively clean up memory when needed
   Future<void> performMemoryCleanup() async {
-    print('Performing memory cleanup...');
+    LoggerService.log('Performing memory cleanup...');
 
     // Close any active sessions
     if (_session != null) {
@@ -484,7 +483,7 @@ class GemmaService {
         await _session!.close();
         _session = null;
       } catch (e) {
-        print('Error closing session during memory cleanup: $e');
+        LoggerService.error('Error closing session during memory cleanup', e);
       }
     }
 
@@ -494,7 +493,7 @@ class GemmaService {
       await Future.delayed(const Duration(milliseconds: 100));
     }
 
-    print('Memory cleanup completed');
+    LoggerService.log('Memory cleanup completed');
   }
 
   // Method to check if memory cleanup is needed (call this between generations)
@@ -511,7 +510,7 @@ class GemmaService {
       try {
         _session!.close();
       } catch (e) {
-        print('Error closing session during dispose: $e');
+        LoggerService.error('Error closing session during dispose', e);
       }
       _session = null;
     }
@@ -521,14 +520,14 @@ class GemmaService {
       try {
         _inferenceModel!.close();
       } catch (e) {
-        print('Error closing inference model during dispose: $e');
+        LoggerService.error('Error closing inference model during dispose', e);
       }
       _inferenceModel = null;
     }
 
     // Reset other properties
     _gemma = null;
-    _modelManager = null;
+
     _isModelLoaded = false;
     _isLoading = false;
     _isGenerating = false;

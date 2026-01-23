@@ -12,6 +12,7 @@ import 'package:shots_studio/services/snackbar_service.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/utils/ai_provider_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shots_studio/services/logger_service.dart';
 
 class AICategorizer {
   final AIServiceManager _aiServiceManager = AIServiceManager();
@@ -200,7 +201,7 @@ class AICategorizer {
               }
             } catch (e) {
               // Silently handle parsing errors for individual batches
-              print('Error parsing batch response: $e');
+              LoggerService.error('Error parsing batch response', e);
             }
           }
         },

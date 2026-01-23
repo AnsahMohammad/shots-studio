@@ -1,4 +1,6 @@
 // Collection Management Utilities
+import 'package:shots_studio/services/logger_service.dart';
+
 class CollectionUtils {
   /// Stores suggested collections for a screenshot in the response map
   static void storeSuggestedCollections(
@@ -19,7 +21,7 @@ class CollectionUtils {
       suggestedCollections[screenshotId] = collectionNames;
       response['suggestedCollections'] = suggestedCollections;
     } catch (e) {
-      print('Error storing collection suggestions: $e');
+      LoggerService.error('Error storing collection suggestions', e);
     }
   }
 
@@ -37,7 +39,7 @@ class CollectionUtils {
         return suggestedCollections[screenshotId];
       }
     } catch (e) {
-      print('Error retrieving collection suggestions: $e');
+      LoggerService.error('Error retrieving collection suggestions', e);
     }
     return null;
   }
@@ -47,7 +49,7 @@ class CollectionUtils {
     try {
       response.remove('suggestedCollections');
     } catch (e) {
-      print('Error clearing collection suggestions: $e');
+      LoggerService.error('Error clearing collection suggestions', e);
     }
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/services/snackbar_service.dart';
+import 'package:shots_studio/services/logger_service.dart';
 
 /// Utility class for handling link detection, display, and launching.
 /// Supports URLs, emails, and phone numbers.
@@ -94,7 +95,7 @@ class LinkUtils {
       try {
         launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       } catch (e) {
-        print('Direct launch failed: $e');
+        LoggerService.error('Direct launch failed', e);
         launched = false;
       }
 
@@ -108,13 +109,13 @@ class LinkUtils {
             return;
           }
         } catch (e) {
-          print('Platform default launch failed: $e');
+          LoggerService.error('Platform default launch failed', e);
         }
 
         await copyToClipboard(context, link);
       }
     } catch (e) {
-      print('URL parsing failed: $e');
+      LoggerService.error('URL parsing failed', e);
       await copyToClipboard(context, link);
     }
   }
