@@ -80,8 +80,18 @@ class _MyAppState extends State<MyApp> {
   Future<void> _loadLocaleSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final languageCode = prefs.getString('selected_language') ?? 'en';
+
+    // Parse the stored locale string (handles cases like 'zh_CN' or 'en')
+    final parts = languageCode.split('_');
+    Locale locale;
+    if (parts.length == 2) {
+      locale = Locale(parts[0], parts[1]);
+    } else {
+      locale = Locale(languageCode);
+    }
+
     setState(() {
-      _selectedLocale = Locale(languageCode);
+      _selectedLocale = locale;
     });
   }
 
@@ -108,7 +118,9 @@ class _MyAppState extends State<MyApp> {
             Locale('en'), // English
             Locale('hi'), // Hindi
             Locale('de'), // German
-            Locale('zh'), // Chinese
+            Locale('zh'), // Chinese (Generic)
+            Locale('zh', 'CN'), // Chinese (Simplified)
+            Locale('zh', 'TW'), // Chinese (Traditional)
             Locale('pt'), // Portuguese
             Locale('ar'), // Arabic
             Locale('es'), // Spanish
@@ -139,7 +151,8 @@ class _MyAppState extends State<MyApp> {
             },
             onLocaleChanged: (locale) async {
               final prefs = await SharedPreferences.getInstance();
-              await prefs.setString('selected_language', locale.languageCode);
+              // Save the full locale string including country code (e.g., 'zh_CN')
+              await prefs.setString('selected_language', locale.toString());
               setState(() {
                 _selectedLocale = locale;
               });

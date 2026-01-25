@@ -464,7 +464,15 @@ class _SettingsSectionState extends State<SettingsSection> {
 
                           // Trigger locale change callback if provided
                           if (widget.onLocaleChanged != null) {
-                            widget.onLocaleChanged!(Locale(newValue));
+                            // Parse the locale string to handle country codes
+                            final parts = newValue.split('_');
+                            if (parts.length == 2) {
+                              widget.onLocaleChanged!(
+                                Locale(parts[0], parts[1]),
+                              );
+                            } else {
+                              widget.onLocaleChanged!(Locale(newValue));
+                            }
                           }
                         }
                       },
@@ -498,7 +506,25 @@ class _SettingsSectionState extends State<SettingsSection> {
                           child: Row(
                             children: [
                               SizedBox(width: 8),
-                              Text('中文 (Chinese)'),
+                              Text('中文 (Chinese Default)'),
+                            ],
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'zh_CN',
+                          child: Row(
+                            children: [
+                              SizedBox(width: 8),
+                              Text('中文 (简体) (Simplified)'),
+                            ],
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'zh_TW',
+                          child: Row(
+                            children: [
+                              SizedBox(width: 8),
+                              Text('中文 (繁體) (Traditional)'),
                             ],
                           ),
                         ),
