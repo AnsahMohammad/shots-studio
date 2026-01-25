@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Play Store flavor - no REQUEST_INSTALL_PACKAGES permission -->
+    
+    <!-- Override MinSDK requirement for ML Kit GenAI (Requires 26, App is 24) -->
+    <uses-sdk tools:overrideLibrary="com.google.mlkit.vision.genai.imagedescriptor,com.google.mlkit.genai.imagedescription,com.google.mlkit.genai.common" />
 </manifest>

@@ -7,6 +7,7 @@ class AIProviderConfig {
       'gemini-2.5-flash',
       'gemini-2.5-pro',
     ],
+    'ai-core': ['ai-core'],
     'gemma': ['gemma'],
     'ocr': ['tesseract-ocr'],
     'none': ['No AI Model'],
@@ -18,6 +19,7 @@ class AIProviderConfig {
     'gemini-2.5-flash': 16,
     'gemini-2.5-flash-lite': 16,
     'gemini-2.5-pro': 32,
+    'ai-core': 1,
     'gemma': 1,
     'tesseract-ocr': 1,
   };
@@ -28,6 +30,7 @@ class AIProviderConfig {
     'gemini-2.5-flash': 50,
     'gemini-2.5-flash-lite': 50,
     'gemini-2.5-pro': 50,
+    'ai-core': 0, // Categorization not supported yet
     'gemma': 10,
     'tesseract-ocr': 0,
   };
@@ -35,6 +38,7 @@ class AIProviderConfig {
   // Preference keys for provider settings
   static const Map<String, String> providerPrefKeys = {
     'gemini': 'ai_provider_gemini_enabled',
+    'ai-core': 'ai_provider_ai_core_enabled',
     'gemma': 'ai_provider_gemma_enabled',
     'ocr': 'ai_provider_ocr_enabled',
   };

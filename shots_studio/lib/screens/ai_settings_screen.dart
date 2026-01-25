@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shots_studio/l10n/app_localizations.dart';
 import 'package:shots_studio/services/gemma_download_service.dart';
 import 'package:shots_studio/widgets/ai_settings/index.dart';
+import 'package:shots_studio/services/ai_core_service.dart';
 import 'dart:io';
 import 'package:shots_studio/services/logger_service.dart';
 
@@ -680,6 +681,30 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
       return;
     }
 
+    // Check support for AiCore when enabling
+    if (provider == 'ai-core' && enabled) {
+      try {
+        final isSupported = await AICoreService().isAiCoreSupported();
+        if (!isSupported) {
+          if (mounted) {
+            SnackbarService().showError(
+              context,
+              'AiCore is not supported on this device or is unavailable.',
+            );
+          }
+          return;
+        }
+      } catch (e) {
+        if (mounted) {
+          SnackbarService().showError(
+            context,
+            'Failed to check AiCore support.',
+          );
+        }
+        return;
+      }
+    }
+
     setState(() {
       _providerStates[provider] = enabled;
     });
@@ -797,6 +822,7 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                 canToggle: canToggle,
                 forceDisabled: forceDisabled,
                 disabledReason: disabledReason,
+                isBeta: provider == 'ai-core',
                 onToggle: _onProviderToggle,
               );
             }),

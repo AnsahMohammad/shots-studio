@@ -144,4 +144,9 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+
+    // ML Kit GenAI Image Description (Proprietary - Not for F-Droid)
+    "playstoreImplementation"("com.google.mlkit:genai-image-description:1.0.0-beta1")
+    "dogImplementation"("com.google.mlkit:genai-image-description:1.0.0-beta1")
+    "githubImplementation"("com.google.mlkit:genai-image-description:1.0.0-beta1")
 }
