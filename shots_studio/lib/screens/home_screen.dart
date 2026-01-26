@@ -15,6 +15,8 @@ import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/screens/search_screen.dart';
 import 'package:shots_studio/screens/reminders_screen.dart';
 import 'package:shots_studio/screens/privacy_screen.dart';
+import 'package:shots_studio/services/share_service.dart';
+import 'package:shots_studio/screens/screenshot_details_screen.dart';
 import 'package:shots_studio/widgets/onboarding/ai_setup_onboarding_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -139,6 +141,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           _loadAndroidScreenshotsIfNeeded().then((_) {
             // Setup FileWatcher only AFTER initial loading is complete
             _setupFileWatcher();
+
+            // Initialize Share Service to listen for incoming shares
+            ShareService().initialize();
+
+            // Listen for shared screenshots
+            ShareService().screenshotStream.listen((sharedScreenshot) async {
+              if (!mounted) return;
+
+              LoggerService.log(
+                'HomeScreen: Received shared screenshot: ${sharedScreenshot.id} (path: ${sharedScreenshot.path})',
+              );
+
+              // Simply add as a new screenshot as requested
+              // User explicitly requested to treat all shares as new uploads
+              // and skip complex duplicate matching for now.
+              setState(() {
+                _screenshots.add(sharedScreenshot);
+              });
+
+              _openScreenshotDetails(sharedScreenshot);
+            });
           });
         }
 
@@ -156,6 +179,50 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     // Clean up file watcher
     _fileWatcherSubscription?.cancel();
     super.dispose();
+  }
+
+  void _openScreenshotDetails(Screenshot screenshot) {
+    if (!mounted) return;
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder:
+            (context) => ScreenshotDetailScreen(
+              screenshot: screenshot,
+              allCollections: _collections,
+              allScreenshots: _activeScreenshots,
+              onUpdateCollection: (updatedCollection) {
+                setState(() {
+                  final index = _collections.indexWhere(
+                    (c) => c.id == updatedCollection.id,
+                  );
+                  if (index != -1) {
+                    _collections[index] = updatedCollection;
+                  }
+                });
+                _saveDataToPrefs();
+              },
+              onDeleteScreenshot: (id) {
+                setState(() {
+                  final index = _screenshots.indexWhere((s) => s.id == id);
+                  if (index != -1) {
+                    _screenshots[index].isDeleted = true;
+                  }
+                });
+                _saveDataToPrefs();
+              },
+              onCollectionAdded: (newCollection) {
+                setState(() {
+                  _collections.add(newCollection);
+                });
+                _saveDataToPrefs();
+              },
+              onScreenshotUpdated: () {
+                _saveDataToPrefs();
+              },
+            ),
+      ),
+    );
   }
 
   /// Initialize server message checking with background service

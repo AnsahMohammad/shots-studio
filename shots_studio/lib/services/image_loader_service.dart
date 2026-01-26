@@ -282,6 +282,11 @@ class ImageLoaderService {
           '$baseDir/Pictures/Screenshots',
         ]);
       }
+
+      // Add centralized shared images directory
+      final appDocsDir = await getApplicationDocumentsDirectory();
+      final sharedImagesPath = '${appDocsDir.path}/shared_images';
+      paths.add(sharedImagesPath);
     } catch (e) {
       LoggerService.error('Error getting screenshot paths', e);
     }

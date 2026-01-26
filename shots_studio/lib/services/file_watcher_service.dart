@@ -37,6 +37,16 @@ class FileWatcherService {
 
   int get processedFilesCount => _processedFiles.length;
 
+  /// Add a file path to the processed list manually
+  /// This is useful when a file is imported via other means (e.g., Share Intent)
+  /// and we want to prevent the watcher from re-emitting it.
+  void addProcessedFile(String path) {
+    if (!_processedFiles.contains(path)) {
+      _processedFiles.add(path);
+      LoggerService.log('FileWatcher: Manually added processed file: $path');
+    }
+  }
+
   /// Start monitoring screenshot directories for new files
   Future<void> startWatching() async {
     if (kIsWeb) {
@@ -376,6 +386,11 @@ class FileWatcherService {
       // Add custom paths
       final customPaths = await CustomPathService.getCustomPaths();
       paths.addAll(customPaths);
+
+      // Add centralized shared images directory
+      final appDir = await getApplicationDocumentsDirectory();
+      final sharedImagesPath = '${appDir.path}/shared_images';
+      paths.add(sharedImagesPath);
     } catch (e) {
       LoggerService.error('FileWatcher: Error getting screenshot paths', e);
     }
