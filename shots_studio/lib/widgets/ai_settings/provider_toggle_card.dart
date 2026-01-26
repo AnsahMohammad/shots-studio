@@ -8,7 +8,6 @@ class ProviderToggleCard extends StatelessWidget {
   final bool canToggle;
   final bool forceDisabled;
   final String? disabledReason;
-  final bool isBeta;
   final Function(String, bool) onToggle;
 
   const ProviderToggleCard({
@@ -19,7 +18,6 @@ class ProviderToggleCard extends StatelessWidget {
     this.canToggle = true,
     this.forceDisabled = false,
     this.disabledReason,
-    this.isBeta = false,
   });
 
   @override
@@ -39,42 +37,18 @@ class ProviderToggleCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Text(
-                        provider.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color:
-                              forceDisabled
-                                  ? theme.colorScheme.onSurfaceVariant
-                                      .withOpacity(0.6)
-                                  : theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      if (isBeta) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            'BETA',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
+                  Text(
+                    provider.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color:
+                          forceDisabled
+                              ? theme.colorScheme.onSurfaceVariant.withOpacity(
+                                0.6,
+                              )
+                              : theme.colorScheme.onSurface,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(

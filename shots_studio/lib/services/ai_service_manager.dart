@@ -78,10 +78,10 @@ class AIServiceManager {
       throw StateError('AI Service not initialized. Call initialize() first.');
     }
 
-    // Providers that function as description-only (no categorization)
-    if (_isDescriptionOnlyProvider()) {
+    // OCR provider does not support categorization
+    if (_isOCRProvider()) {
       return AIResult.error(
-        'Categorization is not supported with this provider (Description Only).',
+        'Categorization is not supported with OCR provider. OCR only extracts text from images.',
         statusCode: 400,
       );
     }
@@ -93,13 +93,11 @@ class AIServiceManager {
     );
   }
 
-  // Check if current model is description-only (OCR, AiCore)
-  bool _isDescriptionOnlyProvider() {
+  // Check if current model is OCR-based
+  bool _isOCRProvider() {
     if (_analysisService == null) return false;
     final modelName = _analysisService!.config.modelName.toLowerCase();
-    return modelName.contains('ocr') ||
-        modelName.contains('tesseract') ||
-        modelName == 'ai-core';
+    return modelName.contains('ocr') || modelName.contains('tesseract');
   }
 
   // Control Methods

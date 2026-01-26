@@ -7,7 +7,6 @@ import 'package:http/http.dart' as http;
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/services/gemma_service.dart';
 import 'package:shots_studio/services/ocr_service.dart';
-import 'package:shots_studio/services/ai_core_service.dart';
 import 'package:shots_studio/services/logger_service.dart';
 
 typedef ShowMessageCallback =
@@ -587,138 +586,6 @@ class GemmaAPIProvider implements APIProvider {
   }
 }
 
-// AiCore (On-Device) API provider implementation
-class AICoreAPIProvider implements APIProvider {
-  final AICoreService _service = AICoreService();
-
-  @override
-  bool canHandleModel(String modelName) {
-    return modelName == 'ai-core';
-  }
-
-  @override
-  Future<Map<String, dynamic>> makeRequest(
-    Map<String, dynamic> requestData,
-    AIConfig config,
-  ) async {
-    File? tempFile;
-    try {
-      // Check if supported first? Ideally this is done at selection time,
-      // but double check here or just assume selection logic handled it.
-      // We'll proceed assuming user selected it because it was supported.
-
-      // Extract image
-      if (!requestData.containsKey('imageData') ||
-          requestData['imageData'] == null) {
-        return {
-          'error': 'No image data provided for AiCore processing',
-          'statusCode': 400,
-        };
-      }
-
-      final imageData = requestData['imageData'] as Map<String, dynamic>;
-
-      // Convert to file
-      tempFile = await _convertImageDataToFile(imageData);
-      if (tempFile == null) {
-        return {'error': 'Failed to process image data', 'statusCode': 400};
-      }
-
-      // Generate description
-      final description = await _service.generateDescriptionWithAiCore(
-        tempFile.path,
-      );
-
-      return {'data': description, 'statusCode': 200, 'model': 'ai-core'};
-    } catch (e) {
-      return {'error': 'AiCore error: ${e.toString()}', 'statusCode': 500};
-    } finally {
-      // Cleanup temp file
-      if (tempFile != null) {
-        try {
-          if (await tempFile.exists()) {
-            await tempFile.delete();
-          }
-        } catch (e) {
-          // Ignore delete errors
-        }
-      }
-    }
-  }
-
-  @override
-  Map<String, dynamic> prepareScreenshotAnalysisRequest({
-    required String prompt,
-    required List<Map<String, dynamic>> imageData,
-    Map<String, dynamic> additionalParams = const {},
-  }) {
-    // Process one image at a time
-    Map<String, dynamic>? firstImageData;
-    if (imageData.isNotEmpty) {
-      firstImageData = imageData.first;
-    }
-
-    return {
-      'prompt':
-          prompt, // Ignored by AiCore Image Description API usually, as it just describes
-      'imageData': firstImageData,
-      'type': 'ai_core_analysis',
-      ...additionalParams,
-    };
-  }
-
-  @override
-  Map<String, dynamic> prepareCategorizationRequest({
-    required String prompt,
-    required List<Map<String, String>> screenshotMetadata,
-    Map<String, dynamic> additionalParams = const {},
-  }) {
-    return {
-      'error': 'AiCore provider does not support categorization',
-      'type': 'unsupported',
-    };
-  }
-
-  // Helper to convert base64 to temp file (duplicated from others, could be refactored to base class or util)
-  Future<File?> _convertImageDataToFile(Map<String, dynamic> imageData) async {
-    try {
-      if (imageData.containsKey('data') && imageData['data'] is Map) {
-        final data = imageData['data'] as Map<String, dynamic>;
-        if (data.containsKey('mime_type') && data.containsKey('data')) {
-          final base64Data = data['data'] as String;
-          final mimeType = data['mime_type'] as String;
-
-          final bytes = base64Decode(base64Data);
-          final tempDir = Directory.systemTemp;
-          final extension = _getExtensionFromMimeType(mimeType);
-          final tempFile = File(
-            '${tempDir.path}/nano_temp_${DateTime.now().millisecondsSinceEpoch}.$extension',
-          );
-
-          await tempFile.writeAsBytes(bytes);
-          return tempFile;
-        }
-      }
-    } catch (e) {
-      LoggerService.error('Error converting image data to file for Nano', e);
-    }
-    return null;
-  }
-
-  String _getExtensionFromMimeType(String mimeType) {
-    switch (mimeType.toLowerCase()) {
-      case 'image/jpeg':
-        return 'jpg';
-      case 'image/png':
-        return 'png';
-      case 'image/webp':
-        return 'webp';
-      default:
-        return 'jpg';
-    }
-  }
-}
-
 // OCR API provider implementation - uses Tesseract OCR for text extraction only
 class OcrAPIProvider implements APIProvider {
   @override
@@ -903,7 +770,6 @@ class OcrAPIProvider implements APIProvider {
 class APIProviderFactory {
   static final List<APIProvider> _providers = [
     GeminiAPIProvider(),
-    AICoreAPIProvider(),
     GemmaAPIProvider(),
     OcrAPIProvider(),
     // Future providers can be added here:
