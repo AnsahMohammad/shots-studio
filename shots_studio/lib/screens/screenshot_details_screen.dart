@@ -19,6 +19,7 @@ import 'package:shots_studio/widgets/ocr_result_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:shots_studio/services/logger_service.dart';
+import 'package:pasteboard/pasteboard.dart';
 
 // Import extracted widgets
 import 'package:shots_studio/widgets/screenshot_details/index.dart';
@@ -388,6 +389,67 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     } else {
       SnackbarService().showError(context, 'Screenshot file not found');
     }
+  }
+
+  Future<void> _copyImageToClipboard() async {
+    AnalyticsService().logFeatureUsed('screenshot_copied_to_clipboard');
+    final file = File(widget.screenshot.path!);
+    if (await file.exists()) {
+      try {
+        final bytes = await file.readAsBytes();
+        await Pasteboard.writeImage(bytes);
+        if (mounted) {
+          SnackbarService().showSuccess(context, 'Image copied to clipboard');
+        }
+      } catch (e) {
+        LoggerService.error('Failed to copy image to clipboard', e);
+        if (mounted) {
+          SnackbarService().showError(
+            context,
+            'Failed to copy image: ${e.toString()}',
+          );
+        }
+      }
+    } else {
+      LoggerService.error('Screenshot file not found');
+      if (mounted) {
+        SnackbarService().showError(context, 'Screenshot file not found');
+      }
+    }
+  }
+
+  Future<void> _showCopyImageDialog() async {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Copy Image'),
+          content: const Text(
+            'Do you want to copy this image to your clipboard?',
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Copy'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _copyImageToClipboard();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _handleReminder() async {
@@ -974,6 +1036,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
             padding: const EdgeInsets.all(16),
             child: InkWell(
               onTap: () => _openFullScreenViewer(),
+              onLongPress: _showCopyImageDialog,
               child: Container(
                 width: double.infinity,
                 height: double.infinity,
@@ -1012,6 +1075,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
         children: [
           InkWell(
             onTap: () => _openFullScreenViewer(),
+            onLongPress: _showCopyImageDialog,
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Container(

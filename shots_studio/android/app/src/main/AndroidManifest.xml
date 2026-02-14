@@ -117,10 +117,10 @@
         <uses-native-library android:name="libOpenCL-car.so" android:required="false"/>
         <uses-native-library android:name="libOpenCL-pixel.so" android:required="false"/>
         
-        <!-- FileProvider for APK installation -->
+        <!-- FileProvider for APK installation and Pasteboard clipboard -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
+            android:authorities="${applicationId}.fileprovider;${applicationId}.provider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
