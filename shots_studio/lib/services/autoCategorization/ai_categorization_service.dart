@@ -41,9 +41,12 @@ class AICategorizer {
     }
 
     final prefs = await SharedPreferences.getInstance();
+    final String modelName =
+        prefs.getString('modelName') ?? 'gemini-2.5-flash-lite';
     final String? apiKey = prefs.getString('apiKey');
-    if ((apiKey == null || apiKey.isEmpty) &&
-        (prefs.getString('modelName') != 'gemma')) {
+
+    if (AIProviderConfig.requiresApiKey(modelName) &&
+        (apiKey == null || apiKey.isEmpty)) {
       SnackbarService().showError(
         context,
         'API key missing. Please add it in settings.',
@@ -51,8 +54,6 @@ class AICategorizer {
       return AICategorizeResult(success: false, error: 'API key not set');
     }
 
-    final String modelName =
-        prefs.getString('modelName') ?? 'gemini-2.5-flash-lite';
     final int maxParallel = AIProviderConfig.getMaxCategorizationLimitForModel(
       modelName,
     );

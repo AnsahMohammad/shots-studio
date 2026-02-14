@@ -32,6 +32,20 @@ class AIProviderConfig {
     'tesseract-ocr': 0,
   };
 
+  // Model-specific API key requirements
+  static const Map<String, bool> modelRequiresApiKey = {
+    'gemini-2.0-flash': true,
+    'gemini-2.5-flash': true,
+    'gemini-2.5-flash-lite': true,
+    'gemini-2.5-pro': true,
+    'gemma': false,
+    'tesseract-ocr': false,
+  };
+
+  static bool requiresApiKey(String model) {
+    return modelRequiresApiKey[model] ?? false; // Default to false
+  }
+
   // Preference keys for provider settings
   static const Map<String, String> providerPrefKeys = {
     'gemini': 'ai_provider_gemini_enabled',

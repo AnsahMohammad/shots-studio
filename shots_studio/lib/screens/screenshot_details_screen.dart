@@ -20,6 +20,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:shots_studio/services/logger_service.dart';
 import 'package:pasteboard/pasteboard.dart';
+import 'package:shots_studio/utils/ai_provider_config.dart';
 
 // Import extracted widgets
 import 'package:shots_studio/widgets/screenshot_details/index.dart';
@@ -564,11 +565,12 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     }
 
     final prefs = await SharedPreferences.getInstance();
+    final String modelName =
+        prefs.getString('modelName') ?? 'gemini-2.5-flash-lite';
     String? apiKey = prefs.getString('apiKey');
 
-    if (prefs.getString('modelName') == 'gemma') {
-      apiKey = 'gemma-v1';
-    } else if (apiKey == null || apiKey.isEmpty) {
+    if (AIProviderConfig.requiresApiKey(modelName) &&
+        (apiKey == null || apiKey.isEmpty)) {
       try {
         await WakelockPlus.disable();
       } catch (e) {
@@ -580,9 +582,6 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
       );
       return;
     }
-
-    final String modelName =
-        prefs.getString('modelName') ?? 'gemini-2.5-flash-lite';
 
     if (mounted) {
       setState(() {
@@ -603,7 +602,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
             .toList();
 
     final config = AIConfig(
-      apiKey: apiKey,
+      apiKey: apiKey ?? '',
       modelName: modelName,
       maxParallel: 1,
       timeoutSeconds: 120,
