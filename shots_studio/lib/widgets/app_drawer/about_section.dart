@@ -278,7 +278,7 @@ class AboutSection extends StatelessWidget {
             style: TextStyle(color: theme.colorScheme.onSecondaryContainer),
           ),
           subtitle: Text(
-            'Contribute on GitHub or GitLab',
+            'Contribute on GitHub',
             style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
           ),
           onTap: () {
@@ -296,7 +296,7 @@ class AboutSection extends StatelessWidget {
             style: TextStyle(color: Colors.greenAccent),
           ),
           subtitle: Text(
-            'Sponsor the project',
+            'Support the project',
             style: TextStyle(color: Colors.greenAccent),
           ),
           onTap: () {
