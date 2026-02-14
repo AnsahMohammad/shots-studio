@@ -32,12 +32,18 @@ class ScreenshotSwipeDetailScreen extends StatefulWidget {
 }
 
 class _ScreenshotSwipeDetailScreenState
-    extends State<ScreenshotSwipeDetailScreen> {
+    extends State<ScreenshotSwipeDetailScreen>
+    with SingleTickerProviderStateMixin {
   late PageController _pageController;
   late int _currentIndex;
 
   // Cache for pre-built widgets to improve performance
   final Map<int, Widget> _pageCache = {};
+
+  // Exit animation for when user swiped to a different image
+  late AnimationController _exitController;
+  late Animation<double> _exitOpacity;
+  bool _isExiting = false;
 
   @override
   void initState() {
@@ -49,15 +55,44 @@ class _ScreenshotSwipeDetailScreenState
       keepPage: true,
     );
 
+    _exitController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _exitOpacity = Tween<double>(
+      begin: 1.0,
+      end: 0.0,
+    ).animate(CurvedAnimation(parent: _exitController, curve: Curves.easeOut));
+
     AnalyticsService().logScreenView('screenshot_swipe_detail_screen');
     AnalyticsService().logFeatureUsed('screenshot_swipe_viewer_opened');
   }
 
   @override
   void dispose() {
+    _exitController.dispose();
     _pageController.dispose();
     _pageCache.clear();
     super.dispose();
+  }
+
+  /// Whether the user has swiped to a different image than what they opened
+  bool get _hasNavigatedAway => _currentIndex != widget.initialIndex;
+
+  /// Fade out the screen and remove the route directly, bypassing
+  /// OpenContainer's close animation (which would zoom back to the wrong card).
+  Future<void> _handleFadeOutExit() async {
+    if (_isExiting) return;
+    _isExiting = true;
+
+    await _exitController.forward();
+
+    if (mounted) {
+      final route = ModalRoute.of(context);
+      if (route != null) {
+        Navigator.of(context).removeRoute(route);
+      }
+    }
   }
 
   void _onPageChanged(int index) {
@@ -167,18 +202,32 @@ class _ScreenshotSwipeDetailScreenState
       );
     }
 
-    return Scaffold(
-      body: PageView.builder(
-        controller: _pageController,
-        onPageChanged: _onPageChanged,
-        itemCount: widget.screenshots.length,
-        padEnds: false,
-        allowImplicitScrolling: true,
-        physics: const ClampingScrollPhysics(),
-        clipBehavior: Clip.none,
-        itemBuilder: (context, index) {
-          return _buildPage(index);
-        },
+    return PopScope(
+      // Allow default pop (OpenContainer close animation) only when on the original image
+      canPop: !_hasNavigatedAway,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _hasNavigatedAway) {
+          // User swiped to a different image — fade out instead of
+          // letting OpenContainer animate back to the wrong card
+          _handleFadeOutExit();
+        }
+      },
+      child: FadeTransition(
+        opacity: _exitOpacity,
+        child: Scaffold(
+          body: PageView.builder(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            itemCount: widget.screenshots.length,
+            padEnds: false,
+            allowImplicitScrolling: true,
+            physics: const ClampingScrollPhysics(),
+            clipBehavior: Clip.none,
+            itemBuilder: (context, index) {
+              return _buildPage(index);
+            },
+          ),
+        ),
       ),
     );
   }
