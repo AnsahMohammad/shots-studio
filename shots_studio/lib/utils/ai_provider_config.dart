@@ -46,6 +46,20 @@ class AIProviderConfig {
     return modelRequiresApiKey[model] ?? false; // Default to false
   }
 
+  // Models capable of advanced extraction (dates, events, locations, flights)
+  static const Map<String, bool> modelSupportsAdvancedExtraction = {
+    'gemini-2.0-flash': false,
+    'gemini-2.5-flash': true,
+    'gemini-2.5-flash-lite': false,
+    'gemini-2.5-pro': true,
+    'gemma': false,
+    'tesseract-ocr': false,
+  };
+
+  static bool hasAdvancedExtraction(String model) {
+    return modelSupportsAdvancedExtraction[model] ?? false;
+  }
+
   // Preference keys for provider settings
   static const Map<String, String> providerPrefKeys = {
     'gemini': 'ai_provider_gemini_enabled',

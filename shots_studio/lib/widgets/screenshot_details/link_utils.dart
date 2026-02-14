@@ -17,6 +17,21 @@ class LinkUtils {
   ) {
     final cleanLink = link.trim();
 
+    // Calendar event links (calendar:TITLE|START|END|LOCATION)
+    if (cleanLink.startsWith('calendar:')) {
+      return {
+        'type': 'calendar',
+        'icon': Icons.calendar_month,
+        'color': Colors.teal,
+        'action': () {
+          final calendarUrl = _buildGoogleCalendarUrl(cleanLink);
+          if (calendarUrl != null) {
+            launchLinkFn(calendarUrl);
+          }
+        },
+      };
+    }
+
     // Handle links that already have prefixes
     if (cleanLink.startsWith('mailto:')) {
       return {
@@ -57,6 +72,37 @@ class LinkUtils {
         'icon': Icons.phone,
         'color': Colors.green,
         'action': () => launchLinkFn('tel:$cleanLink'),
+      };
+    }
+
+    // Google Maps URL detection
+    if (cleanLink.contains('google.com/maps') ||
+        cleanLink.contains('maps.google.com') ||
+        cleanLink.contains('goo.gl/maps')) {
+      String url = cleanLink;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://$url';
+      }
+      return {
+        'type': 'maps',
+        'icon': Icons.location_on,
+        'color': Colors.orange,
+        'action': () => launchLinkFn(url),
+      };
+    }
+
+    // Flight tracking URL detection
+    if (cleanLink.contains('flight+status') ||
+        cleanLink.contains('flight%20status')) {
+      String url = cleanLink;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://$url';
+      }
+      return {
+        'type': 'flight',
+        'icon': Icons.flight,
+        'color': Colors.indigo,
+        'action': () => launchLinkFn(url),
       };
     }
 
@@ -140,16 +186,75 @@ class LinkUtils {
   static String getDisplayText(String link) {
     final cleanLink = link.trim();
 
+    // Calendar links: show event title
+    if (cleanLink.startsWith('calendar:')) {
+      final data = cleanLink.substring(9); // Remove 'calendar:'
+      final parts = data.split('|');
+      final title = parts.isNotEmpty ? parts[0].trim() : 'Event';
+      return 'Add to Calendar: $title';
+    }
+
     if (cleanLink.startsWith('mailto:')) {
       return cleanLink.substring(7); // Remove 'mailto:' prefix
     } else if (cleanLink.startsWith('tel:')) {
       return cleanLink.substring(4); // Remove 'tel:' prefix
-    } else if (cleanLink.startsWith('http://')) {
-      return cleanLink.substring(7); // Remove 'http://' prefix for display
-    } else if (cleanLink.startsWith('https://')) {
-      return cleanLink.substring(8); // Remove 'https://' prefix for display
+    } else if (cleanLink.startsWith('http://') ||
+        cleanLink.startsWith('https://')) {
+      final url =
+          cleanLink.startsWith('http://')
+              ? cleanLink.substring(7)
+              : cleanLink.substring(8);
+
+      // Google Maps links: show friendly text
+      if (url.contains('google.com/maps/search/')) {
+        final searchTerm = Uri.decodeFull(
+          url.split('google.com/maps/search/').last.split('?').first,
+        );
+        return searchTerm;
+      }
+
+      // Flight tracking links: show flight number
+      if (url.contains('google.com/search?q=') &&
+          (url.contains('flight+status') || url.contains('flight%20status'))) {
+        final query = Uri.decodeFull(
+          url.split('q=').last.split('&').first,
+        ).replaceAll('+', ' ').replaceAll(' flight status', '');
+        return query;
+      }
+
+      return url; // Remove protocol prefix for display
     }
 
     return cleanLink;
+  }
+
+  /// Build a Google Calendar URL from a calendar: link.
+  /// Format: calendar:TITLE|YYYYMMDDTHHMMSS|YYYYMMDDTHHMMSS|LOCATION
+  static String? _buildGoogleCalendarUrl(String calendarLink) {
+    try {
+      final data = calendarLink.substring(9); // Remove 'calendar:'
+      final parts = data.split('|');
+
+      if (parts.length < 2) return null;
+
+      final title = parts[0].trim();
+      final startDate = parts[1].trim();
+      final endDate = parts.length > 2 ? parts[2].trim() : startDate;
+      final location = parts.length > 3 ? parts[3].trim() : '';
+
+      final params = {
+        'action': 'TEMPLATE',
+        'text': title,
+        'dates': '$startDate/$endDate',
+        if (location.isNotEmpty) 'location': location,
+      };
+
+      final uri = Uri.https('calendar.google.com', '/calendar/render', params);
+
+      return uri.toString();
+    } catch (e) {
+      LoggerService.error('Error building calendar URL', e);
+      return null;
+    }
   }
 }

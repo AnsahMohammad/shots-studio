@@ -367,6 +367,8 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     if (mounted) {
       setState(() {
         widget.screenshot.aiProcessed = false;
+        widget.screenshot.links.clear();
+        widget.screenshot.description = '';
       });
     }
     _updateScreenshotDetails();

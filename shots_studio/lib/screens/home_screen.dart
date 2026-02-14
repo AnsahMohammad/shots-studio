@@ -1812,9 +1812,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         for (var screenshot in _screenshots) {
           screenshot.aiProcessed = false;
           screenshot.aiMetadata = null;
+          screenshot.links.clear();
+          screenshot.description = '';
           // Optionally clear AI-generated data
           // screenshot.title = null;
-          // screenshot.description = null;
           // screenshot.tags.clear();
         }
 

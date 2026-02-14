@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
+import 'package:shots_studio/utils/ai_provider_config.dart';
 import 'package:shots_studio/services/ai_service.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/utils/image_conversion_utils.dart';
@@ -368,6 +369,11 @@ class ScreenshotAnalysisService extends AIService {
   String _normalizeLinkFormat(String link) {
     final cleanLink = link.trim();
 
+    // Preserve calendar: prefixed links as-is
+    if (cleanLink.startsWith('calendar:')) {
+      return cleanLink;
+    }
+
     // For phone numbers, ensure they have tel: prefix for consistency
     if (RegExp(
           r'^[\+]?[\d\s\-\(\)\.]{7,}$',
@@ -399,7 +405,11 @@ class ScreenshotAnalysisService extends AIService {
   Future<String> _getAnalysisPrompt({
     List<Map<String, String?>>? autoAddCollections,
   }) async {
-    bool isGeminiModel = config.modelName.toLowerCase().contains('gemini');
+    final bool advancedExtraction = AIProviderConfig.hasAdvancedExtraction(
+      config.modelName,
+    );
+    final bool isGeminiModel =
+        AIProviderConfig.getProviderForModel(config.modelName) == 'gemini';
 
     String basePrompt = """
       You are a screenshot analyzer. You will be given single or multiple images.
@@ -415,6 +425,25 @@ class ScreenshotAnalysisService extends AIService {
       - Any other copyable text that users might want to copy or store for later
       Include these in a "links" field as a list of strings. eg : ["tel:+1234567890", "mailto:example@example.com"]
     """;
+
+    // Advanced extraction: dates, events, flights, locations (only for capable models)
+    if (advancedExtraction) {
+      final todayDate = DateTime.now().toIso8601String().split('T')[0];
+      basePrompt += """
+
+      Also extract the following if visible in the screenshot:
+      - Dates & times (events, appointments, reminders, deadlines)
+      - Specific flight numbers only (e.g. AA1234, 6E 2145, BA 456) — these are airline codes followed by numbers.
+        Do NOT extract airline brand names (e.g. "Air India", "Qantas") as flight numbers.
+        Only extract if an actual flight code is visible. Format as: https://www.google.com/search?q=FLIGHT_NUMBER+flight+status
+      - Locations or addresses (format as: https://www.google.com/maps/search/URL_ENCODED_ADDRESS)
+      - For any future event with a clear date/time (after $todayDate), include a calendar link:
+        calendar:EVENT TITLE|YYYYMMDDTHHMMSS|YYYYMMDDTHHMMSS|LOCATION
+        (start time | end time | location — estimate 1 hour duration if end time is unknown, location can be empty)
+        Only include calendar links for future dates.
+      Include all of these in the same "links" field alongside phone numbers, emails, and URLs.
+      """;
+    }
 
     if (autoAddCollections != null && autoAddCollections.isNotEmpty) {
       basePrompt += """
@@ -457,7 +486,7 @@ class ScreenshotAnalysisService extends AIService {
       
       Respond strictly in this JSON format:
       [{"filename": '', "title": '', "desc": '', "tags": [], "links": [], "collections": []}, ...]
-      The "collections" field should contain names of collections that match the image content. The "tags" field should contain relevant search tags. The "links" field should contain any clickable information like phone numbers, emails, URLs, etc.
+      The "collections" field should contain names of collections that match the image content. The "tags" field should contain relevant search tags. The "links" field should contain any clickable information like phone numbers, emails, URLs${advancedExtraction ? ', calendar events, map locations, flight tracking links' : ''}, etc.
     """;
 
     return basePrompt;
