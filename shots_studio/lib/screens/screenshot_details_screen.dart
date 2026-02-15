@@ -373,10 +373,12 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     }
     _updateScreenshotDetails();
 
-    SnackbarService().showInfo(
-      context,
-      'AI details cleared. Ready for re-processing.',
-    );
+    if (mounted) {
+      SnackbarService().showInfo(
+        context,
+        'AI details cleared. Ready for re-processing.',
+      );
+    }
   }
 
   Future<void> _handleShare() async {
@@ -578,10 +580,12 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
       } catch (e) {
         LoggerService.error('Failed to disable wakelock', e);
       }
-      SnackbarService().showError(
-        context,
-        'AI API key not configured. Please check app settings.',
-      );
+      if (mounted) {
+        SnackbarService().showError(
+          context,
+          'AI API key not configured. Please check app settings.',
+        );
+      }
       return;
     }
 
@@ -613,12 +617,14 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
         Color? backgroundColor,
         Duration? duration,
       }) {
-        SnackbarService().showSnackbar(
-          context,
-          message: message,
-          backgroundColor: backgroundColor,
-          duration: duration,
-        );
+        if (mounted) {
+          SnackbarService().showSnackbar(
+            context,
+            message: message,
+            backgroundColor: backgroundColor,
+            duration: duration,
+          );
+        }
       },
     );
 
@@ -674,20 +680,28 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
         LoggerService.log("Screenshot processed success");
         widget.onScreenshotUpdated?.call();
       } else if (result.cancelled) {
-        SnackbarService().showInfo(context, 'AI processing was cancelled.');
+        if (mounted) {
+          SnackbarService().showInfo(context, 'AI processing was cancelled.');
+        }
       } else {
-        SnackbarService().showError(
-          context,
-          result.error ?? 'Failed to process screenshot',
-        );
+        if (mounted) {
+          SnackbarService().showError(
+            context,
+            result.error ?? 'Failed to process screenshot',
+          );
+        }
       }
     } on TimeoutException catch (_) {
-      SnackbarService().showError(
-        context,
-        'AI processing timed out after 120 seconds. Please try again.',
-      );
+      if (mounted) {
+        SnackbarService().showError(
+          context,
+          'AI processing timed out after 120 seconds. Please try again.',
+        );
+      }
     } catch (e) {
-      SnackbarService().showError(context, 'Error processing screenshot: $e');
+      if (mounted) {
+        SnackbarService().showError(context, 'Error processing screenshot: $e');
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -746,7 +760,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
           }
         }
 
-        if (autoAddedCount > 0) {
+        if (autoAddedCount > 0 && mounted) {
           SnackbarService().showSuccess(
             context,
             'Screenshot processed and auto-categorized into $autoAddedCount collection${autoAddedCount > 1 ? 's' : ''}',
@@ -881,10 +895,12 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     AnalyticsService().logFeatureUsed('ocr_processing_requested');
 
     if (!_ocrService.isOCRAvailable()) {
-      SnackbarService().showError(
-        context,
-        'OCR is not available on this platform',
-      );
+      if (mounted) {
+        SnackbarService().showError(
+          context,
+          'OCR is not available on this platform',
+        );
+      }
       return;
     }
 
@@ -901,25 +917,35 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     }
 
     try {
-      SnackbarService().showInfo(context, 'Processing image with OCR...');
+      if (mounted) {
+        SnackbarService().showInfo(context, 'Processing image with OCR...');
+      }
 
       final extractedText = await _ocrService.extractTextFromScreenshot(
         widget.screenshot,
       );
 
       if (extractedText != null && extractedText.isNotEmpty) {
-        SnackbarService().showSuccess(context, 'Text extracted successfully!');
-        AnalyticsService().logFeatureUsed('ocr_text_extracted');
-
-        OCRResultDialog.show(context, extractedText);
+        if (mounted) {
+          SnackbarService().showSuccess(
+            context,
+            'Text extracted successfully!',
+          );
+          AnalyticsService().logFeatureUsed('ocr_text_extracted');
+          OCRResultDialog.show(context, extractedText);
+        }
       } else {
-        SnackbarService().showWarning(context, 'No text found in the image');
+        if (mounted) {
+          SnackbarService().showWarning(context, 'No text found in the image');
+        }
       }
     } catch (e) {
-      SnackbarService().showError(
-        context,
-        'Error processing image: ${e.toString()}',
-      );
+      if (mounted) {
+        SnackbarService().showError(
+          context,
+          'Error processing image: ${e.toString()}',
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
