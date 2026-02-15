@@ -1,0 +1,18 @@
+New Features :
+
+Add images by sharing (Also stores the weblink). Fix Share from app into Shots Studio to automatically preserve weblink #166 , fix Storing Weblinks #48, fix Add image into app by sharing #137
+Set calender, find locations, search flights based on Screenshot. Fix FR: Modifying the prompt to get dates, time, flight numbers, getting links to add to calendar, etc. #175
+Onboarding chinese traditional and chinese simplified. Fix Distinguish Chinese(Traditional) and Chinese(Simplified) #163
+Update gemma to support 16kb page size.
+Ability to copy screenshots. Fixes FR: Ability to copy screenshots instead of sharing
+Group Screenshots by Date in the home page with scrollbar.
+Move API settings into AI settings.
+
+Bug fixes and stability :
+
+Fix animation bug while exiting images. Fix Exiting from image shows wrong animation exit
+refactor main.dart and migrate to use logger
+remove unnecessary analytics
+Add animation enhancements for bounciness in settings screen.
+minor UI text changes in sponsor and contribute.
+Fix tesseract requiring API key on single image processing
