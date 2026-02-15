@@ -98,6 +98,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: Container(
         color: theme.scaffoldBackgroundColor,
         child: ListView(
+          physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           children: [
             SettingsSection(
