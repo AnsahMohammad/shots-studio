@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:tesseract_ocr/tesseract_ocr.dart';
 import 'package:tesseract_ocr/ocr_engine_config.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
+import 'package:shots_studio/services/logger_service.dart';
 
 /// Service for performing OCR (Optical Character Recognition) on screenshots
 /// Uses Tesseract OCR for offline text recognition
@@ -51,7 +52,7 @@ class OCRService {
 
       return extractedText.trim().isEmpty ? null : extractedText.trim();
     } catch (e) {
-      print('OCR extraction error: $e');
+      LoggerService.error('OCR extraction error', e);
       return null;
     }
   }
@@ -74,7 +75,7 @@ class OCRService {
         await file.delete();
       }
     } catch (e) {
-      print('Error cleaning up temp file: $e');
+      LoggerService.error('Error cleaning up temp file', e);
     }
   }
 
@@ -96,7 +97,7 @@ class OCRService {
 
       return null;
     } catch (e) {
-      print('Error extracting text and copying to clipboard: $e');
+      LoggerService.error('Error extracting text and copying to clipboard', e);
       return null;
     }
   }

@@ -4,6 +4,7 @@ import 'package:image/image.dart' as img;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
+import 'package:shots_studio/services/logger_service.dart';
 
 /// Service for writing XMP metadata to image files
 /// This allows AI-generated tags, titles, and descriptions to be embedded
@@ -32,19 +33,21 @@ class XMPMetadataService {
     try {
       // Check if XMP writing is enabled
       if (!await isXMPWritingEnabled()) {
-        print('XMP writing is disabled in settings');
+        LoggerService.log('XMP writing is disabled in settings');
         return false;
       }
 
       // Check if screenshot has a valid file path
       if (screenshot.path == null || screenshot.path!.isEmpty) {
-        print('XMP: Screenshot has no file path');
+        LoggerService.log('XMP: Screenshot has no file path');
         return false;
       }
 
       final file = File(screenshot.path!);
       if (!await file.exists()) {
-        print('XMP: Image file does not exist: ${screenshot.path}');
+        LoggerService.error(
+          'XMP: Image file does not exist: ${screenshot.path}',
+        );
         return false;
       }
 
@@ -53,7 +56,7 @@ class XMPMetadataService {
       final image = img.decodeImage(bytes);
 
       if (image == null) {
-        print('XMP: Failed to decode image: ${screenshot.path}');
+        LoggerService.error('XMP: Failed to decode image: ${screenshot.path}');
         return false;
       }
 
@@ -78,21 +81,28 @@ class XMPMetadataService {
           // Only clean up backup after successful write
           await _cleanupSingleBackup(file.path);
 
-          print('XMP: Successfully wrote metadata to ${screenshot.path}');
-          print(
+          LoggerService.log(
+            'XMP: Successfully wrote metadata to ${screenshot.path}',
+          );
+          LoggerService.log(
             'XMP: Added searchable EXIF metadata - Title: "${screenshot.title}" (XPTitle+ImageDescription), Tags: "${screenshot.tags.join(";")}" (XPKeywords), Description: "${screenshot.description}" (UserComment), Software: Shots Studio',
           );
           return true;
         } catch (writeError) {
           // Critical: If writing failed, restore from backup
-          print(
-            'XMP: Error during file write, attempting to restore from backup: $writeError',
+          LoggerService.error(
+            'XMP: Error during file write, attempting to restore from backup',
+            writeError,
           );
           final restored = await _restoreFromBackup(file.path);
           if (restored) {
-            print('XMP: Successfully restored original file from backup');
+            LoggerService.log(
+              'XMP: Successfully restored original file from backup',
+            );
           } else {
-            print('XMP: CRITICAL ERROR - Could not restore original file!');
+            LoggerService.error(
+              'XMP: CRITICAL ERROR - Could not restore original file!',
+            );
           }
           return false;
         }
@@ -101,7 +111,10 @@ class XMPMetadataService {
       return false;
     } catch (e) {
       // For any other errors, try to restore from backup if it exists
-      print('XMP: Error writing metadata to ${screenshot.path}: $e');
+      LoggerService.error(
+        'XMP: Error writing metadata to ${screenshot.path}',
+        e,
+      );
       await _restoreFromBackup(screenshot.path!);
       return false;
     }
@@ -220,12 +233,14 @@ class XMPMetadataService {
       // Store XMP data in a way that can be retrieved later
       // The image package doesn't have native XMP support, so we use available metadata fields
 
-      print(
+      LoggerService.log(
         'XMP: Added XMP metadata block to image (${xmpData.length} characters)',
       );
-      print('XMP: Professional tools may be able to read embedded XMP data');
+      LoggerService.log(
+        'XMP: Professional tools may be able to read embedded XMP data',
+      );
     } catch (e) {
-      print('XMP: Warning - Could not embed XMP metadata: $e');
+      LoggerService.error('XMP: Warning - Could not embed XMP metadata', e);
       // Non-critical error - EXIF data is still embedded
     }
   }
@@ -277,7 +292,7 @@ class XMPMetadataService {
       image.exif.imageIfd[306] = processingDate.toIso8601String();
 
       // Debug: Print what EXIF tags we're setting
-      print(
+      LoggerService.log(
         'XMP: Setting EXIF tags - ImageDescription(270), XPTitle(40091), XPKeywords(40094), UserComment(37510), Software(305), DateTime(306)',
       );
 
@@ -288,7 +303,7 @@ class XMPMetadataService {
 
       return image;
     } catch (e) {
-      print('XMP: Error embedding metadata in image: $e');
+      LoggerService.error('XMP: Error embedding metadata in image', e);
       return null;
     }
   }
@@ -301,25 +316,29 @@ class XMPMetadataService {
   ) {
     try {
       if (_isJPEG(originalBytes)) {
-        print('XMP: Preserving JPEG format with EXIF metadata');
+        LoggerService.log('XMP: Preserving JPEG format with EXIF metadata');
         return Uint8List.fromList(img.encodeJpg(image, quality: 95));
       } else if (_isPNG(originalBytes)) {
         // PNG doesn't support EXIF data, so we convert to JPEG to preserve metadata
-        print('XMP: Converting PNG to JPEG to preserve EXIF metadata');
+        LoggerService.log(
+          'XMP: Converting PNG to JPEG to preserve EXIF metadata',
+        );
         return Uint8List.fromList(img.encodeJpg(image, quality: 95));
       } else if (_isWebP(originalBytes)) {
         // WebP has limited EXIF support, convert to JPEG for better compatibility
-        print('XMP: Converting WebP to JPEG to preserve EXIF metadata');
+        LoggerService.log(
+          'XMP: Converting WebP to JPEG to preserve EXIF metadata',
+        );
         return Uint8List.fromList(img.encodeJpg(image, quality: 95));
       } else {
         // Default to JPEG for unknown formats
-        print(
+        LoggerService.log(
           'XMP: Unknown format, encoding as JPEG to preserve EXIF metadata',
         );
         return Uint8List.fromList(img.encodeJpg(image, quality: 95));
       }
     } catch (e) {
-      print('XMP: Error encoding image: $e');
+      LoggerService.error('XMP: Error encoding image', e);
       // Fallback to JPEG
       return Uint8List.fromList(img.encodeJpg(image, quality: 95));
     }
@@ -361,10 +380,10 @@ class XMPMetadataService {
       // Only create backup if it doesn't already exist
       if (!await backupFile.exists()) {
         await originalFile.copy(backupPath);
-        print('XMP: Created backup at $backupPath');
+        LoggerService.log('XMP: Created backup at $backupPath');
       }
     } catch (e) {
-      print('XMP: Warning - Could not create backup: $e');
+      LoggerService.error('XMP: Warning - Could not create backup', e);
       // Continue anyway - backup is optional
     }
   }
@@ -375,10 +394,13 @@ class XMPMetadataService {
       final backupFile = File('$originalPath.backup');
       if (await backupFile.exists()) {
         await backupFile.delete();
-        print('XMP: Cleaned up backup for $originalPath');
+        LoggerService.log('XMP: Cleaned up backup for $originalPath');
       }
     } catch (e) {
-      print('XMP: Warning - Could not clean up backup for $originalPath: $e');
+      LoggerService.error(
+        'XMP: Warning - Could not clean up backup for $originalPath',
+        e,
+      );
       // Non-critical error - backup cleanup failure doesn't affect functionality
     }
   }
@@ -396,15 +418,18 @@ class XMPMetadataService {
         // Clean up the backup file after successful restoration
         await backupFile.delete();
 
-        print('XMP: Successfully restored $originalPath from backup');
+        LoggerService.log(
+          'XMP: Successfully restored $originalPath from backup',
+        );
         return true;
       } else {
-        print('XMP: No backup file found for $originalPath');
+        LoggerService.error('XMP: No backup file found for $originalPath');
         return false;
       }
     } catch (e) {
-      print(
-        'XMP: CRITICAL ERROR - Failed to restore $originalPath from backup: $e',
+      LoggerService.error(
+        'XMP: CRITICAL ERROR - Failed to restore $originalPath from backup',
+        e,
       );
       return false;
     }
@@ -444,10 +469,10 @@ class XMPMetadataService {
         final backupFile = File('$path.backup');
         if (await backupFile.exists()) {
           await backupFile.delete();
-          print('XMP: Cleaned up backup for $path');
+          LoggerService.log('XMP: Cleaned up backup for $path');
         }
       } catch (e) {
-        print('XMP: Error cleaning up backup for $path: $e');
+        LoggerService.error('XMP: Error cleaning up backup for $path', e);
       }
     }
   }

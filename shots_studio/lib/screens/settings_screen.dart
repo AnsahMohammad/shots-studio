@@ -6,9 +6,7 @@ import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 
 class SettingsScreen extends StatefulWidget {
-  final String? currentApiKey;
   final String currentModelName;
-  final Function(String) onApiKeyChanged;
   final Function(String) onModelChanged;
   final int currentLimit;
   final Function(int) onLimitChanged;
@@ -30,7 +28,6 @@ class SettingsScreen extends StatefulWidget {
   final Function(String)? onThemeChanged;
   final bool? currentHardDeleteEnabled;
   final Function(bool)? onHardDeleteChanged;
-  final Key? apiKeyFieldKey;
   final VoidCallback? onResetAiProcessing;
   final Function(Locale)? onLocaleChanged;
   final List<Screenshot>? allScreenshots;
@@ -40,9 +37,7 @@ class SettingsScreen extends StatefulWidget {
 
   const SettingsScreen({
     super.key,
-    this.currentApiKey,
     required this.currentModelName,
-    required this.onApiKeyChanged,
     required this.onModelChanged,
     required this.currentLimit,
     required this.onLimitChanged,
@@ -64,7 +59,6 @@ class SettingsScreen extends StatefulWidget {
     this.onThemeChanged,
     this.currentHardDeleteEnabled,
     this.onHardDeleteChanged,
-    this.apiKeyFieldKey,
     this.onResetAiProcessing,
     this.onLocaleChanged,
     this.allScreenshots,
@@ -104,14 +98,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: Container(
         color: theme.scaffoldBackgroundColor,
         child: ListView(
+          physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           children: [
             SettingsSection(
-              currentApiKey: widget.currentApiKey,
               currentModelName: widget.currentModelName,
-              onApiKeyChanged: widget.onApiKeyChanged,
               onModelChanged: widget.onModelChanged,
-              apiKeyFieldKey: widget.apiKeyFieldKey,
               currentAutoProcessEnabled: widget.currentAutoProcessEnabled,
               onAutoProcessEnabledChanged: widget.onAutoProcessEnabledChanged,
               currentAmoledModeEnabled: widget.currentAmoledModeEnabled,

@@ -5,6 +5,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
+import 'package:shots_studio/services/hard_delete_service.dart';
+import 'package:shots_studio/services/logger_service.dart';
 
 /// Result of an export operation
 class ExportResult {
@@ -29,10 +31,7 @@ class ExportService {
     required String collectionName,
   }) async {
     if (screenshots.isEmpty) {
-      return ExportResult(
-        success: false,
-        message: 'No screenshots to export',
-      );
+      return ExportResult(success: false, message: 'No screenshots to export');
     }
 
     try {
@@ -55,16 +54,15 @@ class ExportService {
         try {
           final bytes = await file.readAsBytes();
           final fileName = screenshot.path!.split('/').last;
-          
+
           // Add file to archive
-          archive.addFile(ArchiveFile(
-            fileName,
-            bytes.length,
-            bytes,
-          ));
+          archive.addFile(ArchiveFile(fileName, bytes.length, bytes));
           addedCount++;
         } catch (e) {
-          print('ExportService: Failed to add file ${screenshot.path}: $e');
+          LoggerService.error(
+            'ExportService: Failed to add file ${screenshot.path}',
+            e,
+          );
           failedCount++;
         }
       }
@@ -82,8 +80,10 @@ class ExportService {
 
       // Write ZIP to temp directory
       final tempDir = await getTemporaryDirectory();
-      final sanitizedName = collectionName.replaceAll(RegExp(r'[^\w\s-]'), '').trim();
-      final zipFileName = '${sanitizedName.isEmpty ? 'collection' : sanitizedName}_${DateTime.now().millisecondsSinceEpoch}.zip';
+      final sanitizedName =
+          collectionName.replaceAll(RegExp(r'[^\w\s-]'), '').trim();
+      final zipFileName =
+          '${sanitizedName.isEmpty ? 'collection' : sanitizedName}_${DateTime.now().millisecondsSinceEpoch}.zip';
       final zipFile = File('${tempDir.path}/$zipFileName');
       await zipFile.writeAsBytes(zipData);
 
@@ -99,18 +99,16 @@ class ExportService {
 
       return ExportResult(
         success: true,
-        message: addedCount == screenshots.length
-            ? '$addedCount screenshots exported successfully'
-            : '$addedCount screenshots exported, $failedCount failed',
+        message:
+            addedCount == screenshots.length
+                ? '$addedCount screenshots exported successfully'
+                : '$addedCount screenshots exported, $failedCount failed',
         exportedCount: addedCount,
         failedCount: failedCount,
       );
     } catch (e) {
-      print('ExportService: Error creating ZIP: $e');
-      return ExportResult(
-        success: false,
-        message: 'Failed to create ZIP: $e',
-      );
+      LoggerService.error('ExportService: Error creating ZIP', e);
+      return ExportResult(success: false, message: 'Failed to create ZIP: $e');
     }
   }
 
@@ -122,23 +120,16 @@ class ExportService {
     Function(String screenshotId)? onScreenshotDeleted,
   }) async {
     if (screenshots.isEmpty) {
-      return ExportResult(
-        success: false,
-        message: 'No screenshots to export',
-      );
+      return ExportResult(success: false, message: 'No screenshots to export');
     }
 
     try {
       // Let user pick a destination directory
-      final String? selectedDirectory = await FilePicker.platform.getDirectoryPath(
-        dialogTitle: 'Select destination folder',
-      );
+      final String? selectedDirectory = await FilePicker.platform
+          .getDirectoryPath(dialogTitle: 'Select destination folder');
 
       if (selectedDirectory == null) {
-        return ExportResult(
-          success: false,
-          message: 'Export cancelled',
-        );
+        return ExportResult(success: false, message: 'Export cancelled');
       }
 
       int exportedCount = 0;
@@ -159,41 +150,50 @@ class ExportService {
         try {
           final fileName = screenshot.path!.split('/').last;
           final destPath = '$selectedDirectory/$fileName';
-          
+
           // Check if file already exists at destination
           final destFile = File(destPath);
           String finalPath = destPath;
-          
+
           if (await destFile.exists()) {
             // Add timestamp to avoid overwriting
-            final extension = fileName.contains('.') 
-                ? '.${fileName.split('.').last}'
-                : '';
-            final baseName = fileName.contains('.')
-                ? fileName.substring(0, fileName.lastIndexOf('.'))
-                : fileName;
-            finalPath = '$selectedDirectory/${baseName}_${DateTime.now().millisecondsSinceEpoch}$extension';
+            final extension =
+                fileName.contains('.') ? '.${fileName.split('.').last}' : '';
+            final baseName =
+                fileName.contains('.')
+                    ? fileName.substring(0, fileName.lastIndexOf('.'))
+                    : fileName;
+            finalPath =
+                '$selectedDirectory/${baseName}_${DateTime.now().millisecondsSinceEpoch}$extension';
           }
 
           // Copy file to destination
           await sourceFile.copy(finalPath);
           exportedCount++;
 
-          // If cut mode, delete the source file and notify
+          // If cut mode, delete the source file using MediaStore API and notify
           if (isCut) {
-            await sourceFile.delete();
-            if (onScreenshotDeleted != null) {
+            final deleted = await HardDeleteService.deleteFileWithMediaStore(
+              screenshot.path!,
+            );
+            if (deleted && onScreenshotDeleted != null) {
               onScreenshotDeleted(screenshot.id);
             }
+            // Note: If user denies deletion, file remains but was successfully copied
           }
         } catch (e) {
-          print('ExportService: Failed to export file ${screenshot.path}: $e');
+          LoggerService.error(
+            'ExportService: Failed to export file ${screenshot.path}',
+            e,
+          );
           failedCount++;
         }
       }
 
       final operation = isCut ? 'moved' : 'copied';
-      AnalyticsService().logFeatureUsed(isCut ? 'export_collection_cut' : 'export_collection_copy');
+      AnalyticsService().logFeatureUsed(
+        isCut ? 'export_collection_cut' : 'export_collection_copy',
+      );
 
       if (exportedCount == 0) {
         return ExportResult(
@@ -205,18 +205,16 @@ class ExportService {
 
       return ExportResult(
         success: true,
-        message: exportedCount == screenshots.length
-            ? '$exportedCount screenshots $operation successfully'
-            : '$exportedCount screenshots $operation, $failedCount failed',
+        message:
+            exportedCount == screenshots.length
+                ? '$exportedCount screenshots $operation successfully'
+                : '$exportedCount screenshots $operation, $failedCount failed',
         exportedCount: exportedCount,
         failedCount: failedCount,
       );
     } catch (e) {
-      print('ExportService: Error exporting files: $e');
-      return ExportResult(
-        success: false,
-        message: 'Failed to export: $e',
-      );
+      LoggerService.error('ExportService: Error exporting files', e);
+      return ExportResult(success: false, message: 'Failed to export: $e');
     }
   }
 }

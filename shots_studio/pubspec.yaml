@@ -5,7 +5,7 @@ publish_to: 'none'
 
 # The patch version numbering is automatically incremented by the git hook. 
 # Only update major and minor versions manually. 
-version: 1.9.70+7
+version: 1.9.91+8
 
 environment:
   sdk: ^3.7.2
@@ -45,12 +45,15 @@ dependencies:
   posthog_flutter: ^4.0.0
   file_picker: ^8.1.5
   tesseract_ocr: ^0.5.0
-  flutter_gemma: ^0.10.0
+  flutter_gemma: ^0.11.13
   wakelock_plus: ^1.2.8
   timezone: ^0.9.4
   battery_plus: ^6.0.2
   connectivity_plus: ^6.0.5
   archive: ^4.0.2
+  share_handler: ^0.0.25
+  path: ^1.9.1
+  pasteboard: ^0.4.0
 
 dev_dependencies:
   sentry_dart_plugin: ^2.4.1

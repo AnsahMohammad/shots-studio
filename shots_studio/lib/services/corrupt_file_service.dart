@@ -5,6 +5,7 @@ import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/services/snackbar_service.dart';
 import 'package:shots_studio/l10n/app_localizations.dart';
+import 'package:shots_studio/services/logger_service.dart';
 
 /// Service for handling corrupt file detection and cleanup operations
 class CorruptFileService {
@@ -103,7 +104,7 @@ class CorruptFileService {
     //     backgroundColor: Theme.of(context).colorScheme.primary,
     //   ),
     // );
-    print('No corrupt files found');
+    LoggerService.log('No corrupt files found');
   }
 
   /// Mark corrupt screenshots as deleted and clear their collection references

@@ -61,7 +61,13 @@ class _LanguageSectionState extends State<LanguageSection> {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       elevation: 0,
-      color: theme.colorScheme.surfaceContainer,
+      color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.4),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: theme.colorScheme.secondary.withValues(alpha: 0.3),
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

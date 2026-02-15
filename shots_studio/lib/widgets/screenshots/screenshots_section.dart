@@ -3,11 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/widgets/screenshots/screenshot_card.dart';
+import 'package:shots_studio/widgets/screenshots/date_group_header.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/services/snackbar_service.dart';
 import 'package:shots_studio/utils/responsive_utils.dart';
+import 'package:shots_studio/utils/date_grouping_utils.dart';
 import 'package:shots_studio/services/hard_delete_service.dart';
 import 'package:shots_studio/l10n/app_localizations.dart';
+import 'package:shots_studio/services/logger_service.dart';
 
 class ScreenshotsSection extends StatefulWidget {
   final List<Screenshot> screenshots;
@@ -39,6 +42,7 @@ class _ScreenshotsSectionState extends State<ScreenshotsSection> {
   bool _isSelectionMode = false;
   final Set<String> _selectedScreenshotIds = <String>{};
   bool _hardDeleteEnabled = false;
+  bool _groupByDate = false;
 
   @override
   void initState() {
@@ -46,6 +50,7 @@ class _ScreenshotsSectionState extends State<ScreenshotsSection> {
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
     _loadHardDeleteSetting();
+    _loadGroupByDateSetting();
   }
 
   @override
@@ -62,6 +67,27 @@ class _ScreenshotsSectionState extends State<ScreenshotsSection> {
         _hardDeleteEnabled = prefs.getBool('hard_delete_enabled') ?? false;
       });
     }
+  }
+
+  void _loadGroupByDateSetting() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _groupByDate = prefs.getBool('group_by_date') ?? false;
+      });
+    }
+  }
+
+  void _toggleGroupByDate() async {
+    final newValue = !_groupByDate;
+    setState(() {
+      _groupByDate = newValue;
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('group_by_date', newValue);
+    AnalyticsService().logFeatureUsed(
+      newValue ? 'group_by_date_enabled' : 'group_by_date_disabled',
+    );
   }
 
   void _onScroll() {
@@ -225,7 +251,7 @@ class _ScreenshotsSectionState extends State<ScreenshotsSection> {
           '${selectedIds.length} screenshot${selectedIds.length > 1 ? 's' : ''} deleted successfully';
 
       if (_hardDeleteEnabled && HardDeleteService.isHardDeleteAvailable()) {
-        print(
+        LoggerService.log(
           'HardDeleteService: Attempting bulk hard delete for ${selectedIds.length} screenshots',
         );
 
@@ -249,21 +275,23 @@ class _ScreenshotsSectionState extends State<ScreenshotsSection> {
               deleteMessage =
                   '${bulkDeleteResult.successCount} screenshot${bulkDeleteResult.successCount > 1 ? 's' : ''} deleted completely, ${bulkDeleteResult.failureCount} removed from app only';
             }
-            print(
+            LoggerService.log(
               'HardDeleteService: Bulk hard delete completed - ${bulkDeleteResult.successCount}/${selectedIds.length} successful',
             );
           } else {
             deleteMessage =
                 '${selectedIds.length} screenshot${selectedIds.length > 1 ? 's' : ''} deleted from app, but file deletion failed';
-            print('HardDeleteService: Bulk hard delete failed for all files');
+            LoggerService.error(
+              'HardDeleteService: Bulk hard delete failed for all files',
+            );
           }
 
-          print(
+          LoggerService.log(
             'HardDeleteService: Bulk hard delete result: $bulkDeleteResult',
           );
         }
       } else {
-        print(
+        LoggerService.log(
           'HardDeleteService: Hard delete not available or disabled for bulk operation',
         );
       }
@@ -276,7 +304,7 @@ class _ScreenshotsSectionState extends State<ScreenshotsSection> {
         SnackbarService().showSuccess(context, deleteMessage);
       }
     } catch (e) {
-      print('Error during bulk delete operation: $e');
+      LoggerService.error('Error during bulk delete operation', e);
 
       // Exit selection mode even on error
       _exitSelectionMode();
@@ -393,59 +421,66 @@ class _ScreenshotsSectionState extends State<ScreenshotsSection> {
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
+                      PopupMenuButton<String>(
+                        icon: Icon(
+                          _groupByDate ? Icons.date_range : Icons.sort,
+                          size: 20,
+                          color:
+                              _groupByDate
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                        ),
+                        padding: EdgeInsets.zero,
+                        tooltip: 'Sort & Group',
+                        color: Theme.of(context).colorScheme.secondaryContainer,
+                        onSelected: (_) => _toggleGroupByDate(),
+                        itemBuilder:
+                            (context) => [
+                              PopupMenuItem<String>(
+                                value: 'group_by_date',
+                                child: Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: Checkbox(
+                                        value: _groupByDate,
+                                        onChanged: (_) {
+                                          Navigator.pop(context);
+                                          _toggleGroupByDate();
+                                        },
+                                        activeColor:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
+                                        checkColor:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      'Group by date',
+                                      style: TextStyle(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onSecondaryContainer,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                      ),
                     ],
                   ),
         ),
         Expanded(
-          child: GridView.builder(
-            controller: _scrollController,
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
-            gridDelegate: ResponsiveUtils.getResponsiveGridDelegate(context),
-            itemCount: _visibleScreenshots.length + (_isLoadingMore ? 3 : 0),
-            itemBuilder: (context, index) {
-              if (index >= _visibleScreenshots.length) {
-                return Card(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                  ),
-                );
-              }
-
-              final screenshot = _visibleScreenshots[index];
-              final isSelected = _selectedScreenshotIds.contains(screenshot.id);
-
-              return ScreenshotCard(
-                screenshot: screenshot,
-                isSelectionMode: _isSelectionMode,
-                isSelected: isSelected,
-                onLongPress: () => _enterSelectionMode(screenshot.id),
-                onSelectionToggle:
-                    () => _toggleScreenshotSelection(screenshot.id),
-                onCorruptionDetected: widget.onScreenshotUpdated,
-                destinationBuilder:
-                    widget.screenshotDetailBuilder != null && !_isSelectionMode
-                        ? (context) =>
-                            widget.screenshotDetailBuilder!(context, screenshot)
-                        : null,
-                onTap:
-                    _isSelectionMode
-                        ? () => _toggleScreenshotSelection(screenshot.id)
-                        : (widget.screenshotDetailBuilder == null
-                            ? () => widget.onScreenshotTap(screenshot)
-                            : null),
-              );
-            },
-          ),
+          child: _groupByDate ? _buildGroupedView() : _buildFlatGridView(),
         ),
         // if (widget.screenshots.length > _visibleScreenshots.length)
         //   Padding(
@@ -466,6 +501,123 @@ class _ScreenshotsSectionState extends State<ScreenshotsSection> {
         //     ),
         //   ),
       ],
+    );
+  }
+
+  Widget _buildScreenshotCard(Screenshot screenshot) {
+    final isSelected = _selectedScreenshotIds.contains(screenshot.id);
+    return ScreenshotCard(
+      screenshot: screenshot,
+      isSelectionMode: _isSelectionMode,
+      isSelected: isSelected,
+      onLongPress: () => _enterSelectionMode(screenshot.id),
+      onSelectionToggle: () => _toggleScreenshotSelection(screenshot.id),
+      onCorruptionDetected: widget.onScreenshotUpdated,
+      destinationBuilder:
+          widget.screenshotDetailBuilder != null && !_isSelectionMode
+              ? (context) =>
+                  widget.screenshotDetailBuilder!(context, screenshot)
+              : null,
+      onTap:
+          _isSelectionMode
+              ? () => _toggleScreenshotSelection(screenshot.id)
+              : (widget.screenshotDetailBuilder == null
+                  ? () => widget.onScreenshotTap(screenshot)
+                  : null),
+    );
+  }
+
+  Widget _buildLoadingCard() {
+    return Card(
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFlatGridView() {
+    return GridView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+      gridDelegate: ResponsiveUtils.getResponsiveGridDelegate(context),
+      itemCount: _visibleScreenshots.length + (_isLoadingMore ? 3 : 0),
+      itemBuilder: (context, index) {
+        if (index >= _visibleScreenshots.length) {
+          return _buildLoadingCard();
+        }
+        return _buildScreenshotCard(_visibleScreenshots[index]);
+      },
+    );
+  }
+
+  Widget _buildGroupedView() {
+    final grouped = DateGroupingUtils.groupByDate(_visibleScreenshots);
+    final slivers = <Widget>[];
+
+    for (final entry in grouped.entries) {
+      // Date header
+      slivers.add(
+        SliverToBoxAdapter(
+          child: DateGroupHeader(
+            dateLabel: DateGroupingUtils.formatDateHeader(entry.key, context),
+            count: entry.value.length,
+          ),
+        ),
+      );
+
+      // Grid of cards for this date
+      slivers.add(
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverGrid(
+            gridDelegate: ResponsiveUtils.getResponsiveGridDelegate(context),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _buildScreenshotCard(entry.value[index]),
+              childCount: entry.value.length,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Loading indicators at the bottom
+    if (_isLoadingMore) {
+      slivers.add(
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverGrid(
+            gridDelegate: ResponsiveUtils.getResponsiveGridDelegate(context),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _buildLoadingCard(),
+              childCount: 3,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Scrollbar(
+      controller: _scrollController,
+      thumbVisibility: true,
+      interactive: true,
+      thickness: 6,
+      child: CustomScrollView(
+        controller: _scrollController,
+        slivers: [
+          ...slivers,
+          const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
+        ],
+      ),
     );
   }
 }

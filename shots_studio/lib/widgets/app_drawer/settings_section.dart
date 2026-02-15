@@ -6,11 +6,8 @@ import 'package:shots_studio/l10n/app_localizations.dart';
 import 'package:shots_studio/services/haptic_service.dart';
 
 class SettingsSection extends StatefulWidget {
-  final String? currentApiKey;
   final String currentModelName;
-  final Function(String) onApiKeyChanged;
   final Function(String) onModelChanged;
-  final Key? apiKeyFieldKey;
   final bool? currentAutoProcessEnabled;
   final Function(bool)? onAutoProcessEnabledChanged;
   final bool? currentAmoledModeEnabled;
@@ -25,11 +22,8 @@ class SettingsSection extends StatefulWidget {
 
   const SettingsSection({
     super.key,
-    this.currentApiKey,
     required this.currentModelName,
-    required this.onApiKeyChanged,
     required this.onModelChanged,
-    this.apiKeyFieldKey,
     this.currentAutoProcessEnabled,
     this.onAutoProcessEnabledChanged,
     this.currentAmoledModeEnabled,
@@ -48,7 +42,6 @@ class SettingsSection extends StatefulWidget {
 }
 
 class _SettingsSectionState extends State<SettingsSection> {
-  final FocusNode _apiKeyFocusNode = FocusNode();
   bool _autoProcessEnabled = true;
   bool _amoledModeEnabled = false;
   String _selectedTheme = 'Adaptive Theme';
@@ -464,7 +457,15 @@ class _SettingsSectionState extends State<SettingsSection> {
 
                           // Trigger locale change callback if provided
                           if (widget.onLocaleChanged != null) {
-                            widget.onLocaleChanged!(Locale(newValue));
+                            // Parse the locale string to handle country codes
+                            final parts = newValue.split('_');
+                            if (parts.length == 2) {
+                              widget.onLocaleChanged!(
+                                Locale(parts[0], parts[1]),
+                              );
+                            } else {
+                              widget.onLocaleChanged!(Locale(newValue));
+                            }
                           }
                         }
                       },
@@ -498,7 +499,25 @@ class _SettingsSectionState extends State<SettingsSection> {
                           child: Row(
                             children: [
                               SizedBox(width: 8),
-                              Text('中文 (Chinese)'),
+                              Text('中文 (Chinese Default)'),
+                            ],
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'zh_CN',
+                          child: Row(
+                            children: [
+                              SizedBox(width: 8),
+                              Text('中文 (简体) (Simplified)'),
+                            ],
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'zh_TW',
+                          child: Row(
+                            children: [
+                              SizedBox(width: 8),
+                              Text('中文 (繁體) (Traditional)'),
                             ],
                           ),
                         ),
@@ -815,7 +834,6 @@ class _SettingsSectionState extends State<SettingsSection> {
 
   @override
   void dispose() {
-    _apiKeyFocusNode.dispose();
     super.dispose();
   }
 }

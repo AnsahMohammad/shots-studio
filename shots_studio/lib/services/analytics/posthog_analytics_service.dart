@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
+import 'package:shots_studio/services/logger_service.dart';
 
 class PostHogAnalyticsService {
   static final PostHogAnalyticsService _instance =
@@ -61,7 +62,7 @@ class PostHogAnalyticsService {
     if (_initialized) {
       // Explicitly enable PostHog SDK
       await Posthog().enable();
-      
+
       // Log that analytics was re-enabled
       await logFeatureUsed('analytics_enabled');
     }
@@ -488,7 +489,7 @@ class PostHogAnalyticsService {
         },
       );
     } catch (e) {
-      print('Error logging install info: $e');
+      LoggerService.error('Error logging install info', e);
     }
   }
 
@@ -521,17 +522,6 @@ class PostHogAnalyticsService {
   // Additional PostHog-specific methods
 
   // Identify a user (useful for authenticated users)
-  // TODO: Remove this if not used (privacy)
-  Future<void> identifyUser(
-    String userId, [
-    Map<String, dynamic>? properties,
-  ]) async {
-    if (!_shouldLog()) return;
-
-    final Map<String, Object>? objectProperties =
-        properties?.cast<String, Object>();
-    await Posthog().identify(userId: userId, userProperties: objectProperties);
-  }
 
   // Set person properties by identifying the current user with new properties
   Future<void> setPersonProperties(Map<String, dynamic> properties) async {

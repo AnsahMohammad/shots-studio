@@ -7,7 +7,6 @@ import 'package:shots_studio/screens/full_screen_image_viewer.dart';
 import 'package:shots_studio/screens/search_screen.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/services/snackbar_service.dart';
-import '../l10n/app_localizations.dart';
 import 'package:shots_studio/services/hard_delete_service.dart';
 import 'package:shots_studio/widgets/screenshots/screenshot_collection_dialog.dart';
 import 'package:share_plus/share_plus.dart';
@@ -19,6 +18,9 @@ import 'package:shots_studio/services/ocr_service.dart';
 import 'package:shots_studio/widgets/ocr_result_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:shots_studio/services/logger_service.dart';
+import 'package:pasteboard/pasteboard.dart';
+import 'package:shots_studio/utils/ai_provider_config.dart';
 
 // Import extracted widgets
 import 'package:shots_studio/widgets/screenshot_details/index.dart';
@@ -27,8 +29,7 @@ class ScreenshotDetailScreen extends StatefulWidget {
   final Screenshot screenshot;
   final List<Collection> allCollections;
   final List<Screenshot> allScreenshots;
-  final List<Screenshot>?
-      contextualScreenshots;
+  final List<Screenshot>? contextualScreenshots;
   final Function(Collection) onUpdateCollection;
   final Function(Collection)? onCollectionAdded;
   final Function(String) onDeleteScreenshot;
@@ -36,10 +37,8 @@ class ScreenshotDetailScreen extends StatefulWidget {
   final int? currentIndex;
   final int? totalCount;
   final VoidCallback? onNavigateAfterDelete;
-  final Function(int)?
-      onNavigateToIndex;
-  final bool
-      disableAnimations;
+  final Function(int)? onNavigateToIndex;
+  final bool disableAnimations;
 
   const ScreenshotDetailScreen({
     super.key,
@@ -103,9 +102,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     });
 
     // Initialize notes controller and focus node
-    _notesController = TextEditingController(
-      text: widget.screenshot.notes,
-    );
+    _notesController = TextEditingController(text: widget.screenshot.notes);
     _notesFocusNode = FocusNode();
 
     // Track screenshot details screen access
@@ -117,14 +114,8 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
       vsync: this,
     );
 
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.elasticOut,
-      ),
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
     );
 
     // Check for expired reminders after the frame is built
@@ -205,7 +196,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     _animationController.dispose();
 
     WakelockPlus.disable().catchError((e) {
-      print('Failed to disable wakelock on dispose: $e');
+      LoggerService.error('Failed to disable wakelock on dispose', e);
     });
 
     super.dispose();
@@ -217,7 +208,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     // Get current keyboard height using the recommended approach
     final view = WidgetsBinding.instance.platformDispatcher.views.first;
     final keyboardHeight = view.viewInsets.bottom / view.devicePixelRatio;
-    
+
     // Check if keyboard visibility changed and update state
     final isVisible = keyboardHeight > 0;
     if (_isKeyboardVisible != isVisible) {
@@ -230,7 +221,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
         _animationController.forward();
       }
     }
-    
+
     // If keyboard was visible and is now hidden, unfocus text fields
     if (_lastKeyboardHeight > 0 && keyboardHeight == 0) {
       if (_descriptionFocusNode.hasFocus) {
@@ -272,19 +263,21 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
   void _navigateToTagSearch(String tag) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => SearchScreen(
-          allScreenshots: widget.allScreenshots,
-          allCollections: widget.allCollections,
-          onUpdateCollection: widget.onUpdateCollection,
-          onCollectionAdded: widget.onCollectionAdded ??
-              (_) {
-                print(
-                  'WARNING: onCollectionAdded is null in tag search, collection will not be saved!',
-                );
-              },
-          onDeleteScreenshot: widget.onDeleteScreenshot,
-          initialSearchQuery: tag,
-        ),
+        builder:
+            (context) => SearchScreen(
+              allScreenshots: widget.allScreenshots,
+              allCollections: widget.allCollections,
+              onUpdateCollection: widget.onUpdateCollection,
+              onCollectionAdded:
+                  widget.onCollectionAdded ??
+                  (_) {
+                    LoggerService.error(
+                      'WARNING: onCollectionAdded is null in tag search, collection will not be saved!',
+                    );
+                  },
+              onDeleteScreenshot: widget.onDeleteScreenshot,
+              initialSearchQuery: tag,
+            ),
       ),
     );
   }
@@ -300,8 +293,9 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
             return ScreenshotCollectionDialog(
               collections: widget.allCollections,
               screenshot: widget.screenshot,
-              onCollectionToggle: (collection, dialogSetState) =>
-                  _toggleScreenshotInCollection(collection, dialogSetState),
+              onCollectionToggle:
+                  (collection, dialogSetState) =>
+                      _toggleScreenshotInCollection(collection, dialogSetState),
             );
           },
         );
@@ -319,7 +313,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
   ) {
     final bool isCurrentlyIn =
         widget.screenshot.collectionIds.contains(collection.id) ||
-            collection.screenshotIds.contains(widget.screenshot.id);
+        collection.screenshotIds.contains(widget.screenshot.id);
 
     if (isCurrentlyIn) {
       AnalyticsService().logFeatureUsed('screenshot_removed_from_collection');
@@ -373,6 +367,8 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     if (mounted) {
       setState(() {
         widget.screenshot.aiProcessed = false;
+        widget.screenshot.links.clear();
+        widget.screenshot.description = '';
       });
     }
     _updateScreenshotDetails();
@@ -396,6 +392,67 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     } else {
       SnackbarService().showError(context, 'Screenshot file not found');
     }
+  }
+
+  Future<void> _copyImageToClipboard() async {
+    AnalyticsService().logFeatureUsed('screenshot_copied_to_clipboard');
+    final file = File(widget.screenshot.path!);
+    if (await file.exists()) {
+      try {
+        final bytes = await file.readAsBytes();
+        await Pasteboard.writeImage(bytes);
+        if (mounted) {
+          SnackbarService().showSuccess(context, 'Image copied to clipboard');
+        }
+      } catch (e) {
+        LoggerService.error('Failed to copy image to clipboard', e);
+        if (mounted) {
+          SnackbarService().showError(
+            context,
+            'Failed to copy image: ${e.toString()}',
+          );
+        }
+      }
+    } else {
+      LoggerService.error('Screenshot file not found');
+      if (mounted) {
+        SnackbarService().showError(context, 'Screenshot file not found');
+      }
+    }
+  }
+
+  Future<void> _showCopyImageDialog() async {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Copy Image'),
+          content: const Text(
+            'Do you want to copy this image to your clipboard?',
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Copy'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _copyImageToClipboard();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _handleReminder() async {
@@ -452,7 +509,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     try {
       await WakelockPlus.enable();
     } catch (e) {
-      print('Failed to enable wakelock: $e');
+      LoggerService.error('Failed to enable wakelock', e);
     }
 
     if (widget.screenshot.aiProcessed) {
@@ -500,7 +557,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
         try {
           await WakelockPlus.disable();
         } catch (e) {
-          print('Failed to disable wakelock: $e');
+          LoggerService.error('Failed to disable wakelock', e);
         }
         return;
       }
@@ -510,15 +567,16 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     }
 
     final prefs = await SharedPreferences.getInstance();
+    final String modelName =
+        prefs.getString('modelName') ?? 'gemini-2.5-flash-lite';
     String? apiKey = prefs.getString('apiKey');
 
-    if (prefs.getString('modelName') == 'gemma') {
-      apiKey = 'gemma-v1';
-    } else if (apiKey == null || apiKey.isEmpty) {
+    if (AIProviderConfig.requiresApiKey(modelName) &&
+        (apiKey == null || apiKey.isEmpty)) {
       try {
         await WakelockPlus.disable();
       } catch (e) {
-        print('Failed to disable wakelock: $e');
+        LoggerService.error('Failed to disable wakelock', e);
       }
       SnackbarService().showError(
         context,
@@ -527,28 +585,26 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
       return;
     }
 
-    final String modelName =
-        prefs.getString('modelName') ?? 'gemini-2.5-flash-lite';
-
     if (mounted) {
       setState(() {
         _isProcessingAI = true;
       });
     }
 
-    final autoAddCollections = widget.allCollections
-        .where((collection) => collection.isAutoAddEnabled)
-        .map(
-          (collection) => {
-            'name': collection.name,
-            'description': collection.description,
-            'id': collection.id,
-          },
-        )
-        .toList();
+    final autoAddCollections =
+        widget.allCollections
+            .where((collection) => collection.isAutoAddEnabled)
+            .map(
+              (collection) => {
+                'name': collection.name,
+                'description': collection.description,
+                'id': collection.id,
+              },
+            )
+            .toList();
 
     final config = AIConfig(
-      apiKey: apiKey,
+      apiKey: apiKey ?? '',
       modelName: modelName,
       maxParallel: 1,
       timeoutSeconds: 120,
@@ -573,8 +629,8 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
           .analyzeScreenshots(
             screenshots: [widget.screenshot],
             onBatchProcessed: (batch, response) {
-              final updatedScreenshots =
-                  _aiServiceManager.parseAndUpdateScreenshots(batch, response);
+              final updatedScreenshots = _aiServiceManager
+                  .parseAndUpdateScreenshots(batch, response);
 
               if (updatedScreenshots.isNotEmpty) {
                 final updatedScreenshot = updatedScreenshots.first;
@@ -615,7 +671,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
           );
 
       if (result.success) {
-        print("Screenshot processed success");
+        LoggerService.log("Screenshot processed success");
         widget.onScreenshotUpdated?.call();
       } else if (result.cancelled) {
         SnackbarService().showInfo(context, 'AI processing was cancelled.');
@@ -642,13 +698,15 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
       try {
         await WakelockPlus.disable();
       } catch (e) {
-        print('Failed to disable wakelock: $e');
+        LoggerService.error('Failed to disable wakelock', e);
       }
     }
   }
 
   void _handleAutoCategorization(
-      Map<String, dynamic> response, Screenshot updatedScreenshot) {
+    Map<String, dynamic> response,
+    Screenshot updatedScreenshot,
+  ) {
     try {
       Map<dynamic, dynamic>? suggestionsMap;
       if (response['suggestedCollections'] is Map<String, List<String>>) {
@@ -696,7 +754,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
         }
       }
     } catch (e) {
-      print('Error handling auto-categorization: $e');
+      LoggerService.error('Error handling auto-categorization', e);
     }
   }
 
@@ -709,7 +767,8 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
 
     if (_hardDeleteEnabled && HardDeleteService.isHardDeleteAvailable()) {
       dialogTitle = 'Delete Screenshot?';
-      dialogContent = 'This will:\n'
+      dialogContent =
+          'This will:\n'
           '1. Remove the screenshot from the app\n'
           '2. Delete the image file from your device\n\n'
           'This action cannot be undone. Continue?'
@@ -768,7 +827,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
       String deleteMessage = 'Screenshot deleted successfully';
 
       if (_hardDeleteEnabled && HardDeleteService.isHardDeleteAvailable()) {
-        print(
+        LoggerService.log(
           'HardDeleteService: Attempting hard delete for ${widget.screenshot.path}',
         );
 
@@ -811,7 +870,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
         }
       });
     } catch (e) {
-      print('Error during delete operation: $e');
+      LoggerService.error('Error during delete operation', e);
       if (mounted) {
         SnackbarService().showError(context, 'Error deleting screenshot: $e');
       }
@@ -832,7 +891,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     try {
       await WakelockPlus.enable();
     } catch (e) {
-      print('Failed to enable wakelock: $e');
+      LoggerService.error('Failed to enable wakelock', e);
     }
 
     if (mounted) {
@@ -871,7 +930,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
       try {
         await WakelockPlus.disable();
       } catch (e) {
-        print('Failed to disable wakelock: $e');
+        LoggerService.error('Failed to disable wakelock', e);
       }
     }
   }
@@ -947,20 +1006,23 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
             IconButton(
               icon: Icon(
                 Icons.auto_awesome_outlined,
-                color: widget.screenshot.aiProcessed
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
+                color:
+                    widget.screenshot.aiProcessed
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              tooltip: widget.screenshot.aiProcessed
-                  ? 'Reprocess with AI'
-                  : 'Process with AI',
+              tooltip:
+                  widget.screenshot.aiProcessed
+                      ? 'Reprocess with AI'
+                      : 'Process with AI',
               onPressed: _processSingleScreenshotWithAI,
             ),
         ],
       ),
-      body: isLargeScreen
-          ? _buildLargeScreenLayout(imageName)
-          : _buildMobileLayout(imageName),
+      body:
+          isLargeScreen
+              ? _buildLargeScreenLayout(imageName)
+              : _buildMobileLayout(imageName),
       floatingActionButton: _buildFloatingToolbar(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
@@ -975,6 +1037,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
             padding: const EdgeInsets.all(16),
             child: InkWell(
               onTap: () => _openFullScreenViewer(),
+              onLongPress: _showCopyImageDialog,
               child: Container(
                 width: double.infinity,
                 height: double.infinity,
@@ -1013,6 +1076,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
         children: [
           InkWell(
             onTap: () => _openFullScreenViewer(),
+            onLongPress: _showCopyImageDialog,
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Container(
@@ -1097,14 +1161,16 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     final result = await Navigator.push<int>(
       context,
       MaterialPageRoute(
-        builder: (context) => FullScreenImageViewer(
-          screenshots: widget.contextualScreenshots ?? [widget.screenshot],
-          initialIndex: widget.contextualScreenshots?.indexWhere(
-                (s) => s.id == widget.screenshot.id,
-              ) ??
-              0,
-          onScreenshotChanged: widget.onNavigateToIndex,
-        ),
+        builder:
+            (context) => FullScreenImageViewer(
+              screenshots: widget.contextualScreenshots ?? [widget.screenshot],
+              initialIndex:
+                  widget.contextualScreenshots?.indexWhere(
+                    (s) => s.id == widget.screenshot.id,
+                  ) ??
+                  0,
+              onScreenshotChanged: widget.onNavigateToIndex,
+            ),
       ),
     );
 

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shots_studio/services/logger_service.dart';
 
 /// Service for managing custom screenshot directory paths
 class CustomPathService {
@@ -52,7 +53,7 @@ class CustomPathService {
       final String pathsJson = jsonEncode(paths);
       return await prefs.setString(_customPathsKey, pathsJson);
     } catch (e) {
-      print('Error saving custom paths: $e');
+      LoggerService.error('Error saving custom paths', e);
       return false;
     }
   }
@@ -63,7 +64,7 @@ class CustomPathService {
       final prefs = await SharedPreferences.getInstance();
       return await prefs.remove(_customPathsKey);
     } catch (e) {
-      print('Error clearing custom paths: $e');
+      LoggerService.error('Error clearing custom paths', e);
       return false;
     }
   }
@@ -74,7 +75,7 @@ class CustomPathService {
       final directory = Directory(path);
       return await directory.exists();
     } catch (e) {
-      print('Error validating path $path: $e');
+      LoggerService.error('Error validating path $path', e);
       return false;
     }
   }

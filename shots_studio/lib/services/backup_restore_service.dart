@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:shots_studio/models/collection_model.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
+import 'package:shots_studio/services/logger_service.dart';
 
 /// Result of a backup operation
 class BackupResult {
@@ -45,11 +46,8 @@ class RestoreResult {
 }
 
 /// Progress callback for backup/restore operations
-typedef BackupRestoreProgressCallback = void Function(
-  int current,
-  int total,
-  String status,
-);
+typedef BackupRestoreProgressCallback =
+    void Function(int current, int total, String status);
 
 /// Service for backing up and restoring app data
 class BackupRestoreService {
@@ -71,17 +69,13 @@ class BackupRestoreService {
       );
 
       if (selectedDirectory == null) {
-        return BackupResult(
-          success: false,
-          message: 'Backup cancelled',
-        );
+        return BackupResult(success: false, message: 'Backup cancelled');
       }
 
       onProgress?.call(1, 4, 'Preparing backup...');
 
       // Filter out deleted screenshots
-      final activeScreenshots =
-          screenshots.where((s) => !s.isDeleted).toList();
+      final activeScreenshots = screenshots.where((s) => !s.isDeleted).toList();
 
       // Create backup data structure
       final backupData = {
@@ -122,7 +116,12 @@ class BackupRestoreService {
       final jsonString = const JsonEncoder.withIndent('  ').convert(backupData);
 
       // Create backup file with timestamp
-      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').split('.').first;
+      final timestamp =
+          DateTime.now()
+              .toIso8601String()
+              .replaceAll(':', '-')
+              .split('.')
+              .first;
       final fileName = 'shots_studio_backup_$timestamp.json';
       final backupFile = File('$selectedDirectory/$fileName');
       await backupFile.writeAsString(jsonString);
@@ -131,14 +130,13 @@ class BackupRestoreService {
 
       return BackupResult(
         success: true,
-        message:
-            'Backup saved to $fileName',
+        message: 'Backup saved to $fileName',
         filePath: backupFile.path,
         screenshotCount: activeScreenshots.length,
         collectionCount: collections.length,
       );
     } catch (e) {
-      print('BackupRestoreService: Error creating backup: $e');
+      LoggerService.error('BackupRestoreService: Error creating backup', e);
       return BackupResult(
         success: false,
         message: 'Failed to create backup: $e',
@@ -161,10 +159,7 @@ class BackupRestoreService {
       );
 
       if (result == null || result.files.isEmpty) {
-        return RestoreResult(
-          success: false,
-          message: 'Restore cancelled',
-        );
+        return RestoreResult(success: false, message: 'Restore cancelled');
       }
 
       final filePath = result.files.first.path;
@@ -195,15 +190,15 @@ class BackupRestoreService {
       onProgress?.call(2, 4, 'Restoring screenshots...');
 
       // Restore screenshots
-      final screenshotsList =
-          backupData['screenshots'] as List<dynamic>? ?? [];
+      final screenshotsList = backupData['screenshots'] as List<dynamic>? ?? [];
       final restoredScreenshots = <Screenshot>[];
       int skippedCount = 0;
 
       for (final screenshotJson in screenshotsList) {
         try {
-          final screenshot =
-              Screenshot.fromJson(screenshotJson as Map<String, dynamic>);
+          final screenshot = Screenshot.fromJson(
+            screenshotJson as Map<String, dynamic>,
+          );
 
           // Check if file exists at the stored path
           if (screenshot.path != null) {
@@ -212,8 +207,9 @@ class BackupRestoreService {
               restoredScreenshots.add(screenshot);
             } else {
               skippedCount++;
-              print(
-                  'BackupRestoreService: Skipped screenshot - file not found: ${screenshot.path}');
+              LoggerService.log(
+                'BackupRestoreService: Skipped screenshot - file not found: ${screenshot.path}',
+              );
             }
           } else {
             // Web screenshots (bytes only) - restore them
@@ -221,28 +217,32 @@ class BackupRestoreService {
           }
         } catch (e) {
           skippedCount++;
-          print('BackupRestoreService: Error parsing screenshot: $e');
+          LoggerService.error(
+            'BackupRestoreService: Error parsing screenshot',
+            e,
+          );
         }
       }
 
       onProgress?.call(3, 4, 'Restoring collections...');
 
       // Restore collections
-      final collectionsList =
-          backupData['collections'] as List<dynamic>? ?? [];
+      final collectionsList = backupData['collections'] as List<dynamic>? ?? [];
       final restoredCollections = <Collection>[];
       final restoredScreenshotIds =
           restoredScreenshots.map((s) => s.id).toSet();
 
       for (final collectionJson in collectionsList) {
         try {
-          final collection =
-              Collection.fromJson(collectionJson as Map<String, dynamic>);
+          final collection = Collection.fromJson(
+            collectionJson as Map<String, dynamic>,
+          );
 
           // Filter screenshotIds to only include restored screenshots
-          final filteredScreenshotIds = collection.screenshotIds
-              .where((id) => restoredScreenshotIds.contains(id))
-              .toList();
+          final filteredScreenshotIds =
+              collection.screenshotIds
+                  .where((id) => restoredScreenshotIds.contains(id))
+                  .toList();
 
           final updatedCollection = collection.copyWith(
             screenshotIds: filteredScreenshotIds,
@@ -251,7 +251,10 @@ class BackupRestoreService {
 
           restoredCollections.add(updatedCollection);
         } catch (e) {
-          print('BackupRestoreService: Error parsing collection: $e');
+          LoggerService.error(
+            'BackupRestoreService: Error parsing collection',
+            e,
+          );
         }
       }
 
@@ -273,7 +276,7 @@ class BackupRestoreService {
         collections: restoredCollections,
       );
     } catch (e) {
-      print('BackupRestoreService: Error restoring backup: $e');
+      LoggerService.error('BackupRestoreService: Error restoring backup', e);
       return RestoreResult(
         success: false,
         message: 'Failed to restore backup: $e',
@@ -313,11 +316,12 @@ class BackupRestoreService {
     return showDialog<BackupResult>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => _BackupProgressDialog(
-        screenshots: screenshots,
-        collections: collections,
-        settings: settings,
-      ),
+      builder:
+          (context) => _BackupProgressDialog(
+            screenshots: screenshots,
+            collections: collections,
+            settings: settings,
+          ),
     );
   }
 
@@ -397,11 +401,12 @@ class _BackupProgressDialogState extends State<_BackupProgressDialog> {
             _isComplete
                 ? (_result?.success == true ? Icons.check_circle : Icons.error)
                 : Icons.backup,
-            color: _isComplete
-                ? (_result?.success == true
-                    ? Colors.green
-                    : theme.colorScheme.error)
-                : theme.colorScheme.primary,
+            color:
+                _isComplete
+                    ? (_result?.success == true
+                        ? Colors.green
+                        : theme.colorScheme.error)
+                    : theme.colorScheme.primary,
           ),
           const SizedBox(width: 12),
           Text(_isComplete ? 'Backup Complete' : 'Creating Backup'),
@@ -415,8 +420,9 @@ class _BackupProgressDialogState extends State<_BackupProgressDialog> {
             LinearProgressIndicator(
               value: _total > 0 ? _current / _total : null,
               backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                theme.colorScheme.primary,
+              ),
             ),
             const SizedBox(height: 16),
             Text(
@@ -506,11 +512,12 @@ class _RestoreProgressDialogState extends State<_RestoreProgressDialog> {
             _isComplete
                 ? (_result?.success == true ? Icons.check_circle : Icons.error)
                 : Icons.restore,
-            color: _isComplete
-                ? (_result?.success == true
-                    ? Colors.green
-                    : theme.colorScheme.error)
-                : theme.colorScheme.primary,
+            color:
+                _isComplete
+                    ? (_result?.success == true
+                        ? Colors.green
+                        : theme.colorScheme.error)
+                    : theme.colorScheme.primary,
           ),
           const SizedBox(width: 12),
           Text(_isComplete ? 'Restore Complete' : 'Restoring Data'),
@@ -524,8 +531,9 @@ class _RestoreProgressDialogState extends State<_RestoreProgressDialog> {
             LinearProgressIndicator(
               value: _total > 0 ? _current / _total : null,
               backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                theme.colorScheme.primary,
+              ),
             ),
             const SizedBox(height: 16),
             Text(
@@ -537,9 +545,10 @@ class _RestoreProgressDialogState extends State<_RestoreProgressDialog> {
             Text(
               _result!.success ? 'Restore completed!' : _result!.message,
               style: TextStyle(
-                color: _result!.success
-                    ? theme.colorScheme.onSurface
-                    : theme.colorScheme.error,
+                color:
+                    _result!.success
+                        ? theme.colorScheme.onSurface
+                        : theme.colorScheme.error,
               ),
             ),
             if (_result!.success) ...[

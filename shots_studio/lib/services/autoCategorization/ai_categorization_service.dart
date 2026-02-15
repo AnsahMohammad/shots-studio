@@ -12,6 +12,7 @@ import 'package:shots_studio/services/snackbar_service.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/utils/ai_provider_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shots_studio/services/logger_service.dart';
 
 class AICategorizer {
   final AIServiceManager _aiServiceManager = AIServiceManager();
@@ -40,9 +41,12 @@ class AICategorizer {
     }
 
     final prefs = await SharedPreferences.getInstance();
+    final String modelName =
+        prefs.getString('modelName') ?? 'gemini-2.5-flash-lite';
     final String? apiKey = prefs.getString('apiKey');
-    if ((apiKey == null || apiKey.isEmpty) &&
-        (prefs.getString('modelName') != 'gemma')) {
+
+    if (AIProviderConfig.requiresApiKey(modelName) &&
+        (apiKey == null || apiKey.isEmpty)) {
       SnackbarService().showError(
         context,
         'API key missing. Please add it in settings.',
@@ -50,8 +54,6 @@ class AICategorizer {
       return AICategorizeResult(success: false, error: 'API key not set');
     }
 
-    final String modelName =
-        prefs.getString('modelName') ?? 'gemini-2.5-flash-lite';
     final int maxParallel = AIProviderConfig.getMaxCategorizationLimitForModel(
       modelName,
     );
@@ -200,7 +202,7 @@ class AICategorizer {
               }
             } catch (e) {
               // Silently handle parsing errors for individual batches
-              print('Error parsing batch response: $e');
+              LoggerService.error('Error parsing batch response', e);
             }
           }
         },

@@ -8,7 +8,7 @@ import 'package:shots_studio/widgets/screenshots/tags/tag_chip.dart';
 import 'package:shots_studio/l10n/app_localizations.dart';
 import 'description_field.dart';
 import 'note_field.dart';
-import 'link_chip.dart';
+import 'collapsible_links_section.dart';
 
 /// The main details content section showing file info, description, links, AI metadata, tags, and collections.
 class DetailsContent extends StatelessWidget {
@@ -349,13 +349,9 @@ class DetailsContent extends StatelessWidget {
         if (screenshot.links.isNotEmpty) ...[
           const SizedBox(height: 16),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children:
-                screenshot.links
-                    .map((link) => LinkChip(link: link, parentContext: context))
-                    .toList(),
+          CollapsibleLinksSection(
+            links: screenshot.links,
+            parentContext: context,
           ),
         ],
 

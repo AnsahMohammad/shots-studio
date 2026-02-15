@@ -9,6 +9,7 @@ import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/services/export_service.dart';
 import 'package:shots_studio/services/hard_delete_service.dart';
 import 'package:shots_studio/services/snackbar_service.dart';
+import 'package:shots_studio/services/logger_service.dart';
 import 'package:shots_studio/widgets/screenshots/screenshot_card.dart';
 import 'package:shots_studio/widgets/screenshots/auto-scan_dialogue.dart';
 import 'package:shots_studio/widgets/screenshots/export_dialog.dart';
@@ -112,7 +113,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
         );
         widget.onUpdateCollection(updatedCollection);
 
-        print(
+        LoggerService.log(
           'CollectionDetailScreen: Synced collection count from ${widget.collection.screenshotCount} to ${validScreenshotIds.length}',
         );
       });
@@ -471,7 +472,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
           '${selectedIds.length} screenshot${selectedIds.length > 1 ? 's' : ''} deleted successfully';
 
       if (_hardDeleteEnabled && HardDeleteService.isHardDeleteAvailable()) {
-        print(
+        LoggerService.log(
           'HardDeleteService: Attempting bulk hard delete for ${selectedIds.length} screenshots',
         );
 
@@ -495,21 +496,23 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
               deleteMessage =
                   '${bulkDeleteResult.successCount} screenshot${bulkDeleteResult.successCount > 1 ? 's' : ''} deleted completely, ${bulkDeleteResult.failureCount} removed from app only';
             }
-            print(
+            LoggerService.log(
               'HardDeleteService: Bulk hard delete completed - ${bulkDeleteResult.successCount}/${selectedIds.length} successful',
             );
           } else {
             deleteMessage =
                 '${selectedIds.length} screenshot${selectedIds.length > 1 ? 's' : ''} deleted from app, but file deletion failed';
-            print('HardDeleteService: Bulk hard delete failed for all files');
+            LoggerService.error(
+              'HardDeleteService: Bulk hard delete failed for all files',
+            );
           }
 
-          print(
+          LoggerService.log(
             'HardDeleteService: Bulk hard delete result: $bulkDeleteResult',
           );
         }
       } else {
-        print(
+        LoggerService.log(
           'HardDeleteService: Hard delete not available or disabled for bulk operation',
         );
       }
@@ -530,7 +533,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
         'collection_screenshot_bulk_delete_count_${selectedIds.length}',
       );
     } catch (e) {
-      print('Error during bulk delete operation: $e');
+      LoggerService.error('Error during bulk delete operation', e);
 
       // Exit selection mode even on error
       _exitSelectionMode();

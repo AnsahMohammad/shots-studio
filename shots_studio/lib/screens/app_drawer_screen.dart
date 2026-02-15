@@ -9,9 +9,7 @@ import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/screens/settings_screen.dart';
 
 class AppDrawer extends StatefulWidget {
-  final String? currentApiKey;
   final String currentModelName;
-  final Function(String) onApiKeyChanged;
   final Function(String) onModelChanged;
   final int currentLimit;
   final Function(int) onLimitChanged;
@@ -33,7 +31,6 @@ class AppDrawer extends StatefulWidget {
   final Function(String)? onThemeChanged;
   final bool? currentHardDeleteEnabled;
   final Function(bool)? onHardDeleteChanged;
-  final Key? apiKeyFieldKey;
   final VoidCallback? onResetAiProcessing;
   final Function(Locale)? onLocaleChanged;
   final List<Screenshot>? allScreenshots;
@@ -43,9 +40,7 @@ class AppDrawer extends StatefulWidget {
 
   const AppDrawer({
     super.key,
-    this.currentApiKey,
     required this.currentModelName,
-    required this.onApiKeyChanged,
     required this.onModelChanged,
     required this.currentLimit,
     required this.onLimitChanged,
@@ -67,7 +62,6 @@ class AppDrawer extends StatefulWidget {
     this.onThemeChanged,
     this.currentHardDeleteEnabled,
     this.onHardDeleteChanged,
-    this.apiKeyFieldKey,
     this.onResetAiProcessing,
     this.onLocaleChanged,
     this.allScreenshots,
@@ -111,9 +105,7 @@ class _AppDrawerState extends State<AppDrawer> {
       MaterialPageRoute(
         builder:
             (context) => SettingsScreen(
-              currentApiKey: widget.currentApiKey,
               currentModelName: widget.currentModelName,
-              onApiKeyChanged: widget.onApiKeyChanged,
               onModelChanged: widget.onModelChanged,
               currentLimit: widget.currentLimit,
               onLimitChanged: widget.onLimitChanged,
@@ -136,7 +128,6 @@ class _AppDrawerState extends State<AppDrawer> {
               onThemeChanged: widget.onThemeChanged,
               currentHardDeleteEnabled: widget.currentHardDeleteEnabled,
               onHardDeleteChanged: widget.onHardDeleteChanged,
-              apiKeyFieldKey: widget.apiKeyFieldKey,
               onResetAiProcessing: widget.onResetAiProcessing,
               onLocaleChanged: widget.onLocaleChanged,
               allScreenshots: widget.allScreenshots,
@@ -177,11 +168,8 @@ class _AppDrawerState extends State<AppDrawer> {
           children: [
             const AppDrawerHeader(),
             QuickSettingsSection(
-              currentApiKey: widget.currentApiKey,
               currentModelName: widget.currentModelName,
-              onApiKeyChanged: widget.onApiKeyChanged,
               onModelChanged: widget.onModelChanged,
-              apiKeyFieldKey: widget.apiKeyFieldKey,
             ),
             ListTile(
               leading: Icon(Icons.settings, color: theme.colorScheme.primary),
