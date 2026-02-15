@@ -189,7 +189,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get awaitingAiProcessing => '等待AI处理...';
-  String get awaitingAiProcessing => '等待AI处理...';
 
   @override
   String get addTag => '添加标签';
@@ -429,22 +428,17 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dataManagement => '数据管理';
-  String get dataManagement => '数据管理';
 
   @override
-  String get dataManagementDescription => '备份和恢复您的截图元数据、收藏夹和设置。';
   String get dataManagementDescription => '备份和恢复您的截图元数据、收藏夹和设置。';
 
   @override
   String get backup => '备份';
-  String get backup => '备份';
 
   @override
   String get restore => '恢复';
-  String get restore => '恢复';
 
   @override
-  String get restoreData => '恢复数据';
   String get restoreData => '恢复数据';
 
   @override

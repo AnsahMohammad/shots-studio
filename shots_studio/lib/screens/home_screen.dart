@@ -69,9 +69,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _aiProcessedCount = 0;
   int _aiTotalToProcess = 0;
 
-  // Add a global key for the API key text field
-  final GlobalKey<State> _apiKeyFieldKey = GlobalKey();
-
   // File watcher service for seamless autoscanning
   final FileWatcherService _fileWatcher = FileWatcherService();
   StreamSubscription<List<Screenshot>>? _fileWatcherSubscription;
@@ -1986,9 +1983,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         autoProcessEnabled: _autoProcessEnabled,
       ),
       drawer: AppDrawer(
-        currentApiKey: _apiKey,
         currentModelName: _selectedModelName,
-        onApiKeyChanged: _updateApiKey,
         onModelChanged: _updateModelName,
         currentLimit: _screenshotLimit,
         onLimitChanged: _updateScreenshotLimit,
@@ -2006,7 +2001,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         onAmoledModeChanged: _updateAmoledModeEnabled,
         currentSelectedTheme: _selectedTheme,
         onThemeChanged: _updateThemeSelection,
-        apiKeyFieldKey: _apiKeyFieldKey,
         onResetAiProcessing: _resetAiMetaData,
         onLocaleChanged: widget.onLocaleChanged,
         allScreenshots: _screenshots,

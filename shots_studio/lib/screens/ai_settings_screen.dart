@@ -723,54 +723,52 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
             // Current model info
             CurrentModelInfo(modelName: _selectedModelName),
 
-            // AI Providers Header section
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'AI Providers',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Toggle AI providers on or off. Enabled providers will show their models in the main settings dropdown.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: () => ModelSelectionGuideDialog.show(context),
-                    icon: Icon(
-                      Icons.help_outline,
-                      size: 16,
-                      color: theme.colorScheme.primary,
-                    ),
-                    label: Text(
-                      'How to choose the right model',
+            // --- AI Providers Section ---
+            _buildSectionLabel(theme, 'AI Providers'),
+            Card(
+              margin: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 4.0,
+              ),
+              elevation: 0,
+              color: theme.colorScheme.surfaceContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Toggle AI providers on or off. Enabled providers will show their models in the main settings dropdown.',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () => ModelSelectionGuideDialog.show(context),
+                      icon: Icon(
+                        Icons.help_outline,
+                        size: 16,
                         color: theme.colorScheme.primary,
                       ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: theme.colorScheme.primary),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                      label: Text(
+                        'How to choose the right model',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: theme.colorScheme.primary),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 
@@ -801,20 +799,13 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
               );
             }),
 
-            // Local Models Section
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                'Local Models',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
+            // --- API Key Section ---
+            const SizedBox(height: 12),
+            ApiKeySection(isGeminiEnabled: _providerStates['gemini'] ?? false),
+
+            // --- Local Models Section ---
+            const SizedBox(height: 12),
+            _buildSectionLabel(theme, 'Local Models'),
             GemmaModelSection(
               gemmaModelPath: _gemmaModelPath,
               isLoadingGemmaModel: _isLoadingGemmaModel,
@@ -834,24 +825,28 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
               },
             ),
 
-            const SizedBox(height: 16),
-            // AI Output Settings Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                'AI Output Settings',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
+            // --- AI Output Settings Section ---
+            const SizedBox(height: 12),
+            _buildSectionLabel(theme, 'AI Output Settings'),
             const LanguageSection(),
 
             const SizedBox(height: 32),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionLabel(ThemeData theme, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 28.0, top: 8.0, bottom: 4.0),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+          color: theme.colorScheme.primary,
         ),
       ),
     );
