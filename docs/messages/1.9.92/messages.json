@@ -2,7 +2,7 @@
   "messages": [
     {
       "show": true,
-      "id": "validation_bug_1_9_92_21_02_2026",
+      "id": "validation_notification_1_9_92_21_02_2026",
       "title": "Heads up!",
       "message": "A bug is causing false API validation errors. Please ignore this warning; it does not affect AI processing. You can continue using the app normally while we work on a solution.",
       "type": "info",
@@ -16,7 +16,7 @@
     },
     {
       "show": true,
-      "id": "validation_bug_1_9_92_21_02_2026",
+      "id": "validation_bug1_1_9_92_21_02_2026",
       "title": "API Validation Notice",
       "message": "When clicking 'API Validation', you may see a false error like 'INVALID KEY' or 'QUOTA EXHAUSTED.' \n**Please ignore these warnings.** This is a visual bug and does not affect AI processing. You can continue using the app normally while we work on a fix. \n\nThanks for your patience!\n- Team Shots Studio",
       "type": "info",
