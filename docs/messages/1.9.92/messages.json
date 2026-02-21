@@ -2,6 +2,37 @@
   "messages": [
     {
       "show": true,
+      "id": "validation_bug_1_9_92_21_02_2026",
+      "title": "Temporary API Validation Issue",
+      "message": "There’s a bug in the API key validation check that may show false errors. This does not affect AI processing; you can continue using the app normally 😊. Fix coming soon.",
+      "type": "info",
+      "priority": "high",
+      "show_once": true,
+      "valid_until": "2026-03-20T00:00:00Z",
+      "is_notification": true,
+      "version": "1.9.92",
+      "beta_only": false,
+      "platform": "all"
+    },
+    {
+      "show": true,
+      "id": "validation_bug_1_9_92_21_02_2026",
+      "title": "Heads up!",
+      "message": "We’re aware of an issue where API key validation may incorrectly show as failed. Including errors messages like 'QUOTA EXHAUSTED' or 'API KEY NOT VALID'.\n Your key is likely fine, and AI features should continue to work normally. \nYou can safely ignore the validation message for now and proceed with processing 😊. \nA fix is on the way... Thanks for bearing with us. \n\n - Team Shots Studio",
+      "type": "info",
+      "priority": "high",
+      "show_once": true,
+      "valid_until": "2026-03-20T00:00:00Z",
+      "is_notification": false,
+      "version": "1.9.92",
+      "beta_only": false,
+      "action_text": "Report another Bug!",
+      "dismiss_text": "Dismiss",
+      "action_url": "https://github.com/AnsahMohammad/shots-studio/issues",
+      "platform": "all"
+    },
+    {
+      "show": true,
       "id": "welcome_1_9_92",
       "title": "Here's what's new in Shots Studio 1.9.92! 🚀",
       "message": "Thanks for updating to the latest version! 🎉\n\nWhat's new:\n\n Features:\n• Intelligence: Set calendars, find locations, and search flights based on screenshots (only on gemini 2.5 flash and gemini 2.5 pro)\n• Smart Sharing & weblinks: Add images via sharing and automatically preserve weblinks (yeah that's finally here)\n• Better Org: You can now group screenshots by date in the home page with a new scrollbar\n• Copy Support: Ability to copy screenshots directly instead of sharing\n• Localization: Added Chinese Traditional and Chinese Simplified onboarding\n\nCheck out the changelogs for the full logs!\n\nWith love <3,\nTeam Shots Studio",
