@@ -19,7 +19,7 @@
       "id": "validation_bug_1_9_92_21_02_2026",
       "title": "API Validation Notice",
       "message": "When clicking 'API Validation', you may see a false error like 'INVALID KEY' or 'QUOTA EXHAUSTED.' \n**Please ignore these warnings.** This is a visual bug and does not affect AI processing. You can continue using the app normally while we work on a fix. \n\nThanks for your patience!\n- Team Shots Studio",
-      "type": "info"
+      "type": "info",
       "priority": "high",
       "show_once": true,
       "valid_until": "2026-03-20T00:00:00Z",
