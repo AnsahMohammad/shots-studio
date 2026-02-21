@@ -3,8 +3,8 @@
     {
       "show": true,
       "id": "validation_bug_1_9_92_21_02_2026",
-      "title": "Temporary API Validation Issue",
-      "message": "There’s a bug in the API key validation check that may show false errors. This does not affect AI processing; you can continue using the app normally 😊. Fix coming soon.",
+      "title": "Heads up!",
+      "message": "A bug is causing false API validation errors. Please ignore this warning; it does not affect AI processing. You can continue using the app normally while we work on a solution.",
       "type": "info",
       "priority": "high",
       "show_once": true,
@@ -17,9 +17,9 @@
     {
       "show": true,
       "id": "validation_bug_1_9_92_21_02_2026",
-      "title": "Heads up!",
-      "message": "We’re aware of an issue where API key validation may incorrectly show as failed. Including errors messages like 'QUOTA EXHAUSTED' or 'API KEY NOT VALID'.\n Your key is likely fine, and AI features should continue to work normally. \nYou can safely ignore the validation message for now and proceed with processing 😊. \nA fix is on the way... Thanks for bearing with us. \n\n - Team Shots Studio",
-      "type": "info",
+      "title": "API Validation Notice",
+      "message": "When clicking 'API Validation', you may see a false error like 'INVALID KEY' or 'QUOTA EXHAUSTED.' \n**Please ignore these warnings.** This is a visual bug and does not affect AI processing. You can continue using the app normally while we work on a fix. \n\nThanks for your patience!\n- Team Shots Studio",
+      "type": "info"
       "priority": "high",
       "show_once": true,
       "valid_until": "2026-03-20T00:00:00Z",
