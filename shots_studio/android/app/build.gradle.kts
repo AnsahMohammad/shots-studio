@@ -47,6 +47,10 @@ android {
         versionName = flutter.versionName
     }
 
+    aaptOptions {
+        noCompress.add("onnx")
+    }
+
     flavorDimensions += "source"
     productFlavors {
         create("fdroid") {
@@ -123,7 +127,13 @@ android {
             val versionName = defaultConfig.versionName
             val flavorName = productFlavors[0].name
             val buildTypeName = buildType.name
-            outputImpl.outputFileName = "shots_studio-${flavorName}-${buildTypeName}-${versionName}.apk"
+            
+            val abi = filters.find { it.filterType == "ABI" }?.identifier
+            if (abi != null) {
+                outputImpl.outputFileName = "shots_studio-${flavorName}-${buildTypeName}-${versionName}-${abi}.apk"
+            } else {
+                outputImpl.outputFileName = "shots_studio-${flavorName}-${buildTypeName}-${versionName}.apk"
+            }
         }
     }
 }

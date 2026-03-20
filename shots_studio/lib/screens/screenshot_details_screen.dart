@@ -21,6 +21,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:shots_studio/services/logger_service.dart';
 import 'package:pasteboard/pasteboard.dart';
 import 'package:shots_studio/utils/ai_provider_config.dart';
+import 'package:shots_studio/services/prefilter_service.dart';
 
 // Import extracted widgets
 import 'package:shots_studio/widgets/screenshot_details/index.dart';
@@ -381,6 +382,26 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     }
   }
 
+  void _allowScreenshot() {
+    setState(() {
+      widget.screenshot.prefilterStatus = 'allowed';
+      widget.screenshot.prefilterReason = null;
+    });
+    _updateScreenshotDetails();
+    AnalyticsService().logFeatureUsed('prefilter_user_allowed');
+    SnackbarService().showInfo(context, 'Allowed. Tap ⚡ to process with AI.');
+  }
+
+  void _markSensitive() {
+    setState(() {
+      widget.screenshot.prefilterStatus = 'blocked';
+      widget.screenshot.prefilterReason = 'Manually marked as sensitive';
+    });
+    _updateScreenshotDetails();
+    AnalyticsService().logFeatureUsed('prefilter_user_marked_sensitive');
+    SnackbarService().showInfo(context, 'Marked as sensitive. AI will skip this.');
+  }
+
   Future<void> _handleShare() async {
     AnalyticsService().logFeatureUsed('screenshot_shared');
     final file = File(widget.screenshot.path!);
@@ -567,6 +588,29 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
       widget.screenshot.aiProcessed = false;
       widget.screenshot.aiMetadata = null;
     }
+
+    // ── PREFILTER CHECK ─────────────────────────────────────────────────────────
+    final prefilterMode = await PrefilterService.getMode();
+    if (prefilterMode != 'none' && widget.screenshot.prefilterStatus != 'allowed') {
+      // _ocrService is already instantiated in this screen
+      final ocrText = await _ocrService.extractTextFromScreenshot(widget.screenshot);
+      final result  = await PrefilterService().check(ocrText, prefilterMode);
+      if (result.isSensitive) {
+        if (mounted) {
+          setState(() {
+            widget.screenshot.prefilterStatus = 'blocked';
+            widget.screenshot.prefilterReason = result.reason;
+          });
+          _updateScreenshotDetails();
+          SnackbarService().showWarning(context,
+              '${result.reason}. Tap "Allow anyway" to override.');
+          AnalyticsService().logFeatureUsed('prefilter_single_blocked');
+        }
+        return;
+      }
+      if (mounted) setState(() => widget.screenshot.prefilterStatus = 'clean');
+    }
+    // ── END PREFILTER CHECK ─────────────────────────────────────────────────────
 
     final prefs = await SharedPreferences.getInstance();
     final String modelName =
@@ -1179,6 +1223,8 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
       onTagTapped: _navigateToTagSearch,
       onClearAiReprocessing: _clearAndRequestAiReprocessing,
       onScreenshotUpdated: _updateScreenshotDetails,
+      onAllowScreenshot: _allowScreenshot,
+      onMarkSensitive: _markSensitive,
     );
   }
 
