@@ -7,7 +7,6 @@ import 'package:shots_studio/services/snackbar_service.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/screens/ai_settings_screen.dart';
 import 'package:shots_studio/utils/ai_provider_config.dart';
-import 'package:shots_studio/services/prefilter_service.dart';
 
 /// AI provider option for the onboarding flow
 enum AIProviderOption { gemini, gemma, ocr }
@@ -36,10 +35,9 @@ class _AISetupOnboardingScreenState extends State<AISetupOnboardingScreen> {
   bool _notificationPermissionGranted = false;
   bool _isRequestingPermission = false;
   bool _allPermissionsAlreadyGranted = false;
-  String _selectedPrefilterMode = 'light';
 
-  // Total pages: Intro (0), Permissions (1), Privacy Prefilter (2), AI Selection (3), Configuration (4)
-  static const int _totalPages = 5;
+  // Total pages: Intro (0), Permissions (1), AI Selection (2), Configuration (3)
+  static const int _totalPages = 4;
 
   @override
   void initState() {
@@ -90,13 +88,13 @@ class _AISetupOnboardingScreenState extends State<AISetupOnboardingScreen> {
 
   void _nextPage() {
     if (_currentPage < _totalPages - 1) {
-      // If on intro page (page 0) and all permissions already granted, skip to Privacy Prefilter
+      // If on intro page (page 0) and all permissions already granted, skip to AI selection
       if (_currentPage == 0 && _allPermissionsAlreadyGranted) {
-        _pageController.jumpToPage(2); // Jump to Privacy Prefilter
+        _pageController.jumpToPage(2); // Jump to AI selection
         return;
       }
-      // If on AI selection page (page 3) and should skip config, complete onboarding
-      if (_currentPage == 3 && _shouldSkipConfigPage()) {
+      // If on AI selection page (page 2) and should skip config, complete onboarding
+      if (_currentPage == 2 && _shouldSkipConfigPage()) {
         _completeOnboarding();
         return;
       }
@@ -188,8 +186,6 @@ class _AISetupOnboardingScreenState extends State<AISetupOnboardingScreen> {
     await prefs.setBool(AIProviderConfig.providerPrefKeys['ocr']!, false);
 
     // Save onboarding completion
-    // Redundant save here for safety in case they just tapped and it failed
-    await PrefilterService.setMode(_selectedPrefilterMode);
     await prefs.setBool('ai_setup_onboarding_completed', true);
 
     // Enable ONLY the selected provider
@@ -284,7 +280,6 @@ class _AISetupOnboardingScreenState extends State<AISetupOnboardingScreen> {
                 children: [
                   _buildIntroductionPage(theme),
                   _buildPermissionsPage(theme),
-                  _buildPrefilterSetupPage(theme),
                   _buildAISelectionPage(theme),
                   _buildConfigurationPage(theme),
                 ],
@@ -1483,153 +1478,6 @@ class _AISetupOnboardingScreenState extends State<AISetupOnboardingScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-  Widget _buildPrefilterSetupPage(ThemeData theme) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Privacy Prefilter',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Protect your sensitive data by scanning screenshots locally before processing them with AI.',
-            style: TextStyle(
-              fontSize: 14,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          _buildPrefilterOption(
-            theme,
-            mode: 'none',
-            title: 'None (Disabled)',
-            description: 'No local scanning. All screenshots are sent for AI analysis.',
-            icon: Icons.privacy_tip_outlined,
-          ),
-          const SizedBox(height: 12),
-          _buildPrefilterOption(
-            theme,
-            mode: 'light',
-            title: 'Light (Recommended)',
-            description: 'Fast local scan for common patterns like API keys and credentials.',
-            icon: Icons.shield_outlined,
-          ),
-          const SizedBox(height: 12),
-          _buildPrefilterOption(
-            theme,
-            mode: 'deep',
-            title: 'Deep (Advanced)',
-            description: 'Powerful on-device ML scan for diverse sensitive entities (PII, cards).',
-            icon: Icons.admin_panel_settings,
-          ),
-
-          const SizedBox(height: 32),
-          // Info box
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.secondaryContainer.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline, color: theme.colorScheme.secondary),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Deep mode requires a ~80MB on-device model download. Local scanning ensures your secrets never leave this device.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.colorScheme.onSecondaryContainer,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPrefilterOption(
-    ThemeData theme, {
-    required String mode,
-    required String title,
-    required String description,
-    required IconData icon,
-  }) {
-    final isSelected = _selectedPrefilterMode == mode;
-    return GestureDetector(
-      onTap: () async {
-        setState(() {
-          _selectedPrefilterMode = mode;
-        });
-        await PrefilterService.setMode(mode);
-        AnalyticsService().logFeatureUsed('onboarding_prefilter_selected_$mode');
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? theme.colorScheme.primaryContainer.withOpacity(0.5)
-                  : theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color:
-                isSelected
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.outline.withOpacity(0.3),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
-              size: 28,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (isSelected)
-              Icon(Icons.check_circle, color: theme.colorScheme.primary),
-          ],
-        ),
       ),
     );
   }

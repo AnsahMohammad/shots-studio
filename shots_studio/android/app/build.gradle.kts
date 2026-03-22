@@ -127,13 +127,8 @@ android {
             val versionName = defaultConfig.versionName
             val flavorName = productFlavors[0].name
             val buildTypeName = buildType.name
-            
-            val abi = filters.find { it.filterType == "ABI" }?.identifier
-            if (abi != null) {
-                outputImpl.outputFileName = "shots_studio-${flavorName}-${buildTypeName}-${versionName}-${abi}.apk"
-            } else {
-                outputImpl.outputFileName = "shots_studio-${flavorName}-${buildTypeName}-${versionName}.apk"
-            }
+            outputImpl.outputFileName = "shots_studio-${flavorName}-${buildTypeName}-${versionName}.apk"
+
         }
     }
 }
