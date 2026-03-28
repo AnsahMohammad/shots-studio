@@ -1,17 +1,27 @@
 /// JSON utility functions for parsing and fixing JSON responses
 class JsonUtils {
-  /// Check if JSON string appears to be complete by matching brackets and braces
-  static bool isCompleteJson(String jsonString) {
-    if (jsonString.trim().isEmpty) return false;
-
-    // Count brackets to see if they match
+  /// Count structural brackets/braces, skipping characters inside JSON strings.
+  /// Returns a map with counts of open/close brackets and braces.
+  static Map<String, int> _countStructuralBrackets(String jsonString) {
     int openBrackets = 0;
     int closeBrackets = 0;
     int openBraces = 0;
     int closeBraces = 0;
+    bool inString = false;
 
     for (int i = 0; i < jsonString.length; i++) {
-      switch (jsonString[i]) {
+      final char = jsonString[i];
+
+      // Handle string boundaries — skip escaped quotes (e.g. \")
+      if (char == '"' && (i == 0 || jsonString[i - 1] != '\\')) {
+        inString = !inString;
+        continue;
+      }
+
+      // Don't count brackets/braces that are inside string values
+      if (inString) continue;
+
+      switch (char) {
         case '[':
           openBrackets++;
           break;
@@ -27,44 +37,37 @@ class JsonUtils {
       }
     }
 
-    return openBrackets == closeBrackets && openBraces == closeBraces;
+    return {
+      'openBrackets': openBrackets,
+      'closeBrackets': closeBrackets,
+      'openBraces': openBraces,
+      'closeBraces': closeBraces,
+    };
+  }
+
+  /// Check if JSON string appears to be complete by matching brackets and braces
+  static bool isCompleteJson(String jsonString) {
+    if (jsonString.trim().isEmpty) return false;
+
+    final counts = _countStructuralBrackets(jsonString);
+    return counts['openBrackets']! == counts['closeBrackets']! &&
+        counts['openBraces']! == counts['closeBraces']!;
   }
 
   /// Attempt to fix incomplete JSON by adding missing brackets and braces
   static String attemptJsonFix(String jsonString) {
     String fixed = jsonString.trim();
 
-    // Count missing brackets
-    int openBrackets = 0;
-    int closeBrackets = 0;
-    int openBraces = 0;
-    int closeBraces = 0;
-
-    for (int i = 0; i < fixed.length; i++) {
-      switch (fixed[i]) {
-        case '[':
-          openBrackets++;
-          break;
-        case ']':
-          closeBrackets++;
-          break;
-        case '{':
-          openBraces++;
-          break;
-        case '}':
-          closeBraces++;
-          break;
-      }
-    }
+    final counts = _countStructuralBrackets(fixed);
 
     // Add missing closing braces
-    int missingBraces = openBraces - closeBraces;
+    int missingBraces = counts['openBraces']! - counts['closeBraces']!;
     for (int i = 0; i < missingBraces; i++) {
       fixed += '}';
     }
 
     // Add missing closing brackets
-    int missingBrackets = openBrackets - closeBrackets;
+    int missingBrackets = counts['openBrackets']! - counts['closeBrackets']!;
     for (int i = 0; i < missingBrackets; i++) {
       fixed += ']';
     }
