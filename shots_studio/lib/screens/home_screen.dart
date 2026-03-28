@@ -124,6 +124,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       // Show AI setup onboarding first (includes permissions)
       await showAISetupOnboardingIfNeeded(context, _apiKey, _updateApiKey);
 
+      // Re-load settings after onboarding completes, so the model name
+      // (and any other prefs changed during onboarding) are picked up.
+      await _loadSettings();
+
       if (!context.mounted) return;
 
       // Show privacy dialog after onboarding
@@ -292,7 +296,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
             // Process auto-categorization if response data is available
             Map<String, dynamic>? response;
-            LoggerService.log("response shit shit shit :  $responseJson");
             if (responseJson != null) {
               try {
                 response = jsonDecode(responseJson) as Map<String, dynamic>;
@@ -520,10 +523,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           _saveDataToPrefs();
         }
       } catch (e) {
-        LoggerService.error(
-          "Main app: Error handling quota exceeded event",
-          e,
-        );
+        LoggerService.error("Main app: Error handling quota exceeded event", e);
       }
     });
 

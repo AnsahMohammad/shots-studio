@@ -189,6 +189,21 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+
+    // Save any pending description/notes changes before disposing
+    bool hasUnsavedChanges = false;
+    if (_descriptionController.text != (widget.screenshot.description ?? '')) {
+      widget.screenshot.description = _descriptionController.text;
+      hasUnsavedChanges = true;
+    }
+    if (_notesController.text != (widget.screenshot.notes ?? '')) {
+      widget.screenshot.notes = _notesController.text;
+      hasUnsavedChanges = true;
+    }
+    if (hasUnsavedChanges) {
+      widget.onScreenshotUpdated?.call();
+    }
+
     _descriptionController.dispose();
     _descriptionFocusNode.dispose();
     _notesController.dispose();
@@ -247,6 +262,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
           AnalyticsService().logFeatureUsed('tag_added');
         }
       });
+      _updateScreenshotDetails();
     }
   }
 
@@ -257,6 +273,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
         widget.screenshot.tags = _tags;
         AnalyticsService().logFeatureUsed('tag_removed');
       });
+      _updateScreenshotDetails();
     }
   }
 
