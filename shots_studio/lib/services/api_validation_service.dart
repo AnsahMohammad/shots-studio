@@ -65,7 +65,7 @@ class ApiValidationService {
     }
 
     try {
-      final result = await _performValidation(apiKey, modelName);
+      final result = await _performValidation(apiKey);
 
       // Cache the result
       await _cacheValidationResult(result.isValid);
@@ -113,78 +113,51 @@ class ApiValidationService {
   }
 
   /// Performs the actual API validation by sending a simple request
-  Future<ApiValidationResult> _performValidation(
-    String apiKey,
-    String modelName,
-  ) async {
-    final url = Uri.parse('$_baseUrl/$modelName:generateContent?key=$apiKey');
-
-    final requestBody = jsonEncode({
-      'contents': [
-        {
-          'parts': [
-            {
-              'text':
-                  'Hello, this is a test message to validate the API key. Please respond with "API key is valid".',
-            },
-          ],
-        },
-      ],
-    });
-
-    final headers = {'Content-Type': 'application/json'};
+  Future<ApiValidationResult> _performValidation(String apiKey) async {
+    // Use the models list endpoint - it validates the key without sending a prompt
+    final url = Uri.parse('$_baseUrl?key=$apiKey');
 
     try {
       final response = await http
-          .post(url, headers: headers, body: requestBody)
-          .timeout(const Duration(seconds: 15));
+          .get(url)
+          .timeout(const Duration(seconds: 10));
+
+      debugPrint('API validation status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final responseJson = jsonDecode(response.body);
-
-        // Check if we got a valid response structure
-        if (responseJson['candidates'] != null &&
-            responseJson['candidates'].isNotEmpty &&
-            responseJson['candidates'][0]['content'] != null) {
-          return ApiValidationResult(isValid: true);
-        } else {
-          return ApiValidationResult(
-            isValid: false,
-            error: 'Unexpected response format',
-            shouldRetry: false,
-          );
-        }
+        // If we get 200, the key is valid and the Generative Language API is enabled
+        return ApiValidationResult(isValid: true);
       } else {
         final responseJson = jsonDecode(response.body);
-        String errorMessage = 'Unknown error';
+        final error = responseJson['error'] ?? {};
+        final String message = error['message'] ?? 'Unknown error';
+        final String status = error['status'] ?? '';
 
-        if (responseJson['error'] != null) {
-          errorMessage =
-              responseJson['error']['message'] ?? 'API request failed';
-
-          // Check for specific error types
-          if (errorMessage.toLowerCase().contains('api key not valid') ||
-              errorMessage.toLowerCase().contains('invalid key') ||
-              errorMessage.toLowerCase().contains('unauthorized')) {
-            return ApiValidationResult(
-              isValid: false,
-              error:
-                  'Invalid API key. Please check your API key and try again.',
-              shouldRetry: false,
-            );
-          } else if (errorMessage.toLowerCase().contains('quota') ||
-              errorMessage.toLowerCase().contains('limit')) {
-            return ApiValidationResult(
-              isValid: false,
-              error: 'API quota exceeded. Please check your usage limits.',
-              shouldRetry: true,
-            );
-          }
+        // Handle specific Google API error statuses
+        if (status == 'INVALID_ARGUMENT' || status == 'UNAUTHENTICATED') {
+          return ApiValidationResult(
+            isValid: false,
+            error: 'Invalid API key. Please check your key and try again.',
+            shouldRetry: false,
+          );
+        } else if (status == 'PERMISSION_DENIED') {
+          return ApiValidationResult(
+            isValid: false,
+            error:
+                'API key is valid, but the Gemini API is not enabled in Google Cloud.',
+            shouldRetry: false,
+          );
+        } else if (status == 'RESOURCE_EXHAUSTED') {
+          return ApiValidationResult(
+            isValid: false,
+            error: 'Quota exceeded.',
+            shouldRetry: true,
+          );
         }
 
         return ApiValidationResult(
           isValid: false,
-          error: errorMessage,
+          error: message,
           shouldRetry: response.statusCode >= 500,
         );
       }
@@ -194,16 +167,16 @@ class ApiValidationService {
         error: 'Network error: ${e.message}',
         shouldRetry: true,
       );
-    } on TimeoutException catch (_) {
+    } on TimeoutException {
       return ApiValidationResult(
         isValid: false,
-        error: 'Request timed out. Please check your internet connection.',
+        error: 'Request timed out.',
         shouldRetry: true,
       );
     } catch (e) {
       return ApiValidationResult(
         isValid: false,
-        error: 'Unexpected error: ${e.toString()}',
+        error: 'Unexpected error: $e',
         shouldRetry: true,
       );
     }
@@ -346,7 +319,7 @@ class ApiValidationService {
     }
 
     try {
-      final result = await _performValidation(apiKey, modelName);
+      final result = await _performValidation(apiKey);
 
       // Cache the result
       await _cacheValidationResult(result.isValid);
