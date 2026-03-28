@@ -13,6 +13,8 @@ import 'package:shots_studio/services/screenshot_analysis_service.dart';
 import 'package:shots_studio/utils/ai_provider_config.dart';
 import 'package:shots_studio/services/server_message_service.dart';
 import 'package:shots_studio/services/notification_service.dart';
+import 'package:shots_studio/services/logger_service.dart';
+import 'package:shots_studio/utils/ai_error_utils.dart';
 
 @pragma('vm:entry-point')
 class BackgroundProcessingService {
@@ -36,6 +38,7 @@ class BackgroundProcessingService {
   static const String CHANNEL_SAFETY_STOP = "safety_stop";
   static const String CHANNEL_BATTERY_LOW = "battery_low";
   static const String CHANNEL_NETWORK_CHANGED = "network_changed";
+  static const String CHANNEL_QUOTA_EXCEEDED = "quota_exceeded";
 
   static final BackgroundProcessingService _instance =
       BackgroundProcessingService._internal();
@@ -460,10 +463,9 @@ class BackgroundProcessingService {
         content,
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'safety_channel',
-            'Safety Notifications',
-            channelDescription:
-                'Important safety notifications for auto-processing',
+            'server_messages_urgent', // Registered channel in NotificationService
+            'Urgent Server Messages',
+            channelDescription: 'Channel for urgent server messages',
             icon: '@mipmap/ic_launcher_monochrome',
             importance: Importance.high,
             priority: Priority.high,
@@ -569,6 +571,38 @@ class BackgroundProcessingService {
 
           try {
             // Check if this batch was skipped because all screenshots were already processed
+            LoggerService.log("Background service: batch response: $response");
+
+            // Check for quota exceeded error before processing
+            if (AIErrorHandler.isQuotaExceededError(response)) {
+              LoggerService.log(
+                "Background service: Quota exceeded detected, stopping processing",
+              );
+
+              _processingActive = false;
+              _serviceRunning = false;
+
+              // Show Android notification (fire-and-forget since callback is sync)
+              _showSafetyNotification(
+                flutterLocalNotificationsPlugin,
+                'API Quota Exceeded',
+                'API quota exceeded. Please change your AI model in settings to continue processing.',
+                'quota_exceeded',
+              ).catchError((e) {});
+
+              // Notify the app
+              service.invoke(CHANNEL_QUOTA_EXCEEDED, {
+                'reason': 'quota_exceeded',
+                'message':
+                    'API quota exceeded. Please change your AI model in settings.',
+              });
+
+              // Clean up and stop
+              _cleanupSafetyMonitoring().catchError((e) {});
+              service.stopSelf();
+              return;
+            }
+
             if (response.containsKey('skipped') &&
                 response['skipped'] == true) {
               // Count these as processed since they were already done

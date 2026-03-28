@@ -22,7 +22,22 @@ class AIErrorHandler {
     required void Function(bool) setProcessingTerminated,
     required void Function(int) setNetworkErrorCount,
   }) {
-    if (response['error'] != null &&
+    // Check for quota exceeded error (429 or text match)
+    if (_isQuotaExceededError(response)) {
+      cancelProcessing();
+      setProcessingTerminated(true);
+
+      showMessage?.call(
+        message:
+            'API quota exceeded. Please change your AI model in settings.',
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 5),
+      );
+      return AIErrorResult(
+        shouldTerminate: true,
+        errorType: AIErrorType.quotaExceeded,
+      );
+    } else if (response['error'] != null &&
         response['error'].toString().contains('API key not valid')) {
       // Only show the error message once and terminate processing
       if (!apiKeyErrorShown) {
@@ -96,7 +111,21 @@ class AIErrorHandler {
   /// Checks if an error indicates that processing should be terminated
   static bool shouldTerminateProcessing(String errorMessage) {
     return errorMessage.contains('API key not valid') ||
-        errorMessage.contains('Network error');
+        errorMessage.contains('Network error') ||
+        errorMessage.contains('exceeded your current quota');
+  }
+
+  /// Checks if a response indicates a quota exceeded error.
+  /// Looks for statusCode 429 or error text containing the quota message.
+  static bool isQuotaExceededError(Map<String, dynamic> response) {
+    return _isQuotaExceededError(response);
+  }
+
+  static bool _isQuotaExceededError(Map<String, dynamic> response) {
+    final statusCode = response['statusCode'];
+    final error = response['error']?.toString() ?? '';
+    return statusCode == 429 ||
+        error.contains('exceeded your current quota');
   }
 
   /// Gets appropriate error message for different error types
@@ -106,6 +135,8 @@ class AIErrorHandler {
         return 'Invalid API key provided. AI processing has been terminated.';
       case AIErrorType.networkError:
         return 'Network issues detected. AI processing has been terminated.';
+      case AIErrorType.quotaExceeded:
+        return 'API quota exceeded. Please change your AI model in settings.';
       case AIErrorType.timeout:
         return 'Request timed out. Please try again.';
       case AIErrorType.genericError:
@@ -114,7 +145,7 @@ class AIErrorHandler {
   }
 }
 
-enum AIErrorType { invalidApiKey, networkError, timeout, genericError }
+enum AIErrorType { invalidApiKey, networkError, quotaExceeded, timeout, genericError }
 
 class AIErrorResult {
   final bool shouldTerminate;
