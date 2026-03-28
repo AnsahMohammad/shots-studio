@@ -26,6 +26,7 @@ import 'package:shots_studio/utils/memory_utils.dart';
 
 import 'package:shots_studio/widgets/ai_processing_container.dart';
 import 'package:shots_studio/services/background_service.dart';
+import 'package:shots_studio/services/notification_service.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/services/file_watcher_service.dart';
@@ -291,6 +292,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
             // Process auto-categorization if response data is available
             Map<String, dynamic>? response;
+            LoggerService.log("response shit shit shit :  $responseJson");
             if (responseJson != null) {
               try {
                 response = jsonDecode(responseJson) as Map<String, dynamic>;
@@ -484,6 +486,47 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       }
     });
 
+    // Listen for quota exceeded events from background service
+    service.on('quota_exceeded').listen((event) {
+      LoggerService.log("Main app: Received quota exceeded event: $event");
+
+      try {
+        if (event != null && mounted) {
+          final data = Map<String, dynamic>.from(event);
+          final message =
+              data['message'] as String? ??
+              'API quota exceeded. Please change your AI model in settings.';
+
+          LoggerService.log("Main app: Quota exceeded - $message");
+
+          // Update UI state to stop processing
+          setState(() {
+            _isProcessingAI = false;
+            _isInitializingProcessing = false;
+            _aiProcessedCount = 0;
+            _aiTotalToProcess = 0;
+          });
+
+          SnackbarService().showWarning(context, message);
+
+          // Show device notification
+          NotificationService().showServerMessage(
+            id: 998,
+            title: 'API Quota Exceeded',
+            body: message,
+          );
+
+          // Save data
+          _saveDataToPrefs();
+        }
+      } catch (e) {
+        LoggerService.error(
+          "Main app: Error handling quota exceeded event",
+          e,
+        );
+      }
+    });
+
     LoggerService.log("Background service listeners setup complete");
   }
 
@@ -580,6 +623,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _betaTestingEnabled = prefs.getBool('beta_testing_enabled') ?? false;
       _selectedTheme = prefs.getString('selected_theme') ?? 'Adaptive Theme';
     });
+  }
+
+  /// Refresh the API key from SharedPreferences to pick up changes
+  /// made in settings screens (which write directly to prefs).
+  Future<void> _refreshApiKey() async {
+    final prefs = await SharedPreferences.getInstance();
+    final latestKey = prefs.getString('apiKey');
+    if (latestKey != _apiKey) {
+      setState(() {
+        _apiKey = latestKey;
+      });
+    }
   }
 
   void _updateApiKey(String newApiKey) {
@@ -737,6 +792,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _processWithGemini() async {
     LoggerService.log("Main app: _processWithGemini called");
+    await _refreshApiKey();
     // Check if a valid model is selected
     if (_selectedModelName.toLowerCase() == 'No AI Model'.toLowerCase()) {
       LoggerService.log("Main app: No AI model selected");
@@ -1556,6 +1612,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   // Helper method to check and auto-process screenshots
   Future<void> _autoProcessWithGemini() async {
+    await _refreshApiKey();
     // Only auto-process if enabled, a valid model is selected, we have an API key (if needed),
     // and we're not already processing
     if (_autoProcessEnabled &&
