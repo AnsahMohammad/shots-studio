@@ -137,12 +137,6 @@ class AppLocalizationsRo extends AppLocalizations {
   String get betaTesting => 'Testare Beta';
 
   @override
-  String get writeTagsToXMP => 'Scriere Etichete în XMP';
-
-  @override
-  String get xmpMetadataWritten => 'Metadate XMP scrise în fișier';
-
-  @override
   String get advancedSettings => 'Setări Avansate';
 
   @override

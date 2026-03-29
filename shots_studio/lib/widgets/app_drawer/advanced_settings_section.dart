@@ -13,7 +13,6 @@ import '../../l10n/app_localizations.dart';
 /// - Analytics & Telemetry toggle
 /// - Server Messages toggle
 /// - Beta Testing toggle
-/// - XMP Settings (disabled)
 /// - Backup & Restore card
 /// - Action buttons (Reset AI, Clear Corrupt Files)
 class AdvancedSettingsSection extends StatelessWidget {
@@ -99,8 +98,6 @@ class AdvancedSettingsSection extends StatelessWidget {
           currentBetaTestingEnabled: currentBetaTestingEnabled,
           onBetaTestingEnabledChanged: onBetaTestingEnabledChanged,
         ),
-        // XMP Settings (disabled)
-        const XmpSettingsTile(),
         // Performance Menu
         const PerformanceMenuTile(),
         // Data Management Card (Backup & Restore)

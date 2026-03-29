@@ -137,12 +137,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get betaTesting => 'ベータテスト';
 
   @override
-  String get writeTagsToXMP => 'タグをXMPに書き込む';
-
-  @override
-  String get xmpMetadataWritten => 'XMPメタデータがファイルに書き込まれました';
-
-  @override
   String get advancedSettings => '詳細設定';
 
   @override
