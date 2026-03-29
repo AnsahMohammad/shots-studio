@@ -1235,6 +1235,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     setState(() {
       // Refresh UI when screenshot data changes (like aiProcessed flag)
     });
+    // Ensure changes (like tags added in details screens) are saved
+    _saveDataToPrefs();
   }
 
   void _updateCollection(Collection updatedCollection) {
@@ -1510,6 +1512,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               onUpdateCollection: _updateCollection,
               onCollectionAdded: _addCollection,
               onDeleteScreenshot: _deleteScreenshot,
+              onScreenshotUpdated: _onScreenshotUpdated,
             ),
       ),
     );
@@ -2019,7 +2022,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     onCollectionAdded: _addCollection,
                     onDeleteScreenshot: _deleteScreenshot,
                     onScreenshotUpdated: () {
-                      setState(() {});
+                      _onScreenshotUpdated();
                     },
                   );
                 },
@@ -2162,11 +2165,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   },
                   onCollectionAdded: _addCollection,
                   onDeleteScreenshot: _deleteScreenshot,
-                  onScreenshotUpdated: () {
-                    setState(() {});
-                    // Force save when screenshot is updated
-                    _saveDataToPrefs();
-                  },
+                  onScreenshotUpdated: _onScreenshotUpdated,
                 ),
           ),
         )
