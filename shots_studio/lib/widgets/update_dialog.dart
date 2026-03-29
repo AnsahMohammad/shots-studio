@@ -344,23 +344,15 @@ class _UpdateDialogState extends State<UpdateDialog> {
         },
         child: const Text('Later'),
       ),
-      if (_showInstallOption) ...[
-        FilledButton.icon(
+      if (_showInstallOption)
+        FilledButton.tonal(
           onPressed: _downloadAndInstall,
-          icon: const Icon(Icons.download),
-          label: const Text('Install'),
+          child: const Text('Download in-app'),
         ),
-      ] else ...[
-        FilledButton(
-          onPressed: () {
-            AnalyticsService().logFeatureUsed(
-              'update_dialog_update_clicked_${widget.updateInfo.currentVersion}',
-            );
-            _openUpdatePage(context);
-          },
-          child: const Text('Download'),
-        ),
-      ],
+      FilledButton(
+        onPressed: _openGitHubDownload,
+        child: const Text('Download from GitHub'),
+      ),
     ];
   }
 
@@ -462,11 +454,18 @@ class _UpdateDialogState extends State<UpdateDialog> {
     return '';
   }
 
+  void _openGitHubDownload() {
+    AnalyticsService().logFeatureUsed(
+      'update_dialog_github_download_${widget.updateInfo.currentVersion}',
+    );
+    _openUpdatePage(context);
+  }
+
   void _openUpdatePage(BuildContext context) async {
     try {
-      // Launch the GitHub releases page instead of specific release URL
+      // Launch the specific GitHub release tag page
       const releasesUrl =
-          'https://github.com/AnsahMohammad/shots-studio/releases';
+          'https://github.com/AnsahMohammad/shots-studio/releases/latest';
       await _launchURL(releasesUrl);
     } catch (e) {
       if (context.mounted) {
