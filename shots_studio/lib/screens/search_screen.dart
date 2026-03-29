@@ -17,6 +17,7 @@ class SearchScreen extends StatefulWidget {
   final Function(Collection) onUpdateCollection;
   final Function(Collection) onCollectionAdded;
   final Function(String) onDeleteScreenshot;
+  final VoidCallback? onScreenshotUpdated;
   final String? initialSearchQuery; // Add this parameter
 
   const SearchScreen({
@@ -26,6 +27,7 @@ class SearchScreen extends StatefulWidget {
     required this.onUpdateCollection,
     required this.onCollectionAdded,
     required this.onDeleteScreenshot,
+    this.onScreenshotUpdated,
     this.initialSearchQuery, // Add this parameter
   });
 
@@ -299,6 +301,9 @@ class _SearchScreenState extends State<SearchScreen> {
                         onCollectionAdded: widget.onCollectionAdded,
                         onDeleteScreenshot: widget.onDeleteScreenshot,
                         onScreenshotUpdated: () {
+                          if (widget.onScreenshotUpdated != null) {
+                            widget.onScreenshotUpdated!();
+                          }
                           setState(() {});
                         },
                       );

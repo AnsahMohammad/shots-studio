@@ -25,6 +25,7 @@ class CollectionDetailScreen extends StatefulWidget {
   final Function(Collection) onUpdateCollection;
   final Function(String) onDeleteCollection;
   final Function(String) onDeleteScreenshot;
+  final VoidCallback? onScreenshotUpdated;
 
   const CollectionDetailScreen({
     super.key,
@@ -34,6 +35,7 @@ class CollectionDetailScreen extends StatefulWidget {
     required this.onUpdateCollection,
     required this.onDeleteCollection,
     required this.onDeleteScreenshot,
+    this.onScreenshotUpdated,
   });
 
   @override
@@ -1078,8 +1080,11 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                                     },
                                     onScreenshotUpdated: () {
                                       // This callback is called from the detail screen
-                                      // We don't need to do anything here as we'll handle
-                                      // cleanup when we return
+                                      // Trigger parent callback to save data to prefs
+                                      if (widget.onScreenshotUpdated != null) {
+                                        widget.onScreenshotUpdated!();
+                                      }
+                                      setState(() {});
                                     },
                                   );
                                 }
