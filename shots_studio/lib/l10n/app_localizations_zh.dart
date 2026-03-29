@@ -137,12 +137,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get betaTesting => 'Beta Testing';
 
   @override
-  String get writeTagsToXMP => '将标签写入XMP';
-
-  @override
-  String get xmpMetadataWritten => 'XMP元数据已写入文件';
-
-  @override
   String get advancedSettings => '高级设置';
 
   @override
@@ -579,12 +573,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get betaTesting => 'Beta Testing';
 
   @override
-  String get writeTagsToXMP => '将标签写入XMP';
-
-  @override
-  String get xmpMetadataWritten => 'XMP元数据已写入文件';
-
-  @override
   String get advancedSettings => '高级设置';
 
   @override
@@ -1019,12 +1007,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get betaTesting => 'Beta 測試';
-
-  @override
-  String get writeTagsToXMP => '將標籤寫入 XMP';
-
-  @override
-  String get xmpMetadataWritten => 'XMP 中繼資料已寫入檔案';
 
   @override
   String get advancedSettings => '進階設定';

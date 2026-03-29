@@ -17,7 +17,7 @@
         "example": "5"
       },
       "total": {
-        "type": "int", 
+        "type": "int",
         "example": "10"
       }
     }
@@ -178,32 +178,20 @@
   "@betaTesting": {
     "description": "Beta testing setting"
   },
-  "writeTagsToXMP": "Write Tags to XMP",
-  "@writeTagsToXMP": {
-    "description": "XMP metadata writing setting"
-  },
-  "xmpMetadataWritten": "XMP metadata written to the file",
-  "@xmpMetadataWritten": {
-    "description": "Indicator showing XMP metadata has been written to the image file"
-  },
-    "advancedSettings": "Advanced Settings",
+  "advancedSettings": "Advanced Settings",
   "developerMode": "Advanced Settings",
-  "language": "Language",
   "safeDelete": "Safe Delete",
   "sourceCode": "Source Code",
   "support": "Support",
-  "about": "About",
   "checkForUpdates": "Check for Updates",
   "privacyNotice": "Privacy Notice",
   "analyticsAndTelemetry": "Analytics and Telemetry",
-  "betaTesting": "Beta Testing",
   "performanceMenu": "Performance Menu",
   "serverMessages": "Server Messages",
   "maxParallelAI": "Max Parallel AI",
   "enableScreenshotLimit": "Enable Screenshot Limit",
   "tags": "Tags",
   "aiDetails": "AI Details",
-  "collections": "Collections",
   "size": "Size",
   "awaitingAiProcessing": "Awaiting AI processing...",
   "@awaitingAiProcessing": {
@@ -329,7 +317,7 @@
   "@stopProcessing": {
     "description": "Tooltip for stop processing button"
   },
-  "processWithAI": "Process with AI", 
+  "processWithAI": "Process with AI",
   "@processWithAI": {
     "description": "Tooltip for process with AI button"
   },
@@ -341,14 +329,6 @@
   "@organizeScreenshots": {
     "description": "Second part of empty collections message"
   },
-  "cancel": "Cancel",
-  "@cancel": {
-    "description": "Cancel button text"
-  },
-  "delete": "Delete",
-  "@delete": {
-    "description": "Delete button text"
-  },
   "cancelSelection": "Cancel selection",
   "@cancelSelection": {
     "description": "Tooltip for cancel selection button"
@@ -357,34 +337,10 @@
   "@deselectAll": {
     "description": "Deselect all button text"
   },
-  "selectAll": "Select All",
-  "@selectAll": {
-    "description": "Select all button text"
-  },
   "deleteSelected": "Delete selected",
   "@deleteSelected": {
     "description": "Tooltip for delete selected button"
   },
-  "language": "Language",
-  "safeDelete": "Safe Delete",
-  "sourceCode": "Source Code",
-  "support": "Support",
-  "about": "About",
-  "checkForUpdates": "Check for Updates",
-  "privacyNotice": "Privacy Notice",
-  "analyticsAndTelemetry": "Analytics and Telemetry",
-  "betaTesting": "Beta Testing",
-  "performanceMenu": "Performance Menu",
-  "serverMessages": "Server Messages",
-  "maxParallelAI": "Max Parallel AI",
-  "enableScreenshotLimit": "Enable Screenshot Limit",
-  "tags": "Tags",
-  "aiDetails": "AI Details",
-  "collections": "Collections",
-  "size": "Size",
-  "awaitingAiProcessing": "Awaiting AI processing...",
-  "addTag": "Add tag",
-  "aiSettings": "AI Settings",
   "clearCorruptFiles": "Clear Corrupt Files",
   "@clearCorruptFiles": {
     "description": "Button to clear all corrupt files"

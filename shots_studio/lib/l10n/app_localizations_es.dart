@@ -137,12 +137,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get betaTesting => 'Beta Testing';
 
   @override
-  String get writeTagsToXMP => 'Escribir Etiquetas en XMP';
-
-  @override
-  String get xmpMetadataWritten => 'Metadatos XMP escritos en el archivo';
-
-  @override
   String get advancedSettings => 'Configuración Avanzada';
 
   @override

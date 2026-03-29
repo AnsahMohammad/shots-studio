@@ -12,7 +12,6 @@ import 'package:shots_studio/utils/collection_utils.dart';
 import 'package:shots_studio/utils/ai_error_utils.dart';
 import 'package:shots_studio/utils/json_utils.dart';
 import 'package:shots_studio/utils/ai_language_config.dart';
-import 'package:shots_studio/services/xmp_metadata_service.dart';
 import 'package:shots_studio/services/logger_service.dart';
 
 class ScreenshotAnalysisService extends AIService {
@@ -627,9 +626,6 @@ class ScreenshotAnalysisService extends AIService {
       );
     }
 
-    // Write XMP metadata to original file if enabled
-    _writeXMPMetadataAsync(updatedScreenshot);
-
     return [updatedScreenshot];
   }
 
@@ -704,9 +700,6 @@ class ScreenshotAnalysisService extends AIService {
           );
         }
 
-        // Write XMP metadata to original file if enabled
-        _writeXMPMetadataAsync(updatedScreenshot);
-
         updatedScreenshots.add(updatedScreenshot);
         if (matchedAiItemIndex != null) {
           availableResponses.removeAt(matchedAiItemIndex);
@@ -751,38 +744,6 @@ class ScreenshotAnalysisService extends AIService {
     if (result.shouldTerminate) {
       _processingTerminated = true;
     }
-  }
-
-  /// Write XMP metadata to original file asynchronously (non-blocking)
-  void _writeXMPMetadataAsync(Screenshot screenshot) {
-    // Run XMP writing in the background to not block AI processing
-    Future.microtask(() async {
-      try {
-        LoggerService.log(
-          'XMP: Starting metadata write for ${screenshot.id} - Path: ${screenshot.path}',
-        );
-        final success = await XMPMetadataService.writeXMPMetadata(
-          screenshot: screenshot,
-        );
-        if (success) {
-          LoggerService.log(
-            'XMP: Successfully wrote metadata for ${screenshot.id}',
-          );
-          LoggerService.log(
-            'XMP: Metadata includes: ${screenshot.tags.length} tags, title: "${screenshot.title}", description length: ${screenshot.description?.length ?? 0} chars',
-          );
-        } else {
-          LoggerService.log(
-            'XMP: Failed to write metadata for ${screenshot.id} (XMP writing may be disabled or file not writable)',
-          );
-        }
-      } catch (e) {
-        LoggerService.error(
-          'XMP: Error writing metadata for ${screenshot.id}',
-          e,
-        );
-      }
-    });
   }
 
   /// Log analytics for Gemma processing if applicable

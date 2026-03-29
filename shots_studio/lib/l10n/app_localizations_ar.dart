@@ -137,12 +137,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get betaTesting => 'Beta Testing';
 
   @override
-  String get writeTagsToXMP => 'كتابة العلامات في XMP';
-
-  @override
-  String get xmpMetadataWritten => 'تم كتابة بيانات XMP الوصفية في الملف';
-
-  @override
   String get advancedSettings => 'الإعدادات المتقدمة';
 
   @override

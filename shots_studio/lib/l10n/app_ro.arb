@@ -17,7 +17,7 @@
         "example": "5"
       },
       "total": {
-        "type": "int", 
+        "type": "int",
         "example": "10"
       }
     }
@@ -223,14 +223,6 @@
   "@betaTesting": {
     "description": "Beta testing setting"
   },
-  "writeTagsToXMP": "Scriere Etichete în XMP",
-  "@writeTagsToXMP": {
-    "description": "XMP metadata writing setting"
-  },
-  "xmpMetadataWritten": "Metadate XMP scrise în fișier",
-  "@xmpMetadataWritten": {
-    "description": "Indicator showing XMP metadata has been written to the image file"
-  },
   "advancedSettings": "Setări Avansate",
   "developerMode": "Setări Avansate",
   "safeDelete": "Ștergere Sigură",
@@ -367,7 +359,7 @@
   "@stopProcessing": {
     "description": "Tooltip for stop processing button"
   },
-  "processWithAI": "Procesare cu AI", 
+  "processWithAI": "Procesare cu AI",
   "@processWithAI": {
     "description": "Tooltip for process with AI button"
   },

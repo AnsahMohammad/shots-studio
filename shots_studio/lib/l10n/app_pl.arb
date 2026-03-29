@@ -17,7 +17,7 @@
         "example": "5"
       },
       "total": {
-        "type": "int", 
+        "type": "int",
         "example": "10"
       }
     }
@@ -359,7 +359,7 @@
   "@stopProcessing": {
     "description": "Tooltip for stop processing button"
   },
-  "processWithAI": "Przetwarzaj z AI", 
+  "processWithAI": "Przetwarzaj z AI",
   "@processWithAI": {
     "description": "Tooltip for process with AI button"
   },
@@ -514,14 +514,6 @@
   "close": "Zamknij",
   "@close": {
     "description": "Close button text"
-  },
-  "writeTagsToXMP": "Zapisz tagi do XMP",
-  "@writeTagsToXMP": {
-    "description": "XMP metadata writing setting"
-  },
-  "xmpMetadataWritten": "Metadane XMP zapisane do pliku",
-  "@xmpMetadataWritten": {
-    "description": "Indicator showing XMP metadata has been written to the image file"
   },
   "awaitingAiProcessing": "Oczekiwanie na przetwarzanie AI...",
   "dataManagement": "Zarządzanie Danymi",

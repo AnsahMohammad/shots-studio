@@ -137,12 +137,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get betaTesting => 'Бета-тестирование';
 
   @override
-  String get writeTagsToXMP => 'Записать теги в XMP';
-
-  @override
-  String get xmpMetadataWritten => 'XMP метаданные записаны в файл';
-
-  @override
   String get advancedSettings => 'Расширенные настройки';
 
   @override
