@@ -11,8 +11,7 @@ import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/services/ai_service.dart';
 import 'package:shots_studio/services/screenshot_analysis_service.dart';
 import 'package:shots_studio/utils/ai_provider_config.dart';
-import 'package:shots_studio/services/server_message_service.dart';
-import 'package:shots_studio/services/notification_service.dart';
+
 import 'package:shots_studio/services/logger_service.dart';
 import 'package:shots_studio/utils/ai_error_utils.dart';
 
@@ -199,20 +198,6 @@ class BackgroundProcessingService {
           maxProgress: 100,
           ongoing: false,
         );
-      });
-
-      // Handle server message check request
-      service.on('check_server_messages').listen((event) async {
-        await _checkServerMessages(service);
-      });
-
-      // Start periodic server message checking (every 30 minutes)
-      Timer.periodic(const Duration(minutes: 30), (timer) async {
-        if (!_serviceRunning) {
-          timer.cancel();
-          return;
-        }
-        await _checkServerMessages(service);
       });
 
       // Handle stop service request
@@ -841,78 +826,6 @@ class BackgroundProcessingService {
       return true;
     } catch (e) {
       return false;
-    }
-  }
-
-  // Start background service with server message checking
-  Future<bool> startServerMessageChecking() async {
-    try {
-      final service = FlutterBackgroundService();
-
-      if (!await service.isRunning()) {
-        final initialized = await initializeService();
-        if (!initialized) {
-          return false;
-        }
-      }
-
-      // Trigger immediate server message check
-      service.invoke('check_server_messages');
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  // Method to trigger server message check from the app
-  Future<void> checkServerMessagesNow() async {
-    try {
-      final service = FlutterBackgroundService();
-      if (await service.isRunning()) {
-        service.invoke('check_server_messages');
-      }
-    } catch (e) {
-      // Handle error silently
-    }
-  }
-
-  // Static method to check server messages from background service
-  static Future<void> _checkServerMessages(ServiceInstance service) async {
-    try {
-      // Check for server messages
-      final message = await ServerMessageService.checkForMessages(
-        forceFetch: false,
-      );
-
-      if (message != null && message.isNotification) {
-        // Initialize notification service instance
-        final notificationService = NotificationService();
-
-        // Show notification using NotificationService
-        await notificationService.showServerMessageImmediate(
-          messageId: message.id,
-          title: message.title,
-          body: message.message,
-          isUrgent: message.priority == MessagePriority.high,
-        );
-
-        // Mark message as shown if it's a show-once message
-        if (message.showOnce) {
-          await ServerMessageService.markMessageAsShown(message.id);
-        }
-
-        // Send result back to app
-        service.invoke('server_message_checked', {
-          'messageFound': true,
-          'messageId': message.id,
-          'title': message.title,
-        });
-      } else {
-        service.invoke('server_message_checked', {'messageFound': false});
-      }
-    } catch (e) {
-      // Log error but don't crash the service
-      service.invoke('server_message_error', {'error': e.toString()});
     }
   }
 

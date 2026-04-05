@@ -111,10 +111,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _loadDataFromPrefs();
     _loadSettings();
 
-    // Initialize server message checking in background
-    if (!kIsWeb) {
-      _initializeServerMessageChecking();
-    }
+
 
     if (!kIsWeb) {
       _setupBackgroundServiceListeners();
@@ -227,40 +224,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  /// Initialize server message checking with background service
-  Future<void> _initializeServerMessageChecking() async {
-    try {
-      final backgroundService = BackgroundProcessingService();
 
-      // Start the background service for server message checking
-      await backgroundService.startServerMessageChecking();
-
-      // Set up listeners for server message events
-      final service = FlutterBackgroundService();
-
-      service.on('server_message_checked').listen((event) {
-        if (event != null && mounted) {
-          final data = Map<String, dynamic>.from(event);
-          final messageFound = data['messageFound'] as bool? ?? false;
-
-          if (messageFound) {
-            LoggerService.log(
-              'Server message notification sent: ${data['title']}',
-            );
-          }
-        }
-      });
-
-      service.on('server_message_error').listen((event) {
-        if (event != null) {
-          final data = Map<String, dynamic>.from(event);
-          LoggerService.error('Server message check error: ${data['error']}');
-        }
-      });
-    } catch (e) {
-      LoggerService.error('Failed to initialize server message checking', e);
-    }
-  }
 
   /// Setup listeners for background service events
   void _setupBackgroundServiceListeners() {
