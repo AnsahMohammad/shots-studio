@@ -33,7 +33,7 @@ void main() async {
       // Initialize display refresh rate detection and optimization
       await DisplayUtils.initializeHighRefreshRate();
 
-      // Initialize Analytics (PostHog)
+      // Initialize Analytics
       await AnalyticsService().initialize();
 
       // Optimize image cache for better memory management

@@ -777,7 +777,7 @@ class ScreenshotAnalysisService extends AIService {
       final analyticsService = AnalyticsService();
       final deviceInfo = await analyticsService.getDeviceInfo();
       final devicePlatform = deviceInfo['platform'] ?? 'unknown';
-      final deviceModel = deviceInfo['model'];
+      final deviceModel = deviceInfo['model'] ?? 'unknown';
 
       // Log Gemma processing time analytics
       await analyticsService.logGemmaProcessingTime(

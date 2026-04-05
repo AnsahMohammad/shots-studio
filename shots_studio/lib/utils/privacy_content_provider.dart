@@ -104,7 +104,7 @@ class PrivacyContentProvider {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  "Local AI Processing (Gemma)",
+                  "Local AI Processing",
                   style: TextStyle(
                     color: theme.colorScheme.primary,
                     fontWeight: FontWeight.bold,
@@ -212,7 +212,7 @@ class PrivacyContentProvider {
             ),
             const SizedBox(height: 12),
             Text(
-              "What We MAY Collect (Optional & Anonymous):",
+              "What We MAY Collect (Anonymous):",
               style: TextStyle(
                 color: theme.colorScheme.primary,
                 fontWeight: FontWeight.bold,
@@ -220,10 +220,7 @@ class PrivacyContentProvider {
             ),
             const SizedBox(height: 6),
             Text(
-              "• Anonymous usage patterns and feature interactions\n"
-              "• Performance metrics and crash reports\n"
-              "• General app usage statistics for improvement purposes\n"
-              "• No personally identifiable information is ever collected",
+              "• App crash reports\n",
               style: TextStyle(
                 color: theme.colorScheme.onSurfaceVariant,
                 height: 1.3,
@@ -245,7 +242,8 @@ class PrivacyContentProvider {
       ),
       const SizedBox(height: 8),
       Text(
-        "When using cloud AI features, your data may be processed by:",
+        "When using Gemini AI features, your data may be processed by "
+        "Google according to their privacy policy:",
         style: TextStyle(
           color: theme.colorScheme.onSurfaceVariant,
           height: 1.4,

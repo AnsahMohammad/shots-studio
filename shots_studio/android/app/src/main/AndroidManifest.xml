@@ -72,12 +72,7 @@
             android:name="flutterEmbedding"
             android:value="2" />
             
-        <!-- PostHog Configuration -->
-        <meta-data android:name="com.posthog.posthog.API_KEY" android:value="phc_10fnP6axCcilWjYny4YISbDbsKjtpQ0PI0yhXroQtXd" />
-        <meta-data android:name="com.posthog.posthog.POSTHOG_HOST" android:value="https://us.i.posthog.com" />
-        <meta-data android:name="com.posthog.posthog.TRACK_APPLICATION_LIFECYCLE_EVENTS" android:value="false" />
-        <meta-data android:name="com.posthog.posthog.OPT_OUT" android:value="true" />
-        <meta-data android:name="com.posthog.posthog.DEBUG" android:value="true" />
+
             
         <!-- Background service for AI processing -->
         <service

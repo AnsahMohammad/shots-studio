@@ -45,13 +45,6 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<key>com.posthog.posthog.API_KEY</key>
-	<string>phc_10fnP6axCcilWjYny4YISbDbsKjtpQ0PI0yhXroQtXd</string>
-	<key>com.posthog.posthog.POSTHOG_HOST</key>
-	<string>https://us.i.posthog.com</string>
-	<key>com.posthog.posthog.CAPTURE_APPLICATION_LIFECYCLE_EVENTS</key>
-	<false/>
-	<key>com.posthog.posthog.OPT_OUT</key>
-	<true/>
+
 </dict>
 </plist>

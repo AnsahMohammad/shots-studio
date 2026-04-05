@@ -195,99 +195,100 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
 
                       const SizedBox(height: 20),
 
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SwitchListTile(
-                              secondary: Icon(
-                                Icons.analytics_outlined,
-                                color: theme.colorScheme.primary,
-                              ),
-                              title: Text(
-                                'Analytics & Telemetry',
-                                style: TextStyle(
-                                  color: theme.colorScheme.primary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              subtitle: Text(
-                                _analyticsEnabled
-                                    ? 'Analytics and telemetry enabled'
-                                    : 'Help improve the app by sharing anonymous usage data',
-                                style: TextStyle(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              value: _analyticsEnabled,
-                              activeThumbColor: theme.colorScheme.primary,
-                              onChanged: (bool value) {
-                                setState(() {
-                                  _analyticsEnabled = value;
-                                });
-                                _saveAnalyticsEnabled(value);
+                      // Commented out analytics opt-in/opt-out
+                      // Container(
+                      //   padding: const EdgeInsets.all(16),
+                      //   decoration: BoxDecoration(
+                      //     color: theme.colorScheme.primaryContainer,
+                      //     borderRadius: BorderRadius.circular(12),
+                      //   ),
+                      //   child: Column(
+                      //     crossAxisAlignment: CrossAxisAlignment.start,
+                      //     children: [
+                      //       SwitchListTile(
+                      //         secondary: Icon(
+                      //           Icons.analytics_outlined,
+                      //           color: theme.colorScheme.primary,
+                      //         ),
+                      //         title: Text(
+                      //           'Analytics & Telemetry',
+                      //           style: TextStyle(
+                      //             color: theme.colorScheme.primary,
+                      //             fontWeight: FontWeight.bold,
+                      //           ),
+                      //         ),
+                      //         subtitle: Text(
+                      //           _analyticsEnabled
+                      //               ? 'Analytics and telemetry enabled'
+                      //               : 'Help improve the app by sharing anonymous usage data',
+                      //           style: TextStyle(
+                      //             color: theme.colorScheme.onSurfaceVariant,
+                      //           ),
+                      //         ),
+                      //         value: _analyticsEnabled,
+                      //         activeThumbColor: theme.colorScheme.primary,
+                      //         onChanged: (bool value) {
+                      //           setState(() {
+                      //             _analyticsEnabled = value;
+                      //           });
+                      //           _saveAnalyticsEnabled(value);
 
-                                // Track analytics for analytics setting (meta-analytics!)
-                                AnalyticsService().logFeatureUsed(
-                                  'settings_analytics_${value ? 'enabled' : 'disabled'}',
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 8),
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                left: 16.0,
-                                right: 16.0,
-                              ),
-                              child: Text(
-                                "Anonymous usage analytics help us improve the app experience. This feature is completely optional and can be disabled at any time. For more details, you can inspect the source code of our analytics implementation here: ",
-                                style: TextStyle(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                left: 16.0,
-                                right: 16.0,
-                                top: 4.0,
-                              ),
-                              child: GestureDetector(
-                                onTap: () async {
-                                  const url =
-                                      'https://github.com/AnsahMohammad/shots-studio/blob/main/shots_studio/lib/services/analytics/posthog_analytics_service.dart';
-                                  final Uri uri = Uri.parse(url);
-                                  if (await canLaunchUrl(uri)) {
-                                    await launchUrl(
-                                      uri,
-                                      mode: LaunchMode.externalApplication,
-                                    );
-                                  } else {
-                                    SnackbarService().showError(
-                                      context,
-                                      'Could not launch $url',
-                                    );
-                                  }
-                                },
-                                child: Text(
-                                  'Analytics Source Code',
-                                  style: TextStyle(
-                                    color: theme.colorScheme.primary,
-                                    decoration: TextDecoration.underline,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      //           // Track analytics for analytics setting (meta-analytics!)
+                      //           AnalyticsService().logFeatureUsed(
+                      //             'settings_analytics_${value ? 'enabled' : 'disabled'}',
+                      //           );
+                      //         },
+                      //       ),
+                      //       const SizedBox(height: 8),
+                      //       Padding(
+                      //         padding: const EdgeInsets.only(
+                      //           left: 16.0,
+                      //           right: 16.0,
+                      //         ),
+                      //         child: Text(
+                      //           "Anonymous usage analytics help us improve the app experience. This feature is completely optional and can be disabled at any time. For more details, you can inspect the source code of our analytics implementation here: ",
+                      //           style: TextStyle(
+                      //             color: theme.colorScheme.onSurfaceVariant,
+                      //             fontSize: 12,
+                      //           ),
+                      //         ),
+                      //       ),
+                      //       Padding(
+                      //         padding: const EdgeInsets.only(
+                      //           left: 16.0,
+                      //           right: 16.0,
+                      //           top: 4.0,
+                      //         ),
+                      //         child: GestureDetector(
+                      //           onTap: () async {
+                      //             const url =
+                      //                 'https://github.com/AnsahMohammad/shots-studio/blob/main/shots_studio/lib/services/analytics/analytics_service.dart';
+                      //             final Uri uri = Uri.parse(url);
+                      //             if (await canLaunchUrl(uri)) {
+                      //               await launchUrl(
+                      //                 uri,
+                      //                 mode: LaunchMode.externalApplication,
+                      //               );
+                      //             } else {
+                      //               SnackbarService().showError(
+                      //                 context,
+                      //                 'Could not launch $url',
+                      //               );
+                      //             }
+                      //           },
+                      //           child: Text(
+                      //             'Analytics Source Code',
+                      //             style: TextStyle(
+                      //               color: theme.colorScheme.primary,
+                      //               decoration: TextDecoration.underline,
+                      //               fontSize: 12,
+                      //             ),
+                      //           ),
+                      //         ),
+                      //       ),
+                      //     ],
+                      //   ),
+                      // ),
 
                       // Additional spacing and information
                       if (!widget.isAcknowledgementRequired) ...[
