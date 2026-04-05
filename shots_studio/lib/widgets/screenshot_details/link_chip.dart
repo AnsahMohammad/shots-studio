@@ -7,11 +7,7 @@ class LinkChip extends StatelessWidget {
   final String link;
   final BuildContext parentContext;
 
-  const LinkChip({
-    super.key,
-    required this.link,
-    required this.parentContext,
-  });
+  const LinkChip({super.key, required this.link, required this.parentContext});
 
   @override
   Widget build(BuildContext context) {

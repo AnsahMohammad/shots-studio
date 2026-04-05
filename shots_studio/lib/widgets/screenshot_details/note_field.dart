@@ -24,9 +24,10 @@ class NoteField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AnimatedSize(
-          duration: enhancedAnimationsEnabled
-              ? const Duration(milliseconds: 300)
-              : const Duration(milliseconds: 150),
+          duration:
+              enhancedAnimationsEnabled
+                  ? const Duration(milliseconds: 300)
+                  : const Duration(milliseconds: 150),
           curve: Curves.easeInOut,
           child: TextField(
             controller: controller,

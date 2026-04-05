@@ -26,9 +26,7 @@ class BackupRestoreCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: Container(
         decoration: BoxDecoration(
-          border: Border.all(
-            color: theme.colorScheme.outline.withOpacity(0.5),
-          ),
+          border: Border.all(color: theme.colorScheme.outline.withOpacity(0.5)),
           borderRadius: BorderRadius.circular(12.0),
         ),
         padding: const EdgeInsets.all(16.0),
@@ -140,39 +138,43 @@ class BackupRestoreCard extends StatelessWidget {
     // Show confirmation dialog first
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              Icons.warning_amber_rounded,
-              color: Theme.of(dialogContext).colorScheme.error,
+      builder:
+          (dialogContext) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: Theme.of(dialogContext).colorScheme.error,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  AppLocalizations.of(dialogContext)?.restoreData ??
+                      'Restore Data',
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Text(
-              AppLocalizations.of(dialogContext)?.restoreData ?? 'Restore Data',
+            content: Text(
+              AppLocalizations.of(dialogContext)?.restoreWarning ??
+                  'This will replace all your current data with the backup. Make sure you have a current backup before proceeding.\n\nImages that no longer exist on your device will be skipped.',
             ),
-          ],
-        ),
-        content: Text(
-          AppLocalizations.of(dialogContext)?.restoreWarning ??
-              'This will replace all your current data with the backup. Make sure you have a current backup before proceeding.\n\nImages that no longer exist on your device will be skipped.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(AppLocalizations.of(dialogContext)?.cancel ?? 'Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(
-              AppLocalizations.of(dialogContext)?.restore ?? 'Restore',
-              style: TextStyle(
-                color: Theme.of(dialogContext).colorScheme.error,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(
+                  AppLocalizations.of(dialogContext)?.cancel ?? 'Cancel',
+                ),
               ),
-            ),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text(
+                  AppLocalizations.of(dialogContext)?.restore ?? 'Restore',
+                  style: TextStyle(
+                    color: Theme.of(dialogContext).colorScheme.error,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
 
     if (confirmed != true) return;

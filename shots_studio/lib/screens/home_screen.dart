@@ -111,8 +111,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _loadDataFromPrefs();
     _loadSettings();
 
-
-
     if (!kIsWeb) {
       _setupBackgroundServiceListeners();
     }
@@ -223,8 +221,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       ),
     );
   }
-
-
 
   /// Setup listeners for background service events
   void _setupBackgroundServiceListeners() {

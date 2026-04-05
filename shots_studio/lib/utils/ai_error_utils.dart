@@ -28,8 +28,7 @@ class AIErrorHandler {
       setProcessingTerminated(true);
 
       showMessage?.call(
-        message:
-            'API quota exceeded. Please change your AI model in settings.',
+        message: 'API quota exceeded. Please change your AI model in settings.',
         backgroundColor: Colors.red,
         duration: const Duration(seconds: 5),
       );
@@ -124,8 +123,7 @@ class AIErrorHandler {
   static bool _isQuotaExceededError(Map<String, dynamic> response) {
     final statusCode = response['statusCode'];
     final error = response['error']?.toString() ?? '';
-    return statusCode == 429 ||
-        error.contains('exceeded your current quota');
+    return statusCode == 429 || error.contains('exceeded your current quota');
   }
 
   /// Gets appropriate error message for different error types
@@ -145,7 +143,13 @@ class AIErrorHandler {
   }
 }
 
-enum AIErrorType { invalidApiKey, networkError, quotaExceeded, timeout, genericError }
+enum AIErrorType {
+  invalidApiKey,
+  networkError,
+  quotaExceeded,
+  timeout,
+  genericError,
+}
 
 class AIErrorResult {
   final bool shouldTerminate;

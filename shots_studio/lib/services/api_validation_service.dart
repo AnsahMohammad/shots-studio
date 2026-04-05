@@ -118,9 +118,7 @@ class ApiValidationService {
     final url = Uri.parse('$_baseUrl?key=$apiKey');
 
     try {
-      final response = await http
-          .get(url)
-          .timeout(const Duration(seconds: 10));
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
 
       debugPrint('API validation status: ${response.statusCode}');
 

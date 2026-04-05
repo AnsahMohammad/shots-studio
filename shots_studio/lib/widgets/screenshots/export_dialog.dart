@@ -5,9 +5,7 @@ import 'package:shots_studio/services/analytics/analytics_service.dart';
 class ExportOptions {
   final bool asZip;
 
-  ExportOptions({
-    required this.asZip,
-  });
+  ExportOptions({required this.asZip});
 }
 
 /// Dialog for selecting export options (ZIP, Cut/Copy)
@@ -35,7 +33,11 @@ class _ExportDialogState extends State<ExportDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          Icon(Icons.share_outlined, color: theme.colorScheme.primary, size: 24),
+          Icon(
+            Icons.share_outlined,
+            color: theme.colorScheme.primary,
+            size: 24,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -58,7 +60,7 @@ class _ExportDialogState extends State<ExportDialog> {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // ZIP option
           InkWell(
             onTap: () {
@@ -104,9 +106,9 @@ class _ExportDialogState extends State<ExportDialog> {
               ),
             ),
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           // Info about file export (only when not ZIP)
           AnimatedOpacity(
             opacity: _exportAsZip ? 0.4 : 1.0,
@@ -160,9 +162,7 @@ class _ExportDialogState extends State<ExportDialog> {
         ElevatedButton.icon(
           onPressed: () {
             AnalyticsService().logFeatureUsed('export_dialog_confirmed');
-            Navigator.of(context).pop(ExportOptions(
-              asZip: _exportAsZip,
-            ));
+            Navigator.of(context).pop(ExportOptions(asZip: _exportAsZip));
           },
           icon: Icon(
             _exportAsZip ? Icons.archive_outlined : Icons.folder_open,

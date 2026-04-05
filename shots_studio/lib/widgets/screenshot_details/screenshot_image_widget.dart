@@ -57,8 +57,11 @@ class ScreenshotImageWidget extends StatelessWidget {
     return imageWidget;
   }
 
-  Widget _buildErrorWidget(BuildContext context, String message,
-      {String? subtitle}) {
+  Widget _buildErrorWidget(
+    BuildContext context,
+    String message, {
+    String? subtitle,
+  }) {
     return Container(
       color: Theme.of(context).colorScheme.surface,
       child: Column(
@@ -84,10 +87,9 @@ class ScreenshotImageWidget extends StatelessWidget {
               subtitle,
               style: TextStyle(
                 fontSize: 12,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurfaceVariant
-                    .withValues(alpha: 0.7),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
               ),
               textAlign: TextAlign.center,
             ),

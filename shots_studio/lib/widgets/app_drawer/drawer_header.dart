@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import '../../utils/splash_texts.dart';
 import '../../services/sponsorship_service.dart';
 import '../../services/analytics/analytics_service.dart';
 import '../sponsorship/sponsorship_dialog.dart';
@@ -15,33 +16,25 @@ class _AppDrawerHeaderState extends State<AppDrawerHeader>
     with TickerProviderStateMixin {
   late AnimationController _heartbeatController;
   late AnimationController _pulseController;
-  late AnimationController _textController;
   late Animation<double> _heartbeatAnimation;
   late Animation<double> _pulseAnimation;
-  late Animation<double> _textAnimation;
 
   int _currentTextIndex = 0;
   bool _showSupportButton = false;
 
   String _getCurrentGiftText(BuildContext context) {
-    switch (_currentTextIndex) {
-      case 0:
-        return 'Gift \$10';
-      case 1:
-        return 'Gift \$15';
-      case 2:
-        return 'Gift \$20';
-      default:
-        return 'Gift \$10';
-    }
+    return SplashTexts.items[_currentTextIndex].text;
   }
 
   @override
   void initState() {
     super.initState();
 
-    // Random 4/10 (40%) chance to show support button
-    _showSupportButton = Random().nextInt(10) < 4;
+    // Random 2/10 (20%) chance to show support button
+    _showSupportButton = Random().nextInt(100) < 20;
+
+    // Pick a random gift text index
+    _currentTextIndex = Random().nextInt(SplashTexts.items.length);
 
     // Log analytics for support button visibility
     if (_showSupportButton) {
@@ -67,42 +60,15 @@ class _AppDrawerHeaderState extends State<AppDrawerHeader>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    // Text shifting animation
-    _textController = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    );
-    _textAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _textController, curve: Curves.easeInOut),
-    );
-
     // Start animations
     _heartbeatController.repeat(reverse: true);
     _pulseController.repeat(reverse: true);
-
-    // Text shifting with listener
-    _textController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        setState(() {
-          _currentTextIndex =
-              (_currentTextIndex + 1) % 3; // 3 gift text options
-        });
-        _textController.reset();
-        Future.delayed(const Duration(milliseconds: 1500), () {
-          if (mounted) {
-            _textController.forward();
-          }
-        });
-      }
-    });
-    _textController.forward();
   }
 
   @override
   void dispose() {
     _heartbeatController.dispose();
     _pulseController.dispose();
-    _textController.dispose();
     super.dispose();
   }
 
@@ -112,9 +78,8 @@ class _AppDrawerHeaderState extends State<AppDrawerHeader>
     AnalyticsService().logFeatureAdopted('support_button_interaction');
 
     // Log which text was showing when clicked
-    final giftTexts = ['support_us', 'gift_dollar1', 'gift_dollar5'];
     AnalyticsService().logFeatureUsed(
-      'support_clicked_on_${giftTexts[_currentTextIndex]}',
+      'support_clicked_on_${SplashTexts.items[_currentTextIndex].analyticsKey}',
     );
 
     final sponsorshipOptions = SponsorshipService.getAllOptions();
@@ -144,25 +109,47 @@ class _AppDrawerHeaderState extends State<AppDrawerHeader>
             mainAxisAlignment: MainAxisAlignment.end,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // App icon with theme coloring
-              Container(
-                width: 48,
-                height: 48,
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onPrimaryContainer.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ColorFiltered(
-                  colorFilter: ColorFilter.mode(
-                    theme.colorScheme.onPrimaryContainer,
-                    BlendMode.srcIn,
-                  ),
-                  child: Image.asset(
-                    'assets/icon/ic_launcher_monochrome.png',
-                    fit: BoxFit.contain,
-                  ),
-                ),
+              // App icon with heartbeat animation
+              AnimatedBuilder(
+                animation: Listenable.merge([
+                  _heartbeatAnimation,
+                  _pulseAnimation,
+                ]),
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _heartbeatAnimation.value,
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.onPrimaryContainer.withOpacity(
+                          0.1,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: theme.colorScheme.primary.withOpacity(
+                              0.35 * _pulseAnimation.value,
+                            ),
+                            blurRadius: 18 * _pulseAnimation.value,
+                            spreadRadius: 4 * _pulseAnimation.value,
+                          ),
+                        ],
+                      ),
+                      child: ColorFiltered(
+                        colorFilter: ColorFilter.mode(
+                          theme.colorScheme.onPrimaryContainer,
+                          BlendMode.srcIn,
+                        ),
+                        child: Image.asset(
+                          'assets/icon/ic_launcher_monochrome.png',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
               Text(
                 'Shots Studio',
@@ -183,92 +170,25 @@ class _AppDrawerHeaderState extends State<AppDrawerHeader>
             ],
           ),
 
-          // Beautiful Support Button (Top Right) - Only shown 20% of the time
+          // Splash text (top-right) - plain rotated text, tappable when support button is shown
           if (_showSupportButton)
             Positioned(
               top: 8,
-              right: 8,
-              child: AnimatedBuilder(
-                animation: Listenable.merge([
-                  _heartbeatAnimation,
-                  _pulseAnimation,
-                  _textAnimation,
-                ]),
-                builder: (context, child) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: theme.colorScheme.primary.withOpacity(
-                            0.4 * _pulseAnimation.value,
-                          ),
-                          blurRadius: 20 * _pulseAnimation.value,
-                          spreadRadius: 5 * _pulseAnimation.value,
-                        ),
-                      ],
+              right: 0,
+              child: GestureDetector(
+                onTap: _showSponsorshipDialog,
+                child: Transform.rotate(
+                  angle: -0.40, // ~-30 degrees in radians
+                  child: Text(
+                    _getCurrentGiftText(context),
+                    style: TextStyle(
+                      color: theme.colorScheme.primary.withOpacity(0.90),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
                     ),
-                    child: Material(
-                      borderRadius: BorderRadius.circular(20),
-                      color: theme.colorScheme.onPrimaryContainer.withOpacity(
-                        0.1,
-                      ),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(20),
-                        onTap: _showSponsorshipDialog,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Transform.scale(
-                                scale: _heartbeatAnimation.value,
-                                child: Icon(
-                                  Icons.favorite,
-                                  color: theme.colorScheme.onPrimaryContainer,
-                                  size: 18,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 400),
-                                transitionBuilder: (
-                                  Widget child,
-                                  Animation<double> animation,
-                                ) {
-                                  return FadeTransition(
-                                    opacity: animation,
-                                    child: SlideTransition(
-                                      position: Tween<Offset>(
-                                        begin: const Offset(0.0, 0.3),
-                                        end: Offset.zero,
-                                      ).animate(animation),
-                                      child: child,
-                                    ),
-                                  );
-                                },
-                                child: Text(
-                                  _getCurrentGiftText(context),
-                                  key: ValueKey<String>(
-                                    _getCurrentGiftText(context),
-                                  ),
-                                  style: TextStyle(
-                                    color: theme.colorScheme.primary,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
+                  ),
+                ),
               ),
             ),
         ],

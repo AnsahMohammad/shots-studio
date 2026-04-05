@@ -25,9 +25,10 @@ class ToolbarButton extends StatelessWidget {
         width: 44,
         margin: const EdgeInsets.symmetric(horizontal: 2),
         decoration: BoxDecoration(
-          color: isHighlighted
-              ? Theme.of(context).colorScheme.primaryContainer
-              : Colors.transparent,
+          color:
+              isHighlighted
+                  ? Theme.of(context).colorScheme.primaryContainer
+                  : Colors.transparent,
           borderRadius: BorderRadius.circular(22),
         ),
         child: Material(
@@ -38,14 +39,14 @@ class ToolbarButton extends StatelessWidget {
             child: Icon(
               icon,
               size: 22,
-              color: isHighlighted
-                  ? Theme.of(context).colorScheme.onPrimaryContainer
-                  : (onPressed == null
-                      ? Theme.of(context)
-                          .colorScheme
-                          .onSurfaceVariant
-                          .withValues(alpha: 0.4)
-                      : Theme.of(context).colorScheme.onSurfaceVariant),
+              color:
+                  isHighlighted
+                      ? Theme.of(context).colorScheme.onPrimaryContainer
+                      : (onPressed == null
+                          ? Theme.of(
+                            context,
+                          ).colorScheme.onSurfaceVariant.withValues(alpha: 0.4)
+                          : Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ),
         ),
