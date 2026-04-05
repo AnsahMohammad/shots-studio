@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../services/sponsorship_service.dart';
+
 import '../../services/analytics/analytics_service.dart';
 import '../../services/update_checker_service.dart';
 import '../../services/snackbar_service.dart';
@@ -227,14 +227,10 @@ class AboutSection extends StatelessWidget {
   }
 
   void _showSponsorshipDialog(BuildContext context) {
-    final sponsorshipOptions = SponsorshipService.getAllOptions();
-
     // Route to fullscreen dialog
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder:
-            (context) =>
-                SponsorshipDialog(sponsorshipOptions: sponsorshipOptions),
+        builder: (context) => const SponsorshipDialog(),
         fullscreenDialog: true,
       ),
     );

@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../models/sponsorship_option.dart';
 import '../../services/analytics/analytics_service.dart';
-import '../../l10n/app_localizations.dart';
 
 class SponsorshipDialog extends StatelessWidget {
-  final List<SponsorshipOption> sponsorshipOptions;
+  const SponsorshipDialog({super.key});
 
-  const SponsorshipDialog({super.key, required this.sponsorshipOptions});
+  static const String _githubProfileUrl = 'https://github.com/AnsahMohammad/';
+  static const String _githubRepoUrl =
+      'https://github.com/AnsahMohammad/shots-studio';
+  static const String _githubIssuesUrl =
+      'https://github.com/AnsahMohammad/shots-studio/issues';
 
   Future<void> _launchURL(String urlString) async {
-    // Log analytics for sponsorship URL clicks
-    AnalyticsService().logFeatureUsed('sponsorship_url_clicked');
-    AnalyticsService().logFeatureUsed('external_sponsorship_link');
-
+    AnalyticsService().logFeatureUsed('support_url_clicked');
     final Uri url = Uri.parse(urlString);
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       throw Exception('Could not launch $urlString');
@@ -23,30 +22,7 @@ class SponsorshipDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final enabledOptions =
-        sponsorshipOptions.where((option) => option.enabled).toList();
-    final disabledOptions =
-        sponsorshipOptions.where((option) => !option.enabled).toList();
     final isDark = theme.brightness == Brightness.dark;
-
-    if (sponsorshipOptions.isEmpty) {
-      return AlertDialog(
-        title: Text(
-          AppLocalizations.of(context)?.support ?? 'Support',
-          style: theme.textTheme.headlineSmall,
-        ),
-        content: Text(
-          AppLocalizations.of(context)?.noSponsorshipOptions ??
-              'No sponsorship options are currently available.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context)?.close ?? 'Close'),
-          ),
-        ],
-      );
-    }
 
     return Dialog.fullscreen(
       child: Container(
@@ -74,15 +50,12 @@ class SponsorshipDialog extends StatelessWidget {
                 color: theme.colorScheme.onSurface,
               ),
               onPressed: () {
-                // Log analytics for sponsorship dialog closed
-                AnalyticsService().logFeatureUsed('sponsorship_dialog_closed');
-
+                AnalyticsService().logFeatureUsed('support_dialog_closed');
                 Navigator.pop(context);
               },
             ),
             title: Text(
-              AppLocalizations.of(context)?.supportTheProject ??
-                  'Support the project',
+              'Support the Project',
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: theme.colorScheme.onSurface,
@@ -95,238 +68,76 @@ class SponsorshipDialog extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Hero Section with better visual hierarchy
-                Container(
-                  margin: const EdgeInsets.fromLTRB(24, 8, 24, 40),
-                  child: Column(
-                    children: [
-                      // Main hero container
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(32),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer.withValues(
-                            alpha: 0.3,
-                          ),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: theme.colorScheme.outline.withValues(
-                              alpha: 0.1,
-                            ),
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            // Icon with glow effect
-                            Container(
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary,
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: theme.colorScheme.primary.withValues(
-                                      alpha: 0.3,
-                                    ),
-                                    blurRadius: 20,
-                                    spreadRadius: 0,
-                                  ),
-                                ],
-                              ),
-                              child: Icon(
-                                Icons.favorite_rounded,
-                                color: theme.colorScheme.onPrimary,
-                                size: 32,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            Text(
-                              AppLocalizations.of(
-                                    context,
-                                  )?.supportShotsStudio ??
-                                  'Support Shots Studio',
-                              style: theme.textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              AppLocalizations.of(
-                                    context,
-                                  )?.supportDescription ??
-                                  'Your support helps keep this project alive and enables us to add amazing new features',
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                                height: 1.5,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                // Hero section
+                _buildHeroSection(context, theme),
+
+                const SizedBox(height: 12),
+
+                // "How you can help" section header
+                _buildSectionHeader(context, theme, 'Ways to Support'),
+
+                const SizedBox(height: 16),
+
+                // Support cards
+                _buildSupportCard(
+                  context,
+                  theme: theme,
+                  icon: Icons.star_rounded,
+                  iconColor: theme.colorScheme.tertiary.withValues(alpha: 0.5),
+                  title: 'Star us on GitHub',
+                  subtitle:
+                      'Help us reach more developers by giving the repo a ⭐',
+                  onTap: () {
+                    AnalyticsService().logFeatureUsed('support_star_github');
+                    Navigator.pop(context);
+                    _launchURL(_githubRepoUrl);
+                  },
                 ),
 
-                // Available options section
-                if (enabledOptions.isNotEmpty) ...[
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 4,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          AppLocalizations.of(context)?.availableNow ??
-                              'Available now',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  ...enabledOptions.map(
-                    (option) => Container(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 6,
-                      ),
-                      child: _buildModernOptionCard(
-                        context,
-                        option,
-                        isEnabled: true,
-                      ),
-                    ),
-                  ),
-                ],
-
-                // Coming soon section
-                if (disabledOptions.isNotEmpty) ...[
-                  const SizedBox(height: 40),
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 4,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          AppLocalizations.of(context)?.comingSoon ??
-                              'Coming soon',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  ...disabledOptions.map(
-                    (option) => Container(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 6,
-                      ),
-                      child: _buildModernOptionCard(
-                        context,
-                        option,
-                        isEnabled: false,
-                      ),
-                    ),
-                  ),
-                ],
-
-                // Bottom spacing and footer
-                const SizedBox(height: 40),
-                Container(
-                  margin: const EdgeInsets.all(24),
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color:
-                        isDark
-                            ? theme.colorScheme.onSecondary
-                            : theme.colorScheme.onSecondary,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: theme.colorScheme.outline.withValues(alpha: 0.1),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.handshake_rounded,
-                        color: theme.colorScheme.primary,
-                        size: 28,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        AppLocalizations.of(
-                              context,
-                            )?.everyContributionMatters ??
-                            'Every contribution matters',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        AppLocalizations.of(
-                              context,
-                            )?.supportFooterDescription ??
-                            'Thank you for considering supporting this project. Your contribution helps us maintain and improve Shots Studio. For special arrangements or international wire transfers, please reach out via GitHub.',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          height: 1.5,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 12),
-                      TextButton(
-                        onPressed: () {
-                          // Log analytics for GitHub contact button
-                          AnalyticsService().logFeatureUsed(
-                            'github_contact_clicked',
-                          );
-                          AnalyticsService().logFeatureUsed(
-                            'sponsorship_contact_button',
-                          );
-
-                          _launchURL('https://github.com/AnsahMohammad');
-                        },
-                        child: Text(
-                          AppLocalizations.of(context)?.contactOnGitHub ??
-                              'Contact on GitHub',
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                _buildSupportCard(
+                  context,
+                  theme: theme,
+                  icon: Icons.share_rounded,
+                  iconColor: theme.colorScheme.secondary.withValues(alpha: 0.5),
+                  title: 'Spread the Word',
+                  subtitle:
+                      'Share Shots Studio with your peers or on social media',
+                  onTap: null, // No URL needed, just informational
                 ),
+
+                _buildSupportCard(
+                  context,
+                  theme: theme,
+                  icon: Icons.code_rounded,
+                  iconColor: theme.colorScheme.tertiary.withValues(alpha: 0.5),
+                  title: 'Contribute',
+                  subtitle:
+                      'Found a bug? Have a feature idea? Open an issue or submit a Pull Request on GitHub',
+                  onTap: () {
+                    AnalyticsService().logFeatureUsed('support_contribute');
+                    Navigator.pop(context);
+                    _launchURL(_githubIssuesUrl);
+                  },
+                ),
+
+                _buildSupportCard(
+                  context,
+                  theme: theme,
+                  icon: Icons.feedback_rounded,
+                  iconColor: theme.colorScheme.secondary.withValues(alpha: 0.5),
+                  title: 'Feedback',
+                  subtitle:
+                      'Tell us how you use the app! Your insights help shape the future of the tool',
+                  onTap: () {
+                    AnalyticsService().logFeatureUsed('support_feedback');
+                    Navigator.pop(context);
+                    _launchURL(_githubIssuesUrl);
+                  },
+                ),
+
+                // Footer
+                const SizedBox(height: 32),
+                _buildFooter(context, theme, isDark),
                 const SizedBox(height: 24),
               ],
             ),
@@ -336,34 +147,153 @@ class SponsorshipDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildModernOptionCard(
-    BuildContext context,
-    SponsorshipOption option, {
-    required bool isEnabled,
-  }) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+  Widget _buildHeroSection(BuildContext context, ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: theme.colorScheme.outline.withValues(alpha: 0.1),
+          ),
+        ),
+        child: Column(
+          children: [
+            // Heart icon with glow
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                    blurRadius: 20,
+                    spreadRadius: 0,
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.favorite_rounded,
+                color: theme.colorScheme.onPrimary,
+                size: 32,
+              ),
+            ),
+            const SizedBox(height: 24),
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+            // "Made with love" text with clickable author
+            Column(
+              children: [
+                Text(
+                  'Shots Studio is a free and open-source project created and maintained by',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurface,
+                    height: 1.6,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () => _launchURL(_githubProfileUrl),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.person_rounded,
+                          size: 20,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'ansahk',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(
+    BuildContext context,
+    ThemeData theme,
+    String title,
+  ) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 24,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            title,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSupportCard(
+    BuildContext context, {
+    required ThemeData theme,
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    VoidCallback? onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
       child: Card(
         elevation: 0,
         color:
-            isEnabled
-                ? (isDark
-                    ? theme.colorScheme.surfaceContainerHigh.withValues(
-                      alpha: 0.8,
-                    )
-                    : theme.colorScheme.surface)
-                : theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.5),
+            theme.brightness == Brightness.dark
+                ? theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.8)
+                : theme.colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
           side: BorderSide(
-            color:
-                isEnabled
-                    ? theme.colorScheme.primary.withValues(alpha: 0.2)
-                    : theme.colorScheme.outline.withValues(alpha: 0.1),
-            width: isEnabled ? 1.5 : 1,
+            color: theme.colorScheme.primary.withValues(alpha: 0.2),
+            width: 1.5,
           ),
         ),
         child: Material(
@@ -371,124 +301,43 @@ class SponsorshipDialog extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           child: InkWell(
             borderRadius: BorderRadius.circular(20),
-            onTap:
-                isEnabled
-                    ? () {
-                      // Log analytics for sponsorship option click
-                      AnalyticsService().logFeatureUsed(
-                        'sponsorship_option_clicked',
-                      );
-                      AnalyticsService().logFeatureUsed(
-                        'sponsorship_${option.title.toLowerCase().replaceAll(' ', '_')}_clicked',
-                      );
-                      AnalyticsService().logFeatureAdopted(
-                        'sponsorship_engagement',
-                      );
-
-                      Navigator.pop(context);
-                      _launchURL(option.url);
-                    }
-                    : null,
+            onTap: onTap,
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Row(
                 children: [
-                  // Enhanced icon container
+                  // Icon
                   Container(
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color:
-                          isEnabled
-                              ? (option.iconColor ?? theme.colorScheme.primary)
-                                  .withValues(alpha: 0.15)
-                              : theme.colorScheme.onSurface.withValues(
-                                alpha: 0.05,
-                              ),
+                      color: iconColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color:
-                            isEnabled
-                                ? (option.iconColor ??
-                                        theme.colorScheme.primary)
-                                    .withValues(alpha: 0.3)
-                                : theme.colorScheme.outline.withValues(
-                                  alpha: 0.1,
-                                ),
+                        color: iconColor.withValues(alpha: 0.3),
                       ),
                     ),
-                    child: Icon(
-                      option.icon,
-                      color:
-                          isEnabled
-                              ? (option.iconColor ?? theme.colorScheme.primary)
-                              : theme.colorScheme.onSurface.withValues(
-                                alpha: 0.4,
-                              ),
-                      size: 28,
-                    ),
+                    child: Icon(icon, color: iconColor, size: 28),
                   ),
                   const SizedBox(width: 20),
 
-                  // Content area
+                  // Content
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                option.title,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      isEnabled
-                                          ? theme.colorScheme.onSurface
-                                          : theme.colorScheme.onSurface
-                                              .withValues(alpha: 0.6),
-                                ),
-                              ),
-                            ),
-                            if (option.badge != null)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 5,
-                                ),
-                                decoration: BoxDecoration(
-                                  color:
-                                      isEnabled
-                                          ? (option.badgeColor ??
-                                              theme
-                                                  .colorScheme
-                                                  .primaryContainer)
-                                          : theme.colorScheme.onSurface
-                                              .withValues(alpha: 0.06),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  option.badge!,
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color:
-                                        isEnabled
-                                            ? theme
-                                                .colorScheme
-                                                .onPrimaryContainer
-                                            : theme.colorScheme.onSurface
-                                                .withValues(alpha: 0.5),
-                                  ),
-                                ),
-                              ),
-                          ],
+                        Text(
+                          title,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurface,
+                          ),
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          option.subtitle,
+                          subtitle,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant
-                                .withValues(alpha: isEnabled ? 1.0 : 0.5),
+                            color: theme.colorScheme.onSurfaceVariant,
                             height: 1.4,
                           ),
                         ),
@@ -496,36 +345,86 @@ class SponsorshipDialog extends StatelessWidget {
                     ),
                   ),
 
-                  // Trailing indicator
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color:
-                          isEnabled
-                              ? theme.colorScheme.primary.withValues(alpha: 0.1)
-                              : theme.colorScheme.onSurface.withValues(
-                                alpha: 0.05,
-                              ),
-                      borderRadius: BorderRadius.circular(12),
+                  // Arrow (only for tappable cards)
+                  if (onTap != null)
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.arrow_forward_rounded,
+                        color: theme.colorScheme.primary,
+                        size: 20,
+                      ),
                     ),
-                    child: Icon(
-                      isEnabled
-                          ? Icons.arrow_forward_rounded
-                          : Icons.schedule_rounded,
-                      color:
-                          isEnabled
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.onSurface.withValues(
-                                alpha: 0.4,
-                              ),
-                      size: 20,
-                    ),
-                  ),
                 ],
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildFooter(BuildContext context, ThemeData theme, bool isDark) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.onSecondary,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.open_in_new_rounded,
+            color: theme.colorScheme.primary,
+            size: 28,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Visit us on GitHub',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Explore the source code, report issues, or contribute to the project.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          FilledButton.tonal(
+            onPressed: () {
+              AnalyticsService().logFeatureUsed('support_github_repo');
+              _launchURL(_githubRepoUrl);
+            },
+            style: FilledButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.open_in_new_rounded, size: 18),
+                SizedBox(width: 8),
+                Text('Open on GitHub'),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

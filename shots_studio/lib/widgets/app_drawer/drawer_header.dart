@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import '../../utils/splash_texts.dart';
-import '../../services/sponsorship_service.dart';
+
 import '../../services/analytics/analytics_service.dart';
 import '../sponsorship/sponsorship_dialog.dart';
 
@@ -82,14 +82,10 @@ class _AppDrawerHeaderState extends State<AppDrawerHeader>
       'support_clicked_on_${SplashTexts.items[_currentTextIndex].analyticsKey}',
     );
 
-    final sponsorshipOptions = SponsorshipService.getAllOptions();
-
     // Route to fullscreen dialog
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder:
-            (context) =>
-                SponsorshipDialog(sponsorshipOptions: sponsorshipOptions),
+        builder: (context) => const SponsorshipDialog(),
         fullscreenDialog: true,
       ),
     );
