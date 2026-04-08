@@ -66,6 +66,7 @@ class CollectionCategorizationService extends AIService {
     final requestData = prepareCategorizationRequest(
       prompt: _getCategorizationPrompt(collectionName, collectionDescription),
       screenshotMetadata: screenshotMetadata,
+      additionalParams: {'modelName': config.modelName},
     );
 
     // Fallback to old format if provider doesn't support new format

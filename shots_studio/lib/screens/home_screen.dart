@@ -16,7 +16,6 @@ import 'package:shots_studio/screens/search_screen.dart';
 import 'package:shots_studio/screens/reminders_screen.dart';
 import 'package:shots_studio/screens/privacy_screen.dart';
 import 'package:shots_studio/services/share_service.dart';
-import 'package:shots_studio/screens/screenshot_details_screen.dart';
 import 'package:shots_studio/widgets/onboarding/ai_setup_onboarding_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -43,6 +42,8 @@ import 'package:shots_studio/utils/build_source.dart';
 
 import 'package:shots_studio/services/haptic_service.dart';
 import 'package:shots_studio/services/logger_service.dart';
+import 'package:shots_studio/utils/ai_provider_config.dart';
+import 'package:shots_studio/services/openai_compatibility_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(bool)? onAmoledModeChanged;
@@ -80,6 +81,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   String? _apiKey;
   String _selectedModelName = 'gemini-2.5-flash-lite';
+  String _selectedModelProvider = 'gemini';
+  String _openAIBaseUrl = 'http://localhost:11434';
+  String _openAIApiKey = '';
   int _screenshotLimit = 1200;
   int _maxParallelAI = 4;
   bool _devMode = false;
@@ -609,10 +613,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    final selectedModelName =
+      prefs.getString('modelName') ?? 'gemini-2.5-flash-lite';
+    final savedProvider = prefs.getString('modelProvider');
     setState(() {
       _apiKey = prefs.getString('apiKey');
-      _selectedModelName =
-          prefs.getString('modelName') ?? 'gemini-2.5-flash-lite';
+      _selectedModelName = selectedModelName;
+      _selectedModelProvider =
+        savedProvider ?? AIProviderConfig.getProviderForModel(selectedModelName);
+      _openAIBaseUrl =
+        prefs.getString(OpenAICompatibilityService.baseUrlPrefKey) ??
+        'http://localhost:11434';
+      _openAIApiKey =
+        prefs.getString(OpenAICompatibilityService.apiKeyPrefKey) ?? '';
       _screenshotLimit = prefs.getInt('limit') ?? 1200;
       _maxParallelAI = prefs.getInt('maxParallel') ?? 4;
       _devMode = prefs.getBool('dev_mode') ?? false;
@@ -630,9 +643,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _refreshApiKey() async {
     final prefs = await SharedPreferences.getInstance();
     final latestKey = prefs.getString('apiKey');
-    if (latestKey != _apiKey) {
+    final latestOpenAIKey =
+        prefs.getString(OpenAICompatibilityService.apiKeyPrefKey) ?? '';
+    final latestOpenAIBaseUrl =
+        prefs.getString(OpenAICompatibilityService.baseUrlPrefKey) ??
+        'http://localhost:11434';
+    final latestModelProvider =
+        prefs.getString('modelProvider') ??
+        AIProviderConfig.getProviderForModel(_selectedModelName);
+
+    if (latestKey != _apiKey ||
+        latestOpenAIKey != _openAIApiKey ||
+        latestOpenAIBaseUrl != _openAIBaseUrl ||
+        latestModelProvider != _selectedModelProvider) {
       setState(() {
         _apiKey = latestKey;
+        _openAIApiKey = latestOpenAIKey;
+        _openAIBaseUrl = latestOpenAIBaseUrl;
+        _selectedModelProvider = latestModelProvider;
       });
     }
   }
@@ -650,6 +678,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _updateModelName(String newModelName) {
     setState(() {
       _selectedModelName = newModelName;
+    });
+
+    SharedPreferences.getInstance().then((prefs) {
+      final provider =
+          prefs.getString('modelProvider') ??
+          AIProviderConfig.getProviderForModel(newModelName);
+      if (mounted) {
+        setState(() {
+          _selectedModelProvider = provider;
+        });
+      }
     });
   }
 
@@ -803,14 +842,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       return;
     }
 
+    final isLocalModel =
+        _selectedModelName == 'gemma' ||
+        _selectedModelName == 'tesseract-ocr' ||
+        _selectedModelProvider == 'openai_compatible';
+    final effectiveApiKey = _selectedModelProvider == 'openai_compatible'
+        ? _openAIApiKey
+        : (_apiKey ?? '');
+
     // Check for API key
-    //  if gemma or tesseract-ocr skip API key check
-    if (_selectedModelName == 'gemma' ||
-        _selectedModelName == 'tesseract-ocr') {
+    if (isLocalModel) {
       LoggerService.log(
         "Main app: Using ${_selectedModelName} model, no API key required",
       );
-    } else if (_apiKey == null || _apiKey!.isEmpty) {
+    } else if (effectiveApiKey.isEmpty) {
       LoggerService.log("Main app: No API key configured");
       SnackbarService().showError(
         context,
@@ -895,10 +940,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       );
       final success = await backgroundService.startBackgroundProcessing(
         screenshots: unprocessedScreenshots,
-        apiKey: _apiKey ?? '',
+        apiKey: effectiveApiKey,
         modelName: _selectedModelName,
         maxParallel: _maxParallelAI,
         autoAddCollections: autoAddCollections,
+        providerSpecificConfig: {
+          'provider': _selectedModelProvider,
+          'openaiBaseUrl': _openAIBaseUrl,
+          'openaiApiKey': _openAIApiKey,
+        },
       );
       LoggerService.log(
         "Main app: startBackgroundProcessing returned: $success",
@@ -1622,6 +1672,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         !_isProcessingAI &&
         _selectedModelName.toLowerCase() != 'none' &&
         ((_apiKey != null && _apiKey!.isNotEmpty) ||
+        _selectedModelProvider == 'openai_compatible' ||
             _selectedModelName == 'gemma' ||
             _selectedModelName == 'tesseract-ocr')) {
       // Check if there are any unprocessed screenshots

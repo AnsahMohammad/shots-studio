@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shots_studio/l10n/app_localizations.dart';
 import 'package:shots_studio/services/gemma_download_service.dart';
+import 'package:shots_studio/services/openai_compatibility_service.dart';
 import 'package:shots_studio/widgets/ai_settings/index.dart';
 import 'dart:io';
 import 'package:shots_studio/services/logger_service.dart';
@@ -33,6 +34,12 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
   String? _gemmaModelPath;
   bool _isLoadingGemmaModel = false;
   bool _gemmaUseCPU = true; // CPU by default
+  late TextEditingController _openAIBaseUrlController;
+  late TextEditingController _openAIApiKeyController;
+  bool _isLoadingOpenAIModels = false;
+  String? _openAIModelError;
+  List<String> _openAIModels = [];
+  bool _showAllOpenAIModels = false;
 
   final GemmaDownloadService _downloadService = GemmaDownloadService();
 
@@ -40,6 +47,8 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
   void initState() {
     super.initState();
     _selectedModelName = widget.currentModelName;
+    _openAIBaseUrlController = TextEditingController();
+    _openAIApiKeyController = TextEditingController();
     _loadProviderSettings();
 
     // Listen to download service updates
@@ -56,6 +65,8 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
   @override
   void dispose() {
     _downloadService.removeListener(_onDownloadProgressUpdate);
+    _openAIBaseUrlController.dispose();
+    _openAIApiKeyController.dispose();
     super.dispose();
   }
 
@@ -76,6 +87,8 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
 
   Future<void> _loadProviderSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    final cachedOpenAIModels = await OpenAICompatibilityService.getModelsCache();
+
     if (mounted) {
       setState(() {
         for (final provider in AIProviderConfig.getProviders()) {
@@ -98,7 +111,78 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
         _gemmaModelPath = prefs.getString('gemma_model_path');
         // Load saved Gemma CPU/GPU preference (CPU by default)
         _gemmaUseCPU = prefs.getBool('gemma_use_cpu') ?? true;
+
+        _openAIBaseUrlController.text =
+            prefs.getString(OpenAICompatibilityService.baseUrlPrefKey) ??
+            'http://localhost:11434';
+        _openAIApiKeyController.text =
+            prefs.getString(OpenAICompatibilityService.apiKeyPrefKey) ?? '';
+        _openAIModels = cachedOpenAIModels;
       });
+    }
+  }
+
+  Future<void> _saveModelSelection(String modelName, String provider) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('modelName', modelName);
+    await prefs.setString('modelProvider', provider);
+  }
+
+  Future<void> _saveOpenAISettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      OpenAICompatibilityService.baseUrlPrefKey,
+      OpenAICompatibilityService.normalizeBaseUrl(_openAIBaseUrlController.text),
+    );
+    await prefs.setString(
+      OpenAICompatibilityService.apiKeyPrefKey,
+      _openAIApiKeyController.text.trim(),
+    );
+  }
+
+  Future<void> _fetchOpenAIModels() async {
+    if (_isLoadingOpenAIModels) return;
+
+    setState(() {
+      _isLoadingOpenAIModels = true;
+      _openAIModelError = null;
+    });
+
+    try {
+      await _saveOpenAISettings();
+      final models = await OpenAICompatibilityService.fetchModels(
+        baseUrl: _openAIBaseUrlController.text,
+        apiKey: _openAIApiKeyController.text,
+      );
+
+      await OpenAICompatibilityService.saveModelsCache(models);
+
+      if (!mounted) return;
+      setState(() {
+        _openAIModels = models;
+      });
+
+      if (models.isNotEmpty) {
+        final selectedModel = models.contains(_selectedModelName)
+            ? _selectedModelName
+            : models.first;
+        setState(() {
+          _selectedModelName = selectedModel;
+        });
+        await _saveModelSelection(selectedModel, 'openai_compatible');
+        widget.onModelChanged(selectedModel);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _openAIModelError = e.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingOpenAIModels = false;
+        });
+      }
     }
   }
 
@@ -257,9 +341,11 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
         final availableModels = _getAvailableModels();
         if (availableModels.isNotEmpty) {
           final newModel = availableModels.first;
+          final newProvider = _getProviderForModelName(newModel);
           setState(() {
             _selectedModelName = newModel;
           });
+          await _saveModelSelection(newModel, newProvider);
           widget.onModelChanged(newModel);
         }
       }
@@ -457,7 +543,11 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
 
     for (final provider in AIProviderConfig.getProviders()) {
       if (_providerStates[provider] == true) {
-        availableModels.addAll(AIProviderConfig.getModelsForProvider(provider));
+        if (provider == 'openai_compatible') {
+          availableModels.addAll(_openAIModels);
+        } else {
+          availableModels.addAll(AIProviderConfig.getModelsForProvider(provider));
+        }
       }
     }
 
@@ -466,6 +556,177 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
     }
 
     return availableModels;
+  }
+
+  String _getProviderForModelName(String modelName) {
+    if (_openAIModels.contains(modelName)) {
+      return 'openai_compatible';
+    }
+
+    final provider = AIProviderConfig.getProviderForModel(modelName);
+    return provider == 'unknown' ? 'gemini' : provider;
+  }
+
+  List<String> _getDisplayedOpenAIModels() {
+    if (_showAllOpenAIModels) {
+      return _openAIModels;
+    }
+    return _openAIModels
+        .where(OpenAICompatibilityService.isLikelyVisionCapableModel)
+        .toList();
+  }
+
+  Widget _buildOpenAICompatibleSection(ThemeData theme) {
+    final isEnabled = _providerStates['openai_compatible'] ?? false;
+    final displayedModels = _getDisplayedOpenAIModels();
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'OpenAI Compatible Endpoint',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Use any OpenAI-compatible server like Ollama or llama-swap.',
+              style: TextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.justify,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _openAIBaseUrlController,
+              decoration: InputDecoration(
+                labelText: 'Host URL',
+                hintText: 'http://localhost:11434',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onChanged: (_) => _saveOpenAISettings(),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _openAIApiKeyController,
+              decoration: InputDecoration(
+                labelText: 'API Key (optional)',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              obscureText: true,
+              onChanged: (_) => _saveOpenAISettings(),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: isEnabled && !_isLoadingOpenAIModels
+                    ? _fetchOpenAIModels
+                    : null,
+                icon: _isLoadingOpenAIModels
+                    ? SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            theme.colorScheme.onPrimary,
+                          ),
+                        ),
+                      )
+                    : const Icon(Icons.sync, size: 16),
+                label: Text(_isLoadingOpenAIModels ? 'Fetching...' : 'Fetch Models'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: displayedModels.contains(_selectedModelName)
+                  ? _selectedModelName
+                  : null,
+              isExpanded: true,
+              hint: Text(
+                _showAllOpenAIModels
+                    ? 'Select model'
+                    : 'Select vision-capable model',
+              ),
+              items: displayedModels
+                  .map(
+                    (model) => DropdownMenuItem<String>(
+                      value: model,
+                      child: Text(model, overflow: TextOverflow.ellipsis),
+                    ),
+                  )
+                  .toList(),
+              onChanged: isEnabled
+                  ? (value) async {
+                      if (value == null) return;
+                      setState(() {
+                        _selectedModelName = value;
+                      });
+                      await _saveModelSelection(value, 'openai_compatible');
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setString(
+                        OpenAICompatibilityService.selectedModelPrefKey,
+                        value,
+                      );
+                      widget.onModelChanged(value);
+                    }
+                  : null,
+            ),
+            const SizedBox(height: 8),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Show all fetched models'),
+              subtitle: const Text(
+                'Turn off for quick vision-only filtering (best effort).',
+              ),
+              value: _showAllOpenAIModels,
+              onChanged: isEnabled
+                  ? (value) {
+                      setState(() {
+                        _showAllOpenAIModels = value;
+                      });
+                    }
+                  : null,
+            ),
+            if (!_showAllOpenAIModels &&
+                _openAIModels.isNotEmpty &&
+                displayedModels.isEmpty)
+              Text(
+                'No likely vision models detected. Enable "Show all fetched models".',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            if (_openAIModelError != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _openAIModelError!,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _showGemmaWarningDialog(String provider) async {
@@ -695,9 +956,11 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
     if (availableModels.isNotEmpty &&
         !availableModels.contains(_selectedModelName)) {
       final newModel = availableModels.first;
+      final newProvider = _getProviderForModelName(newModel);
       setState(() {
         _selectedModelName = newModel;
       });
+      await _saveModelSelection(newModel, newProvider);
       widget.onModelChanged(newModel);
 
       AnalyticsService().logFeatureUsed(
@@ -803,6 +1066,10 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
             // --- API Key Section ---
             const SizedBox(height: 12),
             ApiKeySection(isGeminiEnabled: _providerStates['gemini'] ?? false),
+
+            // --- OpenAI Compatible Section ---
+            const SizedBox(height: 12),
+            _buildOpenAICompatibleSection(theme),
 
             // --- Local Models Section ---
             const SizedBox(height: 12),
