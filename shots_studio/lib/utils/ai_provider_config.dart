@@ -7,6 +7,7 @@ class AIProviderConfig {
       'gemini-2.5-flash',
       'gemini-2.5-pro',
     ],
+    'openai_compatible': [],
     'gemma': ['gemma'],
     'ocr': ['tesseract-ocr'],
     'none': ['No AI Model'],
@@ -63,6 +64,7 @@ class AIProviderConfig {
   // Preference keys for provider settings
   static const Map<String, String> providerPrefKeys = {
     'gemini': 'ai_provider_gemini_enabled',
+    'openai_compatible': 'ai_provider_openai_compatible_enabled',
     'gemma': 'ai_provider_gemma_enabled',
     'ocr': 'ai_provider_ocr_enabled',
   };

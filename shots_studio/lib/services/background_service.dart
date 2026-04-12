@@ -512,6 +512,8 @@ class BackgroundProcessingService {
       final String modelName = event['modelName'] as String;
       final int maxParallel = event['maxParallel'] as int;
       final String? collectionsJson = event['collections'] as String?;
+        final String? providerConfigJson =
+          event['providerSpecificConfig'] as String?;
 
       // Initialize safety monitoring based on model type
       final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -538,6 +540,14 @@ class BackgroundProcessingService {
                 .toList();
       }
 
+      Map<String, dynamic> providerSpecificConfig = {};
+      if (providerConfigJson != null && providerConfigJson.isNotEmpty) {
+        final decoded = jsonDecode(providerConfigJson);
+        if (decoded is Map<String, dynamic>) {
+          providerSpecificConfig = decoded;
+        }
+      }
+
       int processedCount = 0;
       final totalCount = screenshots.length;
 
@@ -552,6 +562,7 @@ class BackgroundProcessingService {
         apiKey: apiKey,
         modelName: modelName,
         maxParallel: effectiveMaxParallel,
+        providerSpecificConfig: providerSpecificConfig,
       );
 
       final analysisService = ScreenshotAnalysisService(config);
@@ -734,6 +745,7 @@ class BackgroundProcessingService {
     required String modelName,
     required int maxParallel,
     List<Map<String, String?>>? autoAddCollections,
+    Map<String, dynamic>? providerSpecificConfig,
   }) async {
     try {
       final service = FlutterBackgroundService();
@@ -762,6 +774,10 @@ class BackgroundProcessingService {
 
       if (autoAddCollections != null && autoAddCollections.isNotEmpty) {
         payload['collections'] = jsonEncode(autoAddCollections);
+      }
+
+      if (providerSpecificConfig != null && providerSpecificConfig.isNotEmpty) {
+        payload['providerSpecificConfig'] = jsonEncode(providerSpecificConfig);
       }
 
       // Send processing request
