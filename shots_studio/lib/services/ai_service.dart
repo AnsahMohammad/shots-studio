@@ -8,6 +8,7 @@ import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/services/gemma_service.dart';
 import 'package:shots_studio/services/ocr_service.dart';
 import 'package:shots_studio/services/logger_service.dart';
+import 'package:shots_studio/services/openai_compatibility_service.dart';
 
 typedef ShowMessageCallback =
     void Function({
@@ -766,15 +767,181 @@ class OcrAPIProvider implements APIProvider {
   }
 }
 
+// OpenAI-compatible API provider implementation
+class OpenAICompatibleAPIProvider implements APIProvider {
+  @override
+  bool canHandleModel(String modelName) {
+    return modelName.toLowerCase().contains('openai-compatible');
+  }
+
+  @override
+  Future<Map<String, dynamic>> makeRequest(
+    Map<String, dynamic> requestData,
+    AIConfig config,
+  ) async {
+    final providerConfig = config.providerSpecificConfig;
+    final rawBaseUrl =
+        providerConfig['openaiBaseUrl']?.toString() ?? 'http://localhost:11434';
+    final requestApiKey =
+        providerConfig['openaiApiKey']?.toString() ?? config.apiKey;
+    final url = OpenAICompatibilityService.buildChatCompletionsUri(rawBaseUrl);
+
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    if (requestApiKey.trim().isNotEmpty) {
+      headers['Authorization'] = 'Bearer ${requestApiKey.trim()}';
+    }
+
+    try {
+      final response = await http
+          .post(url, headers: headers, body: jsonEncode(requestData))
+          .timeout(Duration(seconds: config.timeoutSeconds));
+
+      final responseJson = jsonDecode(response.body);
+      if (response.statusCode != 200) {
+        return {
+          'error': responseJson['error']?['message'] ?? 'API Error',
+          'statusCode': response.statusCode,
+          'rawResponse': response.body,
+        };
+      }
+
+      final choices = responseJson['choices'] as List?;
+      if (choices == null || choices.isEmpty) {
+        return {
+          'error': 'No response choices from AI',
+          'statusCode': response.statusCode,
+          'rawResponse': response.body,
+        };
+      }
+
+      final message = choices[0]['message'] as Map?;
+      final content = message?['content'];
+      if (content is String) {
+        return {'data': content, 'statusCode': response.statusCode};
+      }
+
+      return {
+        'error': 'No response text from AI',
+        'statusCode': response.statusCode,
+        'rawResponse': response.body,
+      };
+    } on SocketException catch (e) {
+      return {'error': 'Network error: ${e.message}', 'statusCode': 503};
+    } on TimeoutException catch (_) {
+      return {'error': 'Request timed out', 'statusCode': 408};
+    } catch (e) {
+      return {'error': 'Unexpected error: ${e.toString()}', 'statusCode': 500};
+    }
+  }
+
+  @override
+  Map<String, dynamic> prepareScreenshotAnalysisRequest({
+    required String prompt,
+    required List<Map<String, dynamic>> imageData,
+    Map<String, dynamic> additionalParams = const {},
+  }) {
+    final params = Map<String, dynamic>.from(additionalParams);
+    final modelName = params.remove('modelName')?.toString() ?? 'unknown-model';
+
+    final content = <Map<String, dynamic>>[
+      {'type': 'text', 'text': prompt},
+    ];
+
+    for (final imageItem in imageData) {
+      if (imageItem['identifier'] != null) {
+        content.add({
+          'type': 'text',
+          'text': 'Analyzing image: ${imageItem['identifier']}',
+        });
+      }
+
+      final data = imageItem['data'];
+      if (data is Map &&
+          data['data'] != null &&
+          data['mime_type'] != null &&
+          (data['data'] as String).isNotEmpty) {
+        final mimeType = data['mime_type'] as String;
+        final base64Data = data['data'] as String;
+        content.add({
+          'type': 'image_url',
+          'image_url': {'url': 'data:$mimeType;base64,$base64Data'},
+        });
+      }
+    }
+
+    return {
+      'model': modelName,
+      'messages': [
+        {'role': 'user', 'content': content},
+      ],
+      'max_tokens': params['max_tokens'] ?? 4096,
+      ...params,
+    };
+  }
+
+  @override
+  Map<String, dynamic> prepareCategorizationRequest({
+    required String prompt,
+    required List<Map<String, String>> screenshotMetadata,
+    Map<String, dynamic> additionalParams = const {},
+  }) {
+    final params = Map<String, dynamic>.from(additionalParams);
+    final modelName = params.remove('modelName')?.toString() ?? 'unknown-model';
+
+    final metadataText = screenshotMetadata
+        .map(
+          (metadata) =>
+              'ID: ${metadata['id'] ?? 'Unknown'}\n'
+              'Title: ${metadata['title'] ?? 'No title'}\n'
+              'Description: ${metadata['description'] ?? 'No description'}\n'
+              'Tags: ${metadata['tags'] ?? 'No tags'}\n',
+        )
+        .join('\n');
+
+    final userPrompt = screenshotMetadata.isEmpty
+        ? '$prompt\n\nNo eligible screenshots to analyze.'
+        : '$prompt\n\nScreenshots to analyze (${screenshotMetadata.length} total):\n$metadataText';
+
+    return {
+      'model': modelName,
+      'messages': [
+        {
+          'role': 'user',
+          'content': [
+            {'type': 'text', 'text': userPrompt},
+          ],
+        },
+      ],
+      'max_tokens': params['max_tokens'] ?? 4096,
+      ...params,
+    };
+  }
+}
+
 // Factory for API providers
 class APIProviderFactory {
   static final List<APIProvider> _providers = [
     GeminiAPIProvider(),
     GemmaAPIProvider(),
     OcrAPIProvider(),
+    OpenAICompatibleAPIProvider(),
     // Future providers can be added here:
     // LocalLlamaAPIProvider(),
   ];
+
+  static APIProvider? getProviderForConfig(AIConfig config) {
+    final providerKey =
+        config.providerSpecificConfig['provider']?.toString().toLowerCase();
+    if (providerKey == 'openai_compatible') {
+      for (final provider in _providers) {
+        if (provider is OpenAICompatibleAPIProvider) {
+          return provider;
+        }
+      }
+    }
+
+    return getProvider(config.modelName);
+  }
 
   static APIProvider? getProvider(String modelName) {
     for (final provider in _providers) {
@@ -816,7 +983,7 @@ abstract class AIService {
       return {'error': 'Request cancelled by user', 'statusCode': 499};
     }
 
-    final provider = APIProviderFactory.getProvider(config.modelName);
+    final provider = APIProviderFactory.getProviderForConfig(config);
     if (provider == null) {
       return {
         'error': 'No API provider found for model: ${config.modelName}',
@@ -837,7 +1004,7 @@ abstract class AIService {
     required List<Map<String, dynamic>> imageData,
     Map<String, dynamic> additionalParams = const {},
   }) {
-    final provider = APIProviderFactory.getProvider(config.modelName);
+    final provider = APIProviderFactory.getProviderForConfig(config);
     if (provider == null) {
       return null;
     }
@@ -855,7 +1022,7 @@ abstract class AIService {
     required List<Map<String, String>> screenshotMetadata,
     Map<String, dynamic> additionalParams = const {},
   }) {
-    final provider = APIProviderFactory.getProvider(config.modelName);
+    final provider = APIProviderFactory.getProviderForConfig(config);
     if (provider == null) {
       return null;
     }
