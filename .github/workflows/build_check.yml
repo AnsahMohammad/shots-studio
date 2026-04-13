@@ -1,0 +1,51 @@
+name: Build Check
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "shots_studio/**"
+      - ".github/workflows/build_check.yml"
+
+jobs:
+  build:
+    name: Build (${{ matrix.flavor }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - flavor: github
+            dart_define: BUILD_SOURCE=github
+          - flavor: fdroid
+            dart_define: BUILD_SOURCE=fdroid
+          - flavor: playstore
+            dart_define: BUILD_SOURCE=playstore
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: shots_studio/flutter.version
+          channel: "stable"
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+        working-directory: shots_studio
+
+      - name: Build APK (${{ matrix.flavor }})
+        run: >
+          flutter build apk
+          --flavor ${{ matrix.flavor }}
+          --dart-define=${{ matrix.dart_define }}
+        working-directory: shots_studio
