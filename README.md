@@ -3,6 +3,7 @@
 [![Latest Release](https://img.shields.io/github/v/release/AnsahMohammad/shots-studio?label=release)](https://github.com/AnsahMohammad/shots-studio/releases/latest)
 [![Chat](https://img.shields.io/badge/Discussions-Join-blue?logo=github)](https://github.com/AnsahMohammad/shots-studio/discussions)
 [![Downloads](https://img.shields.io/github/downloads/AnsahMohammad/shots-studio/total)](https://github.com/AnsahMohammad/shots-studio/releases)
+[![Build Check](https://github.com/AnsahMohammad/shots-studio/actions/workflows/build_check.yml/badge.svg)](https://github.com/AnsahMohammad/shots-studio/actions/workflows/build_check.yml)
 
 <div align="center">
   <img src="shots_studio/assets/icon/icon.png" width="20%" />
