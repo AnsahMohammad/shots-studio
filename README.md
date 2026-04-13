@@ -109,8 +109,17 @@ More details: [Gemini API Privacy Policy](https://ai.google.dev/gemini-api/terms
 
 ## Contributing
 
-We welcome contributions — code, features, bug fixes, or docs.  
-See `CONTRIBUTING.md` or open a discussion/PR.
+We welcome contributions — code, features, bug fixes, or docs.
+Please open an issue or add a comment under an issue and tag @ansahmohammad to discuss before working on fix.
+
+See `CONTRIBUTING.md`.
+
+## Contributors
+
+A huge thanks to everyone who has contributed to Shots Studio! 🎉
+
+<!-- contributors-readme-start -->
+<!-- contributors-readme-end -->
 
 ---
 

@@ -1,6 +1,6 @@
 # Contributing to Shots Studio
 
-Thank you for your interest in contributing to **Shots Studio**! We welcome contributions of all kinds — whether it's code, bug reports, feature ideas, documentation improvements, or community support.
+Thank you for your interest in contributing to **Shots Studio**! We welcome contributions of all kinds, whether it's code, bug reports, feature ideas, documentation improvements, or community support.
 
 ## Table of Contents
 
@@ -34,7 +34,7 @@ Before you start contributing, please:
 - **Dart SDK**: Included with Flutter
 - **Android Studio/VS Code**: For development and debugging
 - **Git**: For version control
-- **Python 3.x**: For the web component (if working on web features)
+- **Python 3.x**: [deprecated] For the web component (legacy)
 
 ### Setting Up Your Development Environment
 
@@ -83,10 +83,6 @@ This project supports different build flavors for different distribution sources
 - **GitHub**: `flutter run --flavor github --dart-define=BUILD_SOURCE=github`
 - **Play Store**: `flutter run --flavor playstore --dart-define=BUILD_SOURCE=playstore`
 
-The build source affects:
-- Update checking behavior (enabled for GitHub, disabled for F-Droid/Play Store)
-- Analytics tracking
-- About section display in the app
 
 ### Project Structure
 
@@ -135,7 +131,7 @@ shots-studio/
 
 ### 🔧 Code Contributions
 
-1. **Create or comment on an issue** describing what you want to work on
+1. **Create or comment on an issue** describe what you want to work on
 2. **Wait for assignment** — this helps us coordinate efforts and provide guidance
 3. **Fork the repository** and create a feature branch
 4. **Implement your changes** following our guidelines
@@ -257,12 +253,6 @@ We value all contributions! Contributors will be:
 - **Acknowledged** in our [Contributors](#contributors) section of the README
 - **Credited** in release notes for significant contributions
 - **Appreciated** by the entire community
-
-### Contributors
-
-A huge thanks to everyone who has contributed to Shots Studio! 🎉
-
-<!-- This section will be automatically updated -->
 
 ---
 

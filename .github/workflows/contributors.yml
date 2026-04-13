@@ -1,0 +1,24 @@
+name: Update Contributors
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * 0' # Runs once a week on Sunday
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  contrib-readme-job:
+    runs-on: ubuntu-latest
+    name: Update Contributors
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Update Contributors Grid
+        uses: akhilm/contributors-readme-action@v2.3.6
+        with:
+          readme_path: "README.md"
+          collaborators: "all"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
