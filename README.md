@@ -118,8 +118,8 @@ See `CONTRIBUTING.md`.
 
 A huge thanks to everyone who has contributed to Shots Studio! 🎉
 
-<!-- contributors-readme-start -->
-<!-- contributors-readme-end -->
+<!-- readme: contributors -start -->
+<!-- readme: contributors -end -->
 
 ---
 
