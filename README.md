@@ -119,6 +119,19 @@ See `CONTRIBUTING.md`.
 A huge thanks to everyone who has contributed to Shots Studio! 🎉
 
 <!-- readme: contributors -start -->
+<table>
+	<tbody>
+		<tr>
+            <td align="center">
+                <a href="https://github.com/AnsahMohammad">
+                    <img src="https://avatars.githubusercontent.com/u/85027826?v=4" width="100;" alt="AnsahMohammad"/>
+                    <br />
+                    <sub><b>Ansah Mohammad</b></sub>
+                </a>
+            </td>
+		</tr>
+	<tbody>
+</table>
 <!-- readme: contributors -end -->
 
 ---
