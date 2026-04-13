@@ -11,6 +11,7 @@ on:
     paths:
       - "shots_studio/**"
       - ".github/workflows/"
+  workflow_dispatch: # Allows manual triggering from the Actions tab
 
 jobs:
   build:
