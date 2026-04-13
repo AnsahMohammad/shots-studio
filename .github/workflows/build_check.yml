@@ -1,11 +1,16 @@
 name: Build Check
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "shots_studio/**"
+      - ".github/workflows/"
   pull_request:
     branches: [main]
     paths:
       - "shots_studio/**"
-      - ".github/workflows/build_check.yml"
+      - ".github/workflows/"
 
 jobs:
   build:
