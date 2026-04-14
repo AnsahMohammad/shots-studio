@@ -925,8 +925,6 @@ class APIProviderFactory {
     GemmaAPIProvider(),
     OcrAPIProvider(),
     OpenAICompatibleAPIProvider(),
-    // Future providers can be added here:
-    // LocalLlamaAPIProvider(),
   ];
 
   static APIProvider? getProviderForConfig(AIConfig config) {

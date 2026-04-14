@@ -48,58 +48,6 @@ class OpenAICompatibilityService {
     return Uri.parse('$normalized/v1/chat/completions');
   }
 
-  // Best-effort and fast heuristic. Different servers expose capabilities
-  // inconsistently, so we infer likely vision support from model IDs.
-  static bool isLikelyVisionCapableModel(String modelId) {
-    final id = modelId.toLowerCase();
-
-    const denyList = [
-      'embedding',
-      'embed',
-      'rerank',
-      'moderation',
-      'whisper',
-      'tts',
-      'audio',
-      'transcribe',
-      'stt',
-    ];
-
-    for (final denied in denyList) {
-      if (id.contains(denied)) {
-        return false;
-      }
-    }
-
-    const allowList = [
-      'vision',
-      'vl',
-      '4o',
-      'gpt-4.1',
-      'llava',
-      'bakllava',
-      'moondream',
-      'qwen2-vl',
-      'qwen2.5-vl',
-      'qwen-vl',
-      'internvl',
-      'minicpm-v',
-      'pixtral',
-      'phi-3-vision',
-      'glm-4v',
-      'llama-vision',
-      'gemma3',
-    ];
-
-    for (final allowed in allowList) {
-      if (id.contains(allowed)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
   static Future<List<String>> fetchModels({
     required String baseUrl,
     String? apiKey,
@@ -112,37 +60,53 @@ class OpenAICompatibilityService {
     }
 
     try {
-      final modelsUri = buildModelsUri(baseUrl);
-      final response = await http.get(modelsUri, headers: headers).timeout(timeout);
-
-      if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-        if (decoded is Map<String, dynamic> && decoded['data'] is List) {
-          final models = (decoded['data'] as List)
-              .whereType<Map>()
-              .map((item) => item['id']?.toString() ?? '')
-              .where((id) => id.isNotEmpty)
-              .toList();
-
-          if (models.isNotEmpty) {
-            return models;
-          }
-        }
+      final primaryModels = await _fetchFromOpenaiUrls(
+        baseUrl: baseUrl,
+        headers: headers,
+        timeout: timeout,
+      );
+      if (primaryModels.isNotEmpty) {
+        return primaryModels;
       }
+    } catch (e) {
+      LoggerService.error('Primary models endpoint fetch failed', e);
+    }
 
+    try {
       return await _fetchFromOllamaTags(
         baseUrl: baseUrl,
         headers: headers,
         timeout: timeout,
       );
     } catch (e) {
-      LoggerService.error('OpenAI model fetch failed, trying /api/tags fallback', e);
-      return await _fetchFromOllamaTags(
-        baseUrl: baseUrl,
-        headers: headers,
-        timeout: timeout,
-      );
+      LoggerService.error('Fallback tags endpoint model fetch failed', e);
+      return [];
     }
+  }
+
+  static Future<List<String>> _fetchFromOpenaiUrls({
+    required String baseUrl,
+    required Map<String, String> headers,
+    required Duration timeout,
+  }) async {
+    final modelsUri = buildModelsUri(baseUrl);
+    final response = await http.get(modelsUri, headers: headers).timeout(timeout);
+    if (response.statusCode != 200) {
+      return [];
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['data'] is! List) {
+      return [];
+    }
+
+    final models = (decoded['data'] as List)
+        .whereType<Map>()
+        .map((item) => item['id']?.toString() ?? '')
+        .where((id) => id.isNotEmpty)
+        .toList();
+
+    return models;
   }
 
   static Future<List<String>> _fetchFromOllamaTags({
