@@ -130,6 +130,13 @@ A huge thanks to everyone who has contributed to Shots Studio! 🎉
                     <sub><b>Ansah Mohammad</b></sub>
                 </a>
             </td>
+            <td align="center">
+                <a href="https://github.com/PremKumarAmbrose">
+                    <img src="https://avatars.githubusercontent.com/u/26322085?v=4" width="100;" alt="PremKumarAmbrose"/>
+                    <br />
+                    <sub><b>Prem Kumar Ambrose</b></sub>
+                </a>
+            </td>
 		</tr>
 	<tbody>
 </table>
