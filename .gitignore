@@ -117,5 +117,9 @@ app.*.symbols
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
 
+# AI Models (Downloaded On-Demand)
+shots_studio/assets/models/gliner_pii_small.onnx
+shots_studio/assets/models/gliner_tokenizer.json
+
 .env/
 *.apk

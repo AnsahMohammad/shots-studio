@@ -43,6 +43,8 @@ import 'package:shots_studio/utils/build_source.dart';
 
 import 'package:shots_studio/services/haptic_service.dart';
 import 'package:shots_studio/services/logger_service.dart';
+import 'package:shots_studio/services/prefilter_service.dart';
+import 'package:shots_studio/services/ocr_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(bool)? onAmoledModeChanged;
@@ -836,12 +838,66 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       "Main app: Starting background processing for ${unprocessedScreenshots.length} screenshots",
     );
 
+    // --- PREFILTER PASS ---
+    final prefilterMode = await PrefilterService.getMode();
+    List<Screenshot> screenshotsToProcess = unprocessedScreenshots;
+
+    if (prefilterMode != 'none') {
+      int blockedCount = 0;
+      final prefilterService = PrefilterService();
+      final ocrService = OCRService();
+
+      for (var s in unprocessedScreenshots) {
+        if (s.prefilterStatus == 'allowed') continue;
+
+        // Perform OCR locally
+        final text = await ocrService.extractTextFromScreenshot(s);
+        final result = await prefilterService.check(text, prefilterMode);
+
+        if (result.isSensitive) {
+          s.prefilterStatus = 'blocked';
+          s.prefilterReason = result.reason;
+          blockedCount++;
+        } else {
+          s.prefilterStatus = 'clean';
+        }
+      }
+
+      if (blockedCount > 0) {
+        LoggerService.log("Prefilter blocked $blockedCount screenshots");
+        // Save data to persist prefilter status
+        await _saveDataToPrefs();
+        
+        // Update the list to exclude blocked ones
+        screenshotsToProcess = unprocessedScreenshots.where((s) => 
+            s.prefilterStatus != 'blocked').toList();
+
+        if (screenshotsToProcess.isEmpty) {
+          if (mounted) {
+            setState(() {
+              _isProcessingAI = false;
+              _isInitializingProcessing = false;
+            });
+            SnackbarService().showWarning(context, 
+                'All $blockedCount screenshots were blocked by Privacy Prefilter.');
+          }
+          return;
+        }
+      }
+    }
+    // --- END PREFILTER PASS ---
+
+    // Update UI immediately to show blocked badges
+    if (mounted) {
+      setState(() {});
+    }
+
     // Update UI to show initializing state
     setState(() {
       _isProcessingAI = true;
       _isInitializingProcessing = true;
       _aiProcessedCount = 0;
-      _aiTotalToProcess = unprocessedScreenshots.length;
+      _aiTotalToProcess = screenshotsToProcess.length;
     });
 
     // Get list of collections that have auto-add enabled
@@ -891,10 +947,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
       // Start the processing with the initialized service
       LoggerService.log(
-        "Main app: Calling startBackgroundProcessing with ${unprocessedScreenshots.length} screenshots",
+        "Main app: Calling startBackgroundProcessing with ${screenshotsToProcess.length} screenshots",
       );
       final success = await backgroundService.startBackgroundProcessing(
-        screenshots: unprocessedScreenshots,
+        screenshots: screenshotsToProcess,
         apiKey: _apiKey ?? '',
         modelName: _selectedModelName,
         maxParallel: _maxParallelAI,
@@ -917,7 +973,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
         SnackbarService().showInfo(
           context,
-          'Processing started for ${unprocessedScreenshots.length} screenshots.',
+          'Processing started for ${screenshotsToProcess.length} screenshots.',
         );
       } else {
         LoggerService.error("Main app: Failed to start background processing");
