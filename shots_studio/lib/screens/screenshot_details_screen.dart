@@ -592,17 +592,18 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     final String modelProvider =
       prefs.getString('modelProvider') ??
       AIProviderConfig.getProviderForModel(modelName);
-    final String openAIBaseUrl =
+    final String openAICompatibleBaseUrl =
       prefs.getString(OpenAICompatibilityService.baseUrlPrefKey) ??
-      'http://localhost:11434';
-    final String openAIApiKey =
-      prefs.getString(OpenAICompatibilityService.apiKeyPrefKey) ?? '';
+      OpenAICompatibilityService.defaultBaseUrl;
+    final String openAICompatibleApiKey =
+      prefs.getString(OpenAICompatibilityService.apiKeyPrefKey) ??
+      OpenAICompatibilityService.defaultApiKey;
     String? apiKey =
       modelProvider == 'openai_compatible'
-        ? openAIApiKey
+        ? openAICompatibleApiKey
         : prefs.getString('apiKey');
 
-    if (AIProviderConfig.requiresApiKey(modelName) &&
+    if (AIProviderConfig.requiresApiKey(modelName, provider: modelProvider) &&
         (apiKey == null || apiKey.isEmpty)) {
       try {
         await WakelockPlus.disable();
@@ -643,8 +644,8 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
       timeoutSeconds: 120,
       providerSpecificConfig: {
         'provider': modelProvider,
-        'openaiBaseUrl': openAIBaseUrl,
-        'openaiApiKey': openAIApiKey,
+        'openaiBaseUrl': openAICompatibleBaseUrl,
+        'openaiApiKey': openAICompatibleApiKey,
       },
       showMessage: ({
         required String message,
