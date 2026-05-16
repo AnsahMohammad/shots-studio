@@ -45,7 +45,7 @@ class AIProviderConfig {
 
   static const Map<String, bool> providerRequiresApiKey = {
     'gemini': true,
-    'openai_compatible': true,
+    'openai_compatible': false,
     'gemma': false,
     'ocr': false,
   };

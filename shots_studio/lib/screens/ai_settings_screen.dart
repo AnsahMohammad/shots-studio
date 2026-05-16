@@ -114,9 +114,10 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
 
         _openAIBaseUrlController.text =
             prefs.getString(OpenAICompatibilityService.baseUrlPrefKey) ??
-            'http://localhost:11434';
+            OpenAICompatibilityService.defaultBaseUrl;
         _openAIApiKeyController.text =
-            prefs.getString(OpenAICompatibilityService.apiKeyPrefKey) ?? '';
+            prefs.getString(OpenAICompatibilityService.apiKeyPrefKey) ??
+            OpenAICompatibilityService.defaultApiKey;
         _openAIModels = cachedOpenAIModels;
       });
     }
@@ -142,6 +143,7 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
 
   Future<void> _fetchOpenAIModels() async {
     if (_isLoadingOpenAIModels) return;
+    final trimmedApiKey = _openAIApiKeyController.text.trim();
 
     setState(() {
       _isLoadingOpenAIModels = true;
@@ -152,7 +154,7 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
       await _saveOpenAISettings();
       final models = await OpenAICompatibilityService.fetchModels(
         baseUrl: _openAIBaseUrlController.text,
-        apiKey: _openAIApiKeyController.text,
+        apiKey: trimmedApiKey,
       );
 
       await OpenAICompatibilityService.saveModelsCache(models);
@@ -160,6 +162,10 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
       if (!mounted) return;
       setState(() {
         _openAIModels = models;
+        if (models.isEmpty) {
+          _openAIModelError =
+              'No models found. Check the host URL. Add an API key if your endpoint requires one.';
+        }
       });
 
       if (models.isNotEmpty) {
