@@ -43,7 +43,18 @@ class AIProviderConfig {
     'tesseract-ocr': false,
   };
 
-  static bool requiresApiKey(String model) {
+  static const Map<String, bool> providerRequiresApiKey = {
+    'gemini': true,
+    'openai_compatible': true,
+    'gemma': false,
+    'ocr': false,
+  };
+
+  static bool requiresApiKey(String model, {String? provider}) {
+    if (provider != null && providerRequiresApiKey.containsKey(provider)) {
+      return providerRequiresApiKey[provider] ?? false;
+    }
+
     return modelRequiresApiKey[model] ?? false; // Default to false
   }
 

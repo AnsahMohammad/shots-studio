@@ -82,8 +82,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   String? _apiKey;
   String _selectedModelName = 'gemini-2.5-flash-lite';
   String _selectedModelProvider = 'gemini';
-  String _openAIBaseUrl = 'http://localhost:11434';
-  String _openAIApiKey = '';
+  String _openAICompatibleBaseUrl = OpenAICompatibilityService.defaultBaseUrl;
+  String _openAICompatibleApiKey = OpenAICompatibilityService.defaultApiKey;
   int _screenshotLimit = 1200;
   int _maxParallelAI = 4;
   bool _devMode = false;
@@ -621,11 +621,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _selectedModelName = selectedModelName;
       _selectedModelProvider =
         savedProvider ?? AIProviderConfig.getProviderForModel(selectedModelName);
-      _openAIBaseUrl =
+      _openAICompatibleBaseUrl =
         prefs.getString(OpenAICompatibilityService.baseUrlPrefKey) ??
-        'http://localhost:11434';
-      _openAIApiKey =
-        prefs.getString(OpenAICompatibilityService.apiKeyPrefKey) ?? '';
+        OpenAICompatibilityService.defaultBaseUrl;
+      _openAICompatibleApiKey =
+        prefs.getString(OpenAICompatibilityService.apiKeyPrefKey) ??
+        OpenAICompatibilityService.defaultApiKey;
       _screenshotLimit = prefs.getInt('limit') ?? 1200;
       _maxParallelAI = prefs.getInt('maxParallel') ?? 4;
       _devMode = prefs.getBool('dev_mode') ?? false;
@@ -643,23 +644,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _refreshApiKey() async {
     final prefs = await SharedPreferences.getInstance();
     final latestKey = prefs.getString('apiKey');
-    final latestOpenAIKey =
-        prefs.getString(OpenAICompatibilityService.apiKeyPrefKey) ?? '';
-    final latestOpenAIBaseUrl =
+    final latestOpenAICompatibleApiKey =
+        prefs.getString(OpenAICompatibilityService.apiKeyPrefKey) ??
+        OpenAICompatibilityService.defaultApiKey;
+    final latestOpenAICompatibleBaseUrl =
         prefs.getString(OpenAICompatibilityService.baseUrlPrefKey) ??
-        'http://localhost:11434';
+        OpenAICompatibilityService.defaultBaseUrl;
     final latestModelProvider =
         prefs.getString('modelProvider') ??
         AIProviderConfig.getProviderForModel(_selectedModelName);
 
     if (latestKey != _apiKey ||
-        latestOpenAIKey != _openAIApiKey ||
-        latestOpenAIBaseUrl != _openAIBaseUrl ||
+        latestOpenAICompatibleApiKey != _openAICompatibleApiKey ||
+        latestOpenAICompatibleBaseUrl != _openAICompatibleBaseUrl ||
         latestModelProvider != _selectedModelProvider) {
       setState(() {
         _apiKey = latestKey;
-        _openAIApiKey = latestOpenAIKey;
-        _openAIBaseUrl = latestOpenAIBaseUrl;
+        _openAICompatibleApiKey = latestOpenAICompatibleApiKey;
+        _openAICompatibleBaseUrl = latestOpenAICompatibleBaseUrl;
         _selectedModelProvider = latestModelProvider;
       });
     }
@@ -842,18 +844,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       return;
     }
 
-    final isLocalModel =
-        _selectedModelName == 'gemma' ||
-        _selectedModelName == 'tesseract-ocr' ||
-        _selectedModelProvider == 'openai_compatible';
+    final modelNeedsApiKey = AIProviderConfig.requiresApiKey(
+      _selectedModelName,
+      provider: _selectedModelProvider,
+    );
     final effectiveApiKey = _selectedModelProvider == 'openai_compatible'
-        ? _openAIApiKey
+        ? _openAICompatibleApiKey
         : (_apiKey ?? '');
 
     // Check for API key
-    if (isLocalModel) {
+    if (!modelNeedsApiKey) {
       LoggerService.log(
-        "Main app: Using ${_selectedModelName} model, no API key required",
+        "Main app: Using $_selectedModelName model, no API key required",
       );
     } else if (effectiveApiKey.isEmpty) {
       LoggerService.log("Main app: No API key configured");
@@ -946,8 +948,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         autoAddCollections: autoAddCollections,
         providerSpecificConfig: {
           'provider': _selectedModelProvider,
-          'openaiBaseUrl': _openAIBaseUrl,
-          'openaiApiKey': _openAIApiKey,
+          'openaiBaseUrl': _openAICompatibleBaseUrl,
+          'openaiApiKey': _openAICompatibleApiKey,
         },
       );
       LoggerService.log(
@@ -1671,10 +1673,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (_autoProcessEnabled &&
         !_isProcessingAI &&
         _selectedModelName.toLowerCase() != 'none' &&
-        ((_apiKey != null && _apiKey!.isNotEmpty) ||
-        _selectedModelProvider == 'openai_compatible' ||
-            _selectedModelName == 'gemma' ||
-            _selectedModelName == 'tesseract-ocr')) {
+      (!AIProviderConfig.requiresApiKey(
+          _selectedModelName,
+          provider: _selectedModelProvider,
+        ) ||
+        (_selectedModelProvider == 'openai_compatible'
+          ? _openAICompatibleApiKey.isNotEmpty
+          : (_apiKey != null && _apiKey!.isNotEmpty)))) {
       // Check if there are any unprocessed screenshots
       final unprocessedScreenshots =
           _activeScreenshots.where((s) => !s.aiProcessed).toList();

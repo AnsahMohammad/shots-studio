@@ -542,6 +542,9 @@ class BackgroundProcessingService {
 
       Map<String, dynamic> providerSpecificConfig = {};
       if (providerConfigJson != null && providerConfigJson.isNotEmpty) {
+        // Provider-specific settings are sent as JSON in the background event.
+        // Decode them once here and forward the map into AIConfig unchanged so
+        // the selected provider can read its own settings during request setup.
         final decoded = jsonDecode(providerConfigJson);
         if (decoded is Map<String, dynamic>) {
           providerSpecificConfig = decoded;

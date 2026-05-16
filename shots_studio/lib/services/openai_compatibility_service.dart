@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shots_studio/services/logger_service.dart';
 
 class OpenAICompatibilityService {
+  static const String defaultBaseUrl = 'http://localhost:11434';
+  static const String defaultApiKey = '';
   static const String baseUrlPrefKey = 'openai_compatible_base_url';
   static const String apiKeyPrefKey = 'openai_compatible_api_key';
   static const String selectedModelPrefKey = 'openai_compatible_selected_model';
@@ -14,7 +16,7 @@ class OpenAICompatibilityService {
   static String normalizeBaseUrl(String input) {
     final trimmed = input.trim();
     if (trimmed.isEmpty) {
-      return 'http://localhost:11434';
+      return defaultBaseUrl;
     }
 
     var normalized = trimmed;
