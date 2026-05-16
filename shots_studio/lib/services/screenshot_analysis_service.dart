@@ -536,6 +536,7 @@ class ScreenshotAnalysisService extends AIService {
     final requestData = prepareScreenshotAnalysisRequest(
       prompt: prompt,
       imageData: imageData,
+      additionalParams: {'modelName': config.modelName},
     );
 
     // Fallback to old format if provider doesn't support new format

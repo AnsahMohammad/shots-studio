@@ -21,6 +21,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:shots_studio/services/logger_service.dart';
 import 'package:pasteboard/pasteboard.dart';
 import 'package:shots_studio/utils/ai_provider_config.dart';
+import 'package:shots_studio/services/openai_compatibility_service.dart';
 
 // Import extracted widgets
 import 'package:shots_studio/widgets/screenshot_details/index.dart';
@@ -588,9 +589,21 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
     final prefs = await SharedPreferences.getInstance();
     final String modelName =
         prefs.getString('modelName') ?? 'gemini-2.5-flash-lite';
-    String? apiKey = prefs.getString('apiKey');
+    final String modelProvider =
+      prefs.getString('modelProvider') ??
+      AIProviderConfig.getProviderForModel(modelName);
+    final String openAICompatibleBaseUrl =
+      prefs.getString(OpenAICompatibilityService.baseUrlPrefKey) ??
+      OpenAICompatibilityService.defaultBaseUrl;
+    final String openAICompatibleApiKey =
+      prefs.getString(OpenAICompatibilityService.apiKeyPrefKey) ??
+      OpenAICompatibilityService.defaultApiKey;
+    String? apiKey =
+      modelProvider == 'openai_compatible'
+        ? openAICompatibleApiKey
+        : prefs.getString('apiKey');
 
-    if (AIProviderConfig.requiresApiKey(modelName) &&
+    if (AIProviderConfig.requiresApiKey(modelName, provider: modelProvider) &&
         (apiKey == null || apiKey.isEmpty)) {
       try {
         await WakelockPlus.disable();
@@ -629,6 +642,11 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
       modelName: modelName,
       maxParallel: 1,
       timeoutSeconds: 120,
+      providerSpecificConfig: {
+        'provider': modelProvider,
+        'openaiBaseUrl': openAICompatibleBaseUrl,
+        'openaiApiKey': openAICompatibleApiKey,
+      },
       showMessage: ({
         required String message,
         Color? backgroundColor,

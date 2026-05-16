@@ -13,6 +13,7 @@ import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/utils/ai_provider_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shots_studio/services/logger_service.dart';
+import 'package:shots_studio/services/openai_compatibility_service.dart';
 
 class AICategorizer {
   final AIServiceManager _aiServiceManager = AIServiceManager();
@@ -43,9 +44,21 @@ class AICategorizer {
     final prefs = await SharedPreferences.getInstance();
     final String modelName =
         prefs.getString('modelName') ?? 'gemini-2.5-flash-lite';
-    final String? apiKey = prefs.getString('apiKey');
+    final String modelProvider =
+      prefs.getString('modelProvider') ??
+      AIProviderConfig.getProviderForModel(modelName);
+    final String openAICompatibleBaseUrl =
+      prefs.getString(OpenAICompatibilityService.baseUrlPrefKey) ??
+      OpenAICompatibilityService.defaultBaseUrl;
+    final String openAICompatibleApiKey =
+      prefs.getString(OpenAICompatibilityService.apiKeyPrefKey) ??
+      OpenAICompatibilityService.defaultApiKey;
+    final String? apiKey =
+      modelProvider == 'openai_compatible'
+        ? openAICompatibleApiKey
+        : prefs.getString('apiKey');
 
-    if (AIProviderConfig.requiresApiKey(modelName) &&
+    if (AIProviderConfig.requiresApiKey(modelName, provider: modelProvider) &&
         (apiKey == null || apiKey.isEmpty)) {
       SnackbarService().showError(
         context,
@@ -132,6 +145,11 @@ class AICategorizer {
       apiKey: apiKey ?? '', // Handle null case for gemma model
       modelName: modelName,
       maxParallel: maxParallel,
+      providerSpecificConfig: {
+        'provider': modelProvider,
+        'openaiBaseUrl': openAICompatibleBaseUrl,
+        'openaiApiKey': openAICompatibleApiKey,
+      },
       showMessage: ({
         required String message,
         Color? backgroundColor,
