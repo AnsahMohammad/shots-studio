@@ -24,6 +24,13 @@ class ProviderToggleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final models = AIProviderConfig.getModelsForProvider(provider);
+    final providerLabel = provider.replaceAll('_', ' ').toUpperCase();
+    final providerDescription =
+      provider == 'openai_compatible'
+        ? 'Dynamic models from configured endpoint'
+        : models.isEmpty
+        ? 'No static models'
+        : models.join(', ');
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
@@ -38,7 +45,7 @@ class ProviderToggleCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    provider.toUpperCase(),
+                    providerLabel,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -52,7 +59,7 @@ class ProviderToggleCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    disabledReason ?? models.join(', '),
+                    disabledReason ?? providerDescription,
                     style: TextStyle(
                       fontSize: 12,
                       color:

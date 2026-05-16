@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
+import 'package:shots_studio/services/openai_compatibility_service.dart';
 import 'package:shots_studio/screens/ai_settings_screen.dart';
 import 'package:shots_studio/utils/ai_provider_config.dart';
 import 'package:shots_studio/l10n/app_localizations.dart';
+
+class _ModelAvailability {
+  final List<String> models;
+  final Map<String, String> providerByModel;
+
+  const _ModelAvailability(this.models, this.providerByModel);
+}
 
 class QuickSettingsSection extends StatefulWidget {
   final String currentModelName;
@@ -23,6 +31,7 @@ class _QuickSettingsSectionState extends State<QuickSettingsSection> {
   late String _selectedModelName;
 
   static const String _modelNamePrefKey = 'modelName';
+  static const String _modelProviderPrefKey = 'modelProvider';
 
   @override
   void initState() {
@@ -44,9 +53,11 @@ class _QuickSettingsSectionState extends State<QuickSettingsSection> {
     }
   }
 
-  Future<List<String>> _getAvailableModels() async {
+  Future<_ModelAvailability> _getAvailableModels() async {
     final prefs = await SharedPreferences.getInstance();
     List<String> availableModels = [];
+    final providerByModel = <String, String>{};
+    final openAIModels = await OpenAICompatibilityService.getModelsCache();
 
     // Check which providers are enabled
     for (final provider in AIProviderConfig.getProviders()) {
@@ -54,9 +65,18 @@ class _QuickSettingsSectionState extends State<QuickSettingsSection> {
       if (prefKey != null) {
         final isEnabled = prefs.getBool(prefKey) ?? (provider == 'gemini');
         if (isEnabled) {
-          availableModels.addAll(
-            AIProviderConfig.getModelsForProvider(provider),
-          );
+          if (provider == 'openai_compatible') {
+            availableModels.addAll(openAIModels);
+            for (final model in openAIModels) {
+              providerByModel[model] = 'openai_compatible';
+            }
+          } else {
+            final models = AIProviderConfig.getModelsForProvider(provider);
+            availableModels.addAll(models);
+            for (final model in models) {
+              providerByModel[model] = provider;
+            }
+          }
         }
       }
     }
@@ -64,9 +84,10 @@ class _QuickSettingsSectionState extends State<QuickSettingsSection> {
     // If no providers are enabled, default to none models
     if (availableModels.isEmpty) {
       availableModels.addAll(AIProviderConfig.getModelsForProvider('none'));
+      providerByModel['No AI Model'] = 'none';
     }
 
-    return availableModels;
+    return _ModelAvailability(availableModels, providerByModel);
   }
 
   void _navigateToAISettings() async {
@@ -81,7 +102,11 @@ class _QuickSettingsSectionState extends State<QuickSettingsSection> {
             (context) => AISettingsScreen(
               currentModelName: _selectedModelName,
               onModelChanged: (String newModel) {
-                _saveModelName(newModel);
+                setState(() {
+                  _selectedModelName = newModel;
+                });
+                widget.onModelChanged(newModel);
+                _saveModelName(newModel, null);
               },
             ),
       ),
@@ -95,9 +120,12 @@ class _QuickSettingsSectionState extends State<QuickSettingsSection> {
     }
   }
 
-  Future<void> _saveModelName(String value) async {
+  Future<void> _saveModelName(String value, String? provider) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_modelNamePrefKey, value);
+    if (provider != null && provider.isNotEmpty) {
+      await prefs.setString(_modelProviderPrefKey, provider);
+    }
   }
 
   @override
@@ -129,49 +157,75 @@ class _QuickSettingsSectionState extends State<QuickSettingsSection> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            AppLocalizations.of(context)?.modelName ??
-                                'AI Model',
-                            style: TextStyle(
-                              color: theme.colorScheme.onSecondaryContainer,
-                              fontSize: 16,
-                            ),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final compact = constraints.maxWidth < 280;
+
+                        final settingsButton = TextButton.icon(
+                          onPressed: _navigateToAISettings,
+                          icon: Icon(
+                            Icons.settings_outlined,
+                            size: 16,
+                            color: theme.colorScheme.primary,
                           ),
-                        ),
-                        Flexible(
-                          child: TextButton.icon(
-                            onPressed: _navigateToAISettings,
-                            icon: Icon(
-                              Icons.settings_outlined,
-                              size: 16,
+                          label: Text(
+                            AppLocalizations.of(context)?.aiSettings ??
+                                'AI Settings',
+                            style: TextStyle(
+                              fontSize: 12,
                               color: theme.colorScheme.primary,
                             ),
-                            label: Text(
-                              AppLocalizations.of(context)?.aiSettings ??
-                                  'AI Settings',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: theme.colorScheme.primary,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        );
+
+                        if (compact) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppLocalizations.of(context)?.modelName ??
+                                    'AI Model',
+                                style: TextStyle(
+                                  color: theme.colorScheme.onSecondaryContainer,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: settingsButton,
+                              ),
+                            ],
+                          );
+                        }
+
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                AppLocalizations.of(context)?.modelName ??
+                                    'AI Model',
+                                style: TextStyle(
+                                  color: theme.colorScheme.onSecondaryContainer,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                            settingsButton,
+                          ],
+                        );
+                      },
                     ),
                     const SizedBox(height: 4),
-                    FutureBuilder<List<String>>(
+                    FutureBuilder<_ModelAvailability>(
                       future: _getAvailableModels(),
                       builder: (context, snapshot) {
                         if (!snapshot.hasData) {
@@ -204,7 +258,8 @@ class _QuickSettingsSectionState extends State<QuickSettingsSection> {
                           );
                         }
 
-                        final availableModels = snapshot.data!;
+                        final availableModels = snapshot.data!.models;
+                        final providerByModel = snapshot.data!.providerByModel;
 
                         // Ensure current model is in available models
                         if (!availableModels.contains(_selectedModelName) &&
@@ -215,7 +270,10 @@ class _QuickSettingsSectionState extends State<QuickSettingsSection> {
                               _selectedModelName = availableModels.first;
                             });
                             widget.onModelChanged(availableModels.first);
-                            _saveModelName(availableModels.first);
+                            _saveModelName(
+                              availableModels.first,
+                              providerByModel[availableModels.first],
+                            );
                           });
                         }
 
@@ -242,7 +300,7 @@ class _QuickSettingsSectionState extends State<QuickSettingsSection> {
                                 _selectedModelName = newValue;
                               });
                               widget.onModelChanged(newValue);
-                              _saveModelName(newValue);
+                              _saveModelName(newValue, providerByModel[newValue]);
 
                               // Track model change in analytics
                               AnalyticsService().logFeatureUsed(
