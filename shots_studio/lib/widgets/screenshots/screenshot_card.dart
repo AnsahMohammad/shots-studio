@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:animations/animations.dart';
+import 'package:shots_studio/widgets/screenshots/prefilter_badge.dart';
 
 class ScreenshotCard extends StatelessWidget {
   final Screenshot screenshot;
@@ -259,6 +260,14 @@ class ScreenshotCard extends StatelessWidget {
                   color: Theme.of(context).colorScheme.primary,
                   size: 20,
                 ),
+              ),
+
+            // Prefilter blocked badge (only show when not in selection mode)
+            if (!isSelectionMode)
+              Positioned(
+                top: 0,
+                left: 0,
+                child: PrefilterBadge(screenshot: screenshot),
               ),
           ],
         ),
