@@ -20,6 +20,8 @@ class Screenshot {
   DateTime? reminderTime;
   String? reminderText;
   String? notes; // Personal notes added by user
+  String? prefilterStatus;
+  String? prefilterReason;
 
   Screenshot({
     required this.id,
@@ -38,6 +40,8 @@ class Screenshot {
     this.reminderTime,
     this.reminderText,
     this.notes,
+    this.prefilterStatus,
+    this.prefilterReason,
   }) : links = links ?? [],
        collectionIds = collectionIds ?? [];
 
@@ -82,6 +86,8 @@ class Screenshot {
       'reminderTime': reminderTime?.toIso8601String(),
       'reminderText': reminderText,
       'notes': notes,
+      'prefilterStatus': prefilterStatus,
+      'prefilterReason': prefilterReason,
     };
   }
 
@@ -117,6 +123,8 @@ class Screenshot {
               : null,
       reminderText: json['reminderText'] as String?,
       notes: json['notes'] as String?,
+      prefilterStatus: json['prefilterStatus'] as String?,
+      prefilterReason: json['prefilterReason'] as String?,
     );
   }
 
@@ -186,6 +194,8 @@ class Screenshot {
     DateTime? reminderTime,
     String? reminderText,
     String? notes,
+    String? prefilterStatus,
+    String? prefilterReason,
   }) {
     return Screenshot(
       id: id,
@@ -204,6 +214,8 @@ class Screenshot {
       reminderTime: reminderTime ?? this.reminderTime,
       reminderText: reminderText ?? this.reminderText,
       notes: notes ?? this.notes,
+      prefilterStatus: prefilterStatus ?? this.prefilterStatus,
+      prefilterReason: prefilterReason ?? this.prefilterReason,
     );
   }
 
