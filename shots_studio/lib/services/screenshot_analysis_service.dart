@@ -153,6 +153,17 @@ class ScreenshotAnalysisService extends AIService {
       return AIResult.cancelled();
     }
 
+    final batchResults = finalResults['batchResults'] as List?;
+    final firstError = batchResults
+        ?.whereType<Map>()
+        .map((b) => b['result']?['error'] ?? b['error'])
+        .whereType<String>()
+        .firstOrNull;
+
+    if ((finalResults['processedCount'] as int? ?? 0) == 0 && firstError != null) {
+      return AIResult.error(firstError);
+    }
+
     return AIResult.success(finalResults);
   }
 
@@ -187,30 +198,60 @@ class ScreenshotAnalysisService extends AIService {
 
       // Try to parse the cleaned text directly first
       try {
-        parsedResponse = jsonDecode(cleanedResponseText);
+        final dynamic decoded = jsonDecode(cleanedResponseText);
+        if (decoded is List) {
+          parsedResponse = decoded;
+        } else if (decoded is Map<String, dynamic>) {
+          parsedResponse = [decoded];
+        } else if (decoded is Map) {
+          parsedResponse = [Map<String, dynamic>.from(decoded)];
+        }
       } catch (e) {
         LoggerService.error("Initial JSON parsing failed", e);
 
-        // Try to extract JSON array with regex as fallback
-        final RegExp jsonRegExp = RegExp(r'\[.*\]', dotAll: true);
-        final match = jsonRegExp.firstMatch(cleanedResponseText);
+        // Try to extract JSON array [ ... ] with regex as fallback
+        final RegExp arrayRegExp = RegExp(r'\[.*\]', dotAll: true);
+        final arrayMatch = arrayRegExp.firstMatch(cleanedResponseText);
 
-        if (match != null) {
+        if (arrayMatch != null) {
           try {
-            String extractedJson = match.group(0)!;
-            parsedResponse = jsonDecode(extractedJson);
+            final dynamic decoded = jsonDecode(arrayMatch.group(0)!);
+            if (decoded is List &&
+                decoded.isNotEmpty &&
+                decoded.every((item) => item is Map)) {
+              parsedResponse = decoded;
+            } else if (decoded is Map) {
+              parsedResponse = [Map<String, dynamic>.from(decoded)];
+            }
           } catch (e2) {
-            LoggerService.error("Failed to parse extracted JSON", e2);
-            // Throw parsing error to stop processing and show error to user
-            throw Exception(
-              'JSON parsing failed: Unable to parse AI response. The response format is invalid or corrupted. Please try again.',
-            );
+            LoggerService.error("Failed to parse extracted JSON array", e2);
           }
-        } else {
-          LoggerService.log("No JSON array pattern found in response");
-          // Throw parsing error to stop processing and show error to user
+        }
+
+        // If array regex didn't yield results (or was not a list of objects), try single object { ... }
+        if (parsedResponse.isEmpty) {
+          final RegExp objRegExp = RegExp(r'\{.*\}', dotAll: true);
+          final objMatch = objRegExp.firstMatch(cleanedResponseText);
+          if (objMatch != null) {
+            try {
+              final dynamic decoded = jsonDecode(objMatch.group(0)!);
+              if (decoded is Map) {
+                parsedResponse = [Map<String, dynamic>.from(decoded)];
+              } else if (decoded is List &&
+                  decoded.isNotEmpty &&
+                  decoded.every((item) => item is Map)) {
+                parsedResponse = decoded;
+              }
+            } catch (e3) {
+              LoggerService.error("Failed to parse extracted JSON object", e3);
+            }
+          }
+        }
+
+        if (parsedResponse.isEmpty) {
+          LoggerService.log("No valid JSON pattern found in response");
           throw Exception(
-            'JSON parsing failed: No valid JSON array found in AI response. Please try again.',
+            'JSON parsing failed: Unable to parse AI response. Please try again.',
           );
         }
       }
@@ -255,14 +296,20 @@ class ScreenshotAnalysisService extends AIService {
     List<dynamic> sanitizedResponse = [];
 
     for (var item in parsedResponse) {
-      if (item is Map<String, dynamic>) {
+      if (item is Map) {
         Map<String, dynamic> sanitizedItem = Map<String, dynamic>.from(item);
 
         // Ensure required fields exist and have correct types
         sanitizedItem['filename'] =
             (sanitizedItem['filename'] ?? '').toString();
-        sanitizedItem['title'] = (sanitizedItem['title'] ?? '').toString();
-        sanitizedItem['desc'] = (sanitizedItem['desc'] ?? '').toString();
+        sanitizedItem['title'] =
+            (sanitizedItem['title'] ?? sanitizedItem['name'] ?? '').toString();
+        sanitizedItem['desc'] =
+            (sanitizedItem['desc'] ??
+                    sanitizedItem['description'] ??
+                    sanitizedItem['summary'] ??
+                    '')
+                .toString();
 
         // Ensure tags is always a list
         if (sanitizedItem['tags'] is! List) {
@@ -598,13 +645,15 @@ class ScreenshotAnalysisService extends AIService {
 
     // Only update fields if AI response has non-empty values
     // This preserves existing data when AI models (like OCR) only provide partial data
+    final titleValue = item['title'] ?? item['name'];
     final String? newTitle =
-        (item['title'] != null && item['title'].toString().isNotEmpty)
-            ? item['title']
+        (titleValue != null && titleValue.toString().trim().isNotEmpty)
+            ? titleValue.toString().trim()
             : null;
+    final descValue = item['desc'] ?? item['description'] ?? item['summary'];
     final String? newDescription =
-        (item['desc'] != null && item['desc'].toString().isNotEmpty)
-            ? item['desc']
+        (descValue != null && descValue.toString().trim().isNotEmpty)
+            ? descValue.toString().trim()
             : null;
     final List<String> newTags = List<String>.from(item['tags'] ?? []);
     final List<String> newLinks = List<String>.from(item['links'] ?? []);
@@ -659,6 +708,15 @@ class ScreenshotAnalysisService extends AIService {
         }
       }
 
+      // Fallback: If no filename match was found, match positionally with first available response
+      if (matchedAiItem == null && availableResponses.isNotEmpty) {
+        final firstAvailable = availableResponses.first;
+        if (firstAvailable is Map<String, dynamic>) {
+          matchedAiItem = firstAvailable;
+          matchedAiItemIndex = 0;
+        }
+      }
+
       if (matchedAiItem != null) {
         final List<String> collectionNames = List<String>.from(
           matchedAiItem['collections'] ?? [],
@@ -666,15 +724,15 @@ class ScreenshotAnalysisService extends AIService {
 
         // Only update fields if AI response has non-empty values
         // This preserves existing data when AI models (like OCR) only provide partial data
+        final itemTitle = matchedAiItem['title'] ?? matchedAiItem['name'];
         final String? newTitle =
-            (matchedAiItem['title'] != null &&
-                    matchedAiItem['title'].toString().isNotEmpty)
-                ? matchedAiItem['title']
+            (itemTitle != null && itemTitle.toString().trim().isNotEmpty)
+                ? itemTitle.toString().trim()
                 : null;
+        final itemDesc = matchedAiItem['desc'] ?? matchedAiItem['description'] ?? matchedAiItem['summary'];
         final String? newDescription =
-            (matchedAiItem['desc'] != null &&
-                    matchedAiItem['desc'].toString().isNotEmpty)
-                ? matchedAiItem['desc']
+            (itemDesc != null && itemDesc.toString().trim().isNotEmpty)
+                ? itemDesc.toString().trim()
                 : null;
         final List<String> newTags = List<String>.from(
           matchedAiItem['tags'] ?? [],

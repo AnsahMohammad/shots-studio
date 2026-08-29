@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_gemma/flutter_gemma.dart';
 
 import 'package:flutter_gemma/core/api/flutter_gemma.dart' as gemma_api;
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shots_studio/services/logger_service.dart';
 
@@ -26,10 +27,14 @@ class GemmaService {
   bool _isModelLoaded = false;
   bool _isLoading = false;
   bool _isGenerating = false;
+  bool _supportsImage = true;
   String? _currentModelPath;
   int _generationCount = 0;
   int? _lastProcessingTimeMs; // Track last processing time for analytics
   static const int _maxGenerationsBeforeCleanup = 2;
+
+  String? _lastLoadError;
+  String? get lastLoadError => _lastLoadError;
 
   // Initialize Gemma plugin (lazy - only when needed)
   static bool _isFlutterGemmaInitialized = false;
@@ -43,6 +48,23 @@ class GemmaService {
     _gemma = FlutterGemmaPlugin.instance;
   }
 
+  ModelType _getModelType(String path) {
+    final lower = path.toLowerCase();
+    if (lower.contains('qwen')) {
+      return ModelType.qwen;
+    } else if (lower.contains('llama')) {
+      return ModelType.llama;
+    } else if (lower.contains('deepseek')) {
+      return ModelType.deepSeek;
+    } else if (lower.contains('hammer')) {
+      return ModelType.hammer;
+    } else if (lower.contains('gemma')) {
+      return ModelType.gemmaIt;
+    } else {
+      return ModelType.general;
+    }
+  }
+
   // Load model from file path
   Future<bool> loadModel(String modelFilePath) async {
     if (_gemma == null) {
@@ -50,6 +72,7 @@ class GemmaService {
     }
 
     _isLoading = true;
+    _lastLoadError = null;
 
     try {
       // Verify file exists
@@ -61,35 +84,31 @@ class GemmaService {
       // Clean up existing resources before loading new model
       await _cleanupExistingModel();
 
-      // Install the model using the new FileSource API (references file without copying)
-      final modelFileName = modelFilePath.split('/').last;
-      await gemma_api.FlutterGemma.installModel(
-        modelType: ModelType.gemmaIt,
-      ).fromFile(modelFilePath).install();
+      final modelType = _getModelType(modelFilePath);
 
-      // Verify the model is properly installed
-      final isInstalled = await gemma_api.FlutterGemma.isModelInstalled(
-        modelFileName,
-      );
-      if (!isInstalled) {
-        throw Exception('Model not properly installed at path: $modelFilePath');
-      }
+      // Install the model using the FileSource API (references file without copying)
+      await gemma_api.FlutterGemma.installModel(
+        modelType: modelType,
+      ).fromFile(modelFilePath).install();
 
       // Get CPU/GPU preference from SharedPreferences
       final prefs = await SharedPreferences.getInstance();
-      final useCPU = prefs.getBool('gemma_use_cpu') ?? true; // CPU by default
+      final useCPU = prefs.getBool('gemma_use_cpu') ?? true;
 
-      // Create inference model with conservative settings to reduce memory usage
-      _inferenceModel = await _gemma!.createModel(
-        modelType: ModelType.gemmaIt,
-        preferredBackend: useCPU ? PreferredBackend.cpu : PreferredBackend.gpu,
-        maxTokens: 2048, // Reduced from 4096 to save memory
-        supportImage: true, // Enable multimodal support
-        maxNumImages: 1,
+      _supportsImage = _checkIsMultimodal(modelFilePath);
+
+      LoggerService.log('Creating inference model with ModelType: $modelType, useCPU: $useCPU, supportsImage: $_supportsImage');
+
+      // Load model with multiple fallback tiers for memory safety
+      _inferenceModel = await _createInferenceModelWithFallback(
+        modelType: modelType,
+        useCPU: useCPU,
+        supportsImage: _supportsImage,
       );
 
       _isModelLoaded = true;
       _currentModelPath = modelFilePath;
+      _lastLoadError = null;
 
       // Save the model path and loaded state to preferences
       await _saveModelPath(modelFilePath);
@@ -103,10 +122,87 @@ class GemmaService {
       _isModelLoaded = false;
       _currentModelPath = null;
       await _saveModelLoadedState(false);
+      LoggerService.error('Error loading model: $modelFilePath', e);
+      if (e.toString().contains('RET_CHECK') || e.toString().contains('building tflite model')) {
+        _lastLoadError = 'Incompatible model format: This model file was not compiled for Google MediaPipe/LiteRT. Please use a .task or .bin model compiled for LiteRT, or run via Ollama.';
+      } else {
+        _lastLoadError = 'Failed to load model: ${e.toString()}';
+      }
       rethrow;
     } finally {
       _isLoading = false;
     }
+  }
+
+  Future<InferenceModel> _createInferenceModelWithFallback({
+    required ModelType modelType,
+    required bool useCPU,
+    required bool supportsImage,
+  }) async {
+    _forceGarbageCollection();
+
+    // Attempt 1: Requested configuration with 512 tokens for optimal RAM footprint
+    try {
+      return await _gemma!.createModel(
+        modelType: modelType,
+        preferredBackend: useCPU ? PreferredBackend.cpu : PreferredBackend.gpu,
+        maxTokens: 512,
+        supportImage: supportsImage,
+        maxNumImages: supportsImage ? 1 : 0,
+      );
+    } catch (e) {
+      LoggerService.log('Tier 1 model creation failed ($e), trying CPU...');
+    }
+
+    // Attempt 2: If deepSeek, try Qwen architecture (DeepSeek-R1-Distill-Qwen is based on Qwen)
+    if (modelType == ModelType.deepSeek) {
+      try {
+        return await _gemma!.createModel(
+          modelType: ModelType.qwen,
+          preferredBackend: PreferredBackend.cpu,
+          maxTokens: 512,
+          supportImage: false,
+          maxNumImages: 0,
+        );
+      } catch (e) {
+        LoggerService.log('Tier 2 Qwen architecture fallback failed ($e)...');
+      }
+    }
+
+    // Attempt 3: CPU text-only with 512 context tokens
+    try {
+      return await _gemma!.createModel(
+        modelType: modelType,
+        preferredBackend: PreferredBackend.cpu,
+        maxTokens: 512,
+        supportImage: false,
+        maxNumImages: 0,
+      );
+    } catch (e) {
+      LoggerService.log('Tier 3 model creation failed ($e), falling back to ModelType.general...');
+    }
+
+    // Attempt 4: ModelType.general with 256 tokens (minimal RAM footprint)
+    try {
+      return await _gemma!.createModel(
+        modelType: ModelType.general,
+        preferredBackend: PreferredBackend.cpu,
+        maxTokens: 256,
+        supportImage: false,
+        maxNumImages: 0,
+      );
+    } catch (e) {
+      LoggerService.log('Tier 4 model creation failed ($e), falling back to ModelType.gemmaIt...');
+    }
+
+    // Attempt 5: ModelType.gemmaIt fallback with 256 tokens
+    return await _gemma!.createModel(
+      modelType: ModelType.gemmaIt,
+      preferredBackend: PreferredBackend.cpu,
+      maxTokens: 256,
+      supportImage: false,
+      maxNumImages: 0,
+    );
   }
 
   Future<void> _cleanupExistingModel() async {
@@ -128,51 +224,103 @@ class GemmaService {
       _inferenceModel = null;
     }
 
-    // Note: FileSource models don't need deletion as they reference the original file
-    // The model can be uninstalled if needed using the new API
-
     _forceGarbageCollection();
   }
 
   // Check if model is ready and load from preferences if needed
-  Future<bool> ensureModelReady() async {
+  Future<bool> ensureModelReady({String? preferredModelName}) async {
     if (_isModelLoaded && _inferenceModel != null) {
       return true;
     }
 
-    // Try to load from saved preferences
-    return await loadModelFromPreferences();
+    // Try to load from saved preferences or search installed directory
+    return await loadModelFromPreferences(preferredModelName: preferredModelName);
   }
 
   // Load model from saved preferences
-  Future<bool> loadModelFromPreferences() async {
+  Future<bool> loadModelFromPreferences({String? preferredModelName}) async {
     try {
       LoggerService.log("\n\n Loading model from preferences...");
       final prefs = await SharedPreferences.getInstance();
-      final savedModelPath = prefs.getString(_modelPathPrefKey);
+      String? savedModelPath = prefs.getString(_modelPathPrefKey);
       LoggerService.log("Saved model path: $savedModelPath");
 
-      if (savedModelPath != null && savedModelPath.isNotEmpty) {
-        LoggerService.log('Checking if file exists: $savedModelPath');
-        final file = File(savedModelPath);
+      String? targetPath;
+
+      // 1. If preferredModelName is provided, search installed directory for a matching file
+      if (preferredModelName != null && preferredModelName.isNotEmpty) {
+        targetPath = await _findInstalledModelFile(preferredModelName: preferredModelName);
+      }
+
+      // 2. If no target path yet, check savedModelPath
+      if (targetPath == null || targetPath.isEmpty || !await File(targetPath).exists()) {
+        if (savedModelPath != null && savedModelPath.isNotEmpty && await File(savedModelPath).exists()) {
+          targetPath = savedModelPath;
+        }
+      }
+
+      // 3. If still no target path, pick any available installed model file
+      if (targetPath == null || targetPath.isEmpty || !await File(targetPath).exists()) {
+        targetPath = await _findInstalledModelFile();
+      }
+
+      if (targetPath != null && targetPath.isNotEmpty) {
+        final file = File(targetPath);
         if (await file.exists()) {
-          LoggerService.log('Loading model from saved path: $savedModelPath');
-          return await loadModel(savedModelPath);
+          LoggerService.log('Loading model from path: $targetPath');
+          await _saveModelPath(targetPath);
+          return await loadModel(targetPath);
         } else {
-          LoggerService.log('Saved model path does not exist: $savedModelPath');
-          // Clean up invalid path
+          LoggerService.log('Model path does not exist: $targetPath');
           await _removeModelPath();
           await _saveModelLoadedState(false);
         }
       } else {
-        LoggerService.log('No model path found in preferences');
+        LoggerService.log('No model path found in preferences or storage');
       }
     } catch (e) {
       LoggerService.error('Error loading model from preferences', e);
       await _saveModelLoadedState(false);
     }
-    LoggerService.log('No valid model found in preferences.');
+    LoggerService.log('No valid model found in storage.');
     return false;
+  }
+
+  Future<String?> _findInstalledModelFile({String? preferredModelName}) async {
+    try {
+      final appDocDir = await getApplicationDocumentsDirectory();
+      final modelsDir = Directory('${appDocDir.path}/gemma_models');
+      if (!await modelsDir.exists()) return null;
+
+      final entities = await modelsDir.list().toList();
+      final files = entities
+          .where((entity) =>
+              entity is File &&
+              (entity.path.endsWith('.task') ||
+                  entity.path.endsWith('.bin') ||
+                  entity.path.endsWith('.gguf') ||
+                  entity.path.endsWith('.litertlm') ||
+                  entity.path.endsWith('.tflite')))
+          .cast<File>()
+          .toList();
+
+      if (files.isEmpty) return null;
+
+      if (preferredModelName != null && preferredModelName.isNotEmpty) {
+        final cleanPref = preferredModelName.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+        for (final f in files) {
+          final cleanFileName = f.path.split(RegExp(r'[\\/]')).last.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+          if (cleanFileName.contains(cleanPref) || cleanPref.contains(cleanFileName)) {
+            return f.path;
+          }
+        }
+      }
+
+      return files.first.path;
+    } catch (e) {
+      LoggerService.error('Error finding installed model files', e);
+      return null;
+    }
   }
 
   // Generate response with optional image
@@ -200,7 +348,7 @@ class GemmaService {
       );
 
       Message message;
-      if (imageFile != null) {
+      if (imageFile != null && _supportsImage) {
         // Read image bytes for multimodal input - limit image size to prevent memory issues
         final imageBytes = await _readImageWithSizeLimit(imageFile);
         message = Message.withImage(
@@ -209,7 +357,7 @@ class GemmaService {
           isUser: true,
         );
       } else {
-        // Text-only message
+        // Text-only message for text-only models (Qwen, Phi, Llama, Falcon, SmolLM, Gemma 2) or text prompts
         message = Message.text(text: prompt, isUser: true);
       }
 
@@ -281,7 +429,7 @@ class GemmaService {
       );
 
       Message message;
-      if (imageFile != null) {
+      if (imageFile != null && _supportsImage) {
         final imageBytes = await _readImageWithSizeLimit(imageFile);
         message = Message.withImage(
           text: prompt,
@@ -404,7 +552,13 @@ class GemmaService {
   // Get model name from current path
   String? get modelName {
     if (_currentModelPath != null) {
-      return _currentModelPath?.split('/').last;
+      final fileName = _currentModelPath!.split(Platform.isWindows ? '\\' : '/').last;
+      return fileName
+          .replaceAll('.task', '')
+          .replaceAll('.bin', '')
+          .replaceAll('.gguf', '')
+          .replaceAll('_', ' ')
+          .replaceAll('-', ' ');
     }
     return null;
   }
@@ -543,6 +697,19 @@ class GemmaService {
   bool get isModelLoaded => _isModelLoaded;
   bool get isLoading => _isLoading;
   bool get isGenerating => _isGenerating;
+  bool get supportsImage => _supportsImage;
   String? get currentModelPath => _currentModelPath;
   int? get lastProcessingTimeMs => _lastProcessingTimeMs;
+
+  bool _checkIsMultimodal(String path) {
+    final lower = path.toLowerCase();
+    // Gemma 3N and explicit vision models support images
+    return (lower.contains('gemma') && (lower.contains('3n') || lower.contains('vision'))) ||
+        lower.contains('minicpm-v') ||
+        lower.contains('llava') ||
+        lower.contains('qwen2.5-vl') ||
+        lower.contains('vl');
+  }
 }
+
+

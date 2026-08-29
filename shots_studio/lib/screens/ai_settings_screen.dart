@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shots_studio/l10n/app_localizations.dart';
 import 'package:shots_studio/services/gemma_download_service.dart';
+import 'package:shots_studio/services/gemma_service.dart';
 import 'package:shots_studio/widgets/ai_settings/index.dart';
 import 'dart:io';
 import 'package:shots_studio/services/logger_service.dart';
@@ -67,8 +68,15 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
             _downloadService.progress.filePath != null) {
           _gemmaModelPath = _downloadService.progress.filePath;
           _providerStates['gemma'] = true;
-          // Save provider setting
           _saveProviderSetting('gemma', true);
+          _selectedModelName = 'gemma';
+          widget.onModelChanged('gemma');
+
+          final gemmaService = GemmaService();
+          gemmaService.loadModel(_gemmaModelPath!).catchError((e) {
+            LoggerService.error('Error preloading downloaded model', e);
+            return false;
+          });
         }
       });
     }
@@ -144,18 +152,32 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
             // Save the permanent model path
             final prefs = await SharedPreferences.getInstance();
             await prefs.setString('gemma_model_path', destinationFile.path);
+            await prefs.setBool('gemma_model_loaded', true);
+            await prefs.setString('modelName', 'gemma');
+            await _saveProviderSetting('gemma', true);
 
             setState(() {
               _gemmaModelPath = destinationFile.path;
+              _providerStates['gemma'] = true;
+              _selectedModelName = 'gemma';
             });
+
+            widget.onModelChanged('gemma');
 
             // Track analytics
             AnalyticsService().logFeatureUsed('gemma_model_file_selected');
 
+            // Preload model in background
+            final gemmaService = GemmaService();
+            gemmaService.loadModel(destinationFile.path).catchError((e) {
+              LoggerService.error('Error preloading picked model', e);
+              return false;
+            });
+
             if (mounted) {
               SnackbarService().showSuccess(
                 context,
-                'Gemma model file copied: $originalFileName',
+                'Model file copied: $originalFileName',
               );
             }
           } else {
@@ -297,67 +319,54 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
     );
   }
 
+  Future<String> _getDownloadLocation() async {
+    try {
+      final appDocDir = await getApplicationDocumentsDirectory();
+      final modelsDir = Directory('${appDocDir.path}/gemma_models');
+
+      if (!await modelsDir.exists()) {
+        await modelsDir.create(recursive: true);
+      }
+
+      return modelsDir.path;
+    } catch (e) {
+      final appDocDir = await getApplicationDocumentsDirectory();
+      return appDocDir.path;
+    }
+  }
+
   Future<bool> _showTermsAndConditionsDialog() async {
-    final bool? accepted = await showDialog<bool>(
+    final accepted = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Gemma Terms and Conditions'),
-          content: SizedBox(
-            width: double.maxFinite,
+          content: SingleChildScrollView(
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  'Before downloading the Gemma model, you must accept the terms and conditions of use.',
+                  'By downloading and using Gemma, you agree to the Gemma Terms of Use. '
+                  'Gemma is provided by Google and subject to the Gemma Terms of Service.',
                   style: TextStyle(fontSize: 14),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'By downloading and using this model, you agree to:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                const Text('• Use the model responsibly and ethically'),
-                const Text('• Comply with applicable laws and regulations'),
-                const Text('• Not use the model for harmful purposes'),
-                const SizedBox(height: 16),
                 InkWell(
                   onTap: () async {
-                    const url = 'https://ai.google.dev/gemma/terms';
-                    try {
-                      final uri = Uri.parse(url);
-                      if (await canLaunchUrl(uri)) {
-                        await launchUrl(
-                          uri,
-                          mode: LaunchMode.externalApplication,
-                        );
-                      }
-                    } catch (e) {
-                      await Clipboard.setData(const ClipboardData(text: url));
-                      if (context.mounted) {
-                        SnackbarService().showInfo(
-                          context,
-                          'Link copied to clipboard!',
-                        );
-                      }
+                    final uri = Uri.parse(
+                      'https://ai.google.dev/gemma/terms',
+                    );
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
                     }
                   },
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primaryContainer.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withValues(alpha: 0.3),
-                      ),
-                    ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: Row(
                       children: [
                         Icon(
@@ -406,22 +415,6 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
     return accepted ?? false;
   }
 
-  Future<String> _getDownloadLocation() async {
-    try {
-      final appDocDir = await getApplicationDocumentsDirectory();
-      final modelsDir = Directory('${appDocDir.path}/gemma_models');
-
-      if (!await modelsDir.exists()) {
-        await modelsDir.create(recursive: true);
-      }
-
-      return modelsDir.path;
-    } catch (e) {
-      final appDocDir = await getApplicationDocumentsDirectory();
-      return appDocDir.path;
-    }
-  }
-
   Future<void> _downloadGemmaModel() async {
     final termsAccepted = await _showTermsAndConditionsDialog();
     if (!termsAccepted) {
@@ -451,6 +444,8 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
   void _cancelDownload() {
     _downloadService.cancelDownload();
   }
+
+
 
   List<String> _getAvailableModels() {
     List<String> availableModels = [];
@@ -603,7 +598,7 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                   decoration: BoxDecoration(
                     color: Theme.of(
                       context,
-                    ).colorScheme.primaryContainer.withOpacity(0.3),
+                    ).colorScheme.primaryContainer.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -698,6 +693,8 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
       setState(() {
         _selectedModelName = newModel;
       });
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('modelName', newModel);
       widget.onModelChanged(newModel);
 
       AnalyticsService().logFeatureUsed(
@@ -825,6 +822,24 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                 _saveGemmaCpuGpuSetting(useCPU);
               },
             ),
+
+            // --- OpenAI-Compatible / Ollama Section ---
+            if (_providerStates['openai_compatible'] == true) ...[
+              const SizedBox(height: 12),
+              _buildSectionLabel(theme, 'Self-Hosted / Local LLM'),
+              OpenAICompatibleSection(
+                isOpenAIEnabled: _providerStates['openai_compatible'] ?? false,
+                currentSelectedModel: _selectedModelName,
+                onModelSelected: (model) async {
+                  setState(() {
+                    _selectedModelName = model;
+                  });
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString('modelName', model);
+                  widget.onModelChanged(model);
+                },
+              ),
+            ],
 
             // --- AI Output Settings Section ---
             const SizedBox(height: 12),

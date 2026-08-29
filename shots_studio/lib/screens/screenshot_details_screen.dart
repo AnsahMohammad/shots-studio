@@ -624,11 +624,16 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
             )
             .toList();
 
+    final provider = AIProviderConfig.getProviderForModel(modelName);
+
     final config = AIConfig(
       apiKey: apiKey ?? '',
       modelName: modelName,
       maxParallel: 1,
       timeoutSeconds: 120,
+      providerSpecificConfig: {
+        'provider': provider,
+      },
       showMessage: ({
         required String message,
         Color? backgroundColor,

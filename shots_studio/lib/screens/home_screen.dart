@@ -16,13 +16,13 @@ import 'package:shots_studio/screens/search_screen.dart';
 import 'package:shots_studio/screens/reminders_screen.dart';
 import 'package:shots_studio/screens/privacy_screen.dart';
 import 'package:shots_studio/services/share_service.dart';
-import 'package:shots_studio/screens/screenshot_details_screen.dart';
 import 'package:shots_studio/widgets/onboarding/ai_setup_onboarding_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 import 'package:shots_studio/services/snackbar_service.dart';
 import 'package:shots_studio/utils/memory_utils.dart';
+import 'package:shots_studio/utils/ai_provider_config.dart';
 
 import 'package:shots_studio/widgets/ai_processing_container.dart';
 import 'package:shots_studio/services/background_service.dart';
@@ -651,6 +651,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     setState(() {
       _selectedModelName = newModelName;
     });
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString('modelName', newModelName);
+    });
   }
 
   void _updateScreenshotLimit(int newLimit) {
@@ -792,6 +795,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _processWithGemini() async {
     LoggerService.log("Main app: _processWithGemini called");
+    await _loadSettings();
     await _refreshApiKey();
     // Check if a valid model is selected
     if (_selectedModelName.toLowerCase() == 'No AI Model'.toLowerCase()) {
@@ -804,9 +808,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
 
     // Check for API key
-    //  if gemma or tesseract-ocr skip API key check
-    if (_selectedModelName == 'gemma' ||
-        _selectedModelName == 'tesseract-ocr') {
+    if (!AIProviderConfig.requiresApiKey(_selectedModelName)) {
       LoggerService.log(
         "Main app: Using ${_selectedModelName} model, no API key required",
       );
@@ -1622,8 +1624,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         !_isProcessingAI &&
         _selectedModelName.toLowerCase() != 'none' &&
         ((_apiKey != null && _apiKey!.isNotEmpty) ||
-            _selectedModelName == 'gemma' ||
-            _selectedModelName == 'tesseract-ocr')) {
+            !AIProviderConfig.requiresApiKey(_selectedModelName))) {
       // Check if there are any unprocessed screenshots
       final unprocessedScreenshots =
           _activeScreenshots.where((s) => !s.aiProcessed).toList();

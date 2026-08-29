@@ -4,11 +4,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:shots_studio/services/gemma_service.dart';
 import 'package:shots_studio/services/ocr_service.dart';
 import 'package:shots_studio/services/logger_service.dart';
 import 'package:shots_studio/services/openai_compatibility_service.dart';
+import 'package:shots_studio/utils/ai_provider_config.dart';
 
 typedef ShowMessageCallback =
     void Function({
@@ -313,13 +315,27 @@ class GeminiAPIProvider implements APIProvider {
   }
 }
 
-// Gemma Local API provider implementation
+// Gemma / Local on-device API provider implementation
 class GemmaAPIProvider implements APIProvider {
   final GemmaService _gemmaService = GemmaService();
 
   @override
   bool canHandleModel(String modelName) {
-    return modelName.toLowerCase().contains('gemma');
+    if (modelName.contains(':') ||
+        AIProviderConfig.getProviderForModel(modelName) == 'openai_compatible' ||
+        AIProviderConfig.getProviderForModel(modelName) == 'gemini' ||
+        AIProviderConfig.getProviderForModel(modelName) == 'ocr') {
+      return false;
+    }
+    final lower = modelName.toLowerCase();
+    return lower.contains('gemma') ||
+        lower.contains('local') ||
+        lower.contains('.task') ||
+        lower.contains('.bin') ||
+        lower.contains('.gguf') ||
+        lower.contains('.litertlm') ||
+        lower.contains('.tflite') ||
+        AIProviderConfig.getProviderForModel(modelName) == 'gemma';
   }
 
   @override
@@ -330,12 +346,15 @@ class GemmaAPIProvider implements APIProvider {
     File? tempFile;
 
     try {
-      // Ensure Gemma model is ready
-      final isReady = await _gemmaService.ensureModelReady();
+      // Ensure Gemma / local model is ready with preferred model
+      final isReady = await _gemmaService.ensureModelReady(
+        preferredModelName: config.modelName,
+      );
       if (!isReady) {
+        final specificError = _gemmaService.lastLoadError;
         return {
-          'error':
-              'Gemma model not loaded. Please select a model file in AI Settings.',
+          'error': specificError ??
+              'Local model not loaded. Please select or import a LiteRT-compatible model file (.task, .bin) in AI Settings.',
           'statusCode': 400,
         };
       }
@@ -344,25 +363,27 @@ class GemmaAPIProvider implements APIProvider {
       final String prompt = _extractPromptFromRequest(requestData);
       tempFile = await _extractImageFromRequest(requestData);
 
-      // print("requestData: $requestData");
-      // print("Extracted prompt: $prompt");
-
-      // Generate response using Gemma service
+      // Generate response using Gemma / local model service with low temperature for stable structured output
       final response = await _gemmaService.generateResponse(
         prompt: prompt,
         imageFile: tempFile,
-        temperature: 0.8,
+        temperature: 0.1,
         randomSeed: 1,
         topK: 1,
       );
+
+      if (response.trim().isEmpty) {
+        return {
+          'error': 'Local model returned an empty response.',
+          'statusCode': 500,
+        };
+      }
 
       if (_gemmaService.shouldPerformMemoryCleanup()) {
         Future.delayed(const Duration(milliseconds: 100), () {
           _gemmaService.performMemoryCleanup();
         });
       }
-
-      // print("Gemma response: $response");
 
       // Add processing time and model info to response for analytics
       final result = {
@@ -376,18 +397,20 @@ class GemmaAPIProvider implements APIProvider {
       return result;
     } catch (e) {
       return {
-        'error': 'Gemma processing error: ${e.toString()}',
+        'error': 'Local model error: ${e.toString()}',
         'statusCode': 500,
       };
     } finally {
-      // Clean up temporary file if created
       if (tempFile != null) {
         try {
           if (await tempFile.exists()) {
             await tempFile.delete();
           }
         } catch (e) {
-          LoggerService.error('Warning: Could not delete temporary file', e);
+          LoggerService.error(
+            'Warning: Could not delete temporary local model file',
+            e,
+          );
         }
       }
     }
@@ -771,7 +794,15 @@ class OcrAPIProvider implements APIProvider {
 class OpenAICompatibleAPIProvider implements APIProvider {
   @override
   bool canHandleModel(String modelName) {
-    return modelName.toLowerCase().contains('openai-compatible');
+    if (AIProviderConfig.getProviderForModel(modelName) == 'openai_compatible' ||
+        modelName.contains(':') ||
+        AIProviderConfig.getDynamicOpenAIModels().contains(modelName)) {
+      return true;
+    }
+    final lower = modelName.toLowerCase();
+    return lower.contains('openai-compatible') ||
+        lower.contains('ollama') ||
+        (AIProviderConfig.providerModels['openai_compatible']?.contains(modelName) ?? false);
   }
 
   @override
@@ -780,10 +811,22 @@ class OpenAICompatibleAPIProvider implements APIProvider {
     AIConfig config,
   ) async {
     final providerConfig = config.providerSpecificConfig;
-    final rawBaseUrl =
-        providerConfig['openaiBaseUrl']?.toString() ?? 'http://localhost:11434';
-    final requestApiKey =
+    String rawBaseUrl =
+        providerConfig['openaiBaseUrl']?.toString() ?? '';
+    String requestApiKey =
         providerConfig['openaiApiKey']?.toString() ?? config.apiKey;
+
+    if (rawBaseUrl.isEmpty) {
+      final prefs = await SharedPreferences.getInstance();
+      rawBaseUrl =
+          prefs.getString(OpenAICompatibilityService.baseUrlPrefKey) ??
+          'http://localhost:11434';
+      if (requestApiKey.isEmpty) {
+        requestApiKey =
+            prefs.getString(OpenAICompatibilityService.apiKeyPrefKey) ?? '';
+      }
+    }
+
     final url = OpenAICompatibilityService.buildChatCompletionsUri(rawBaseUrl);
 
     final headers = <String, String>{'Content-Type': 'application/json'};
@@ -791,15 +834,33 @@ class OpenAICompatibleAPIProvider implements APIProvider {
       headers['Authorization'] = 'Bearer ${requestApiKey.trim()}';
     }
 
+    final payload = Map<String, dynamic>.from(requestData);
+    if (payload['model'] == null ||
+        payload['model'] == 'unknown-model' ||
+        payload['model'] == 'openai-compatible' ||
+        payload['model'].toString().trim().isEmpty) {
+      payload['model'] = config.modelName;
+    }
+
     try {
       final response = await http
-          .post(url, headers: headers, body: jsonEncode(requestData))
+          .post(url, headers: headers, body: jsonEncode(payload))
           .timeout(Duration(seconds: config.timeoutSeconds));
 
       final responseJson = jsonDecode(response.body);
       if (response.statusCode != 200) {
+        String errorMsg = 'API Error';
+        if (responseJson is Map) {
+          if (responseJson['error'] is String) {
+            errorMsg = responseJson['error'] as String;
+          } else if (responseJson['error'] is Map && responseJson['error']['message'] != null) {
+            errorMsg = responseJson['error']['message'].toString();
+          } else if (responseJson['message'] != null) {
+            errorMsg = responseJson['message'].toString();
+          }
+        }
         return {
-          'error': responseJson['error']?['message'] ?? 'API Error',
+          'error': errorMsg,
           'statusCode': response.statusCode,
           'rawResponse': response.body,
         };
@@ -841,7 +902,9 @@ class OpenAICompatibleAPIProvider implements APIProvider {
     Map<String, dynamic> additionalParams = const {},
   }) {
     final params = Map<String, dynamic>.from(additionalParams);
-    final modelName = params.remove('modelName')?.toString() ?? 'unknown-model';
+    final modelName = params.remove('modelName')?.toString() ??
+        params.remove('model')?.toString() ??
+        'openai-compatible';
 
     final content = <Map<String, dynamic>>[
       {'type': 'text', 'text': prompt},
@@ -886,7 +949,9 @@ class OpenAICompatibleAPIProvider implements APIProvider {
     Map<String, dynamic> additionalParams = const {},
   }) {
     final params = Map<String, dynamic>.from(additionalParams);
-    final modelName = params.remove('modelName')?.toString() ?? 'unknown-model';
+    final modelName = params.remove('modelName')?.toString() ??
+        params.remove('model')?.toString() ??
+        'openai-compatible';
 
     final metadataText = screenshotMetadata
         .map(
@@ -922,9 +987,9 @@ class OpenAICompatibleAPIProvider implements APIProvider {
 class APIProviderFactory {
   static final List<APIProvider> _providers = [
     GeminiAPIProvider(),
+    OpenAICompatibleAPIProvider(),
     GemmaAPIProvider(),
     OcrAPIProvider(),
-    OpenAICompatibleAPIProvider(),
   ];
 
   static APIProvider? getProviderForConfig(AIConfig config) {
@@ -936,15 +1001,63 @@ class APIProviderFactory {
           return provider;
         }
       }
+    } else if (providerKey == 'gemma') {
+      for (final provider in _providers) {
+        if (provider is GemmaAPIProvider) {
+          return provider;
+        }
+      }
     }
 
-    return getProvider(config.modelName);
+    final provider = getProvider(config.modelName);
+    if (provider != null) return provider;
+
+    final detected = AIProviderConfig.getProviderForModel(config.modelName);
+    if (detected == 'openai_compatible') {
+      for (final p in _providers) {
+        if (p is OpenAICompatibleAPIProvider) return p;
+      }
+    } else if (detected == 'gemini') {
+      for (final p in _providers) {
+        if (p is GeminiAPIProvider) return p;
+      }
+    } else if (detected == 'ocr') {
+      for (final p in _providers) {
+        if (p is OcrAPIProvider) return p;
+      }
+    } else {
+      // Default to on-device local model provider
+      for (final p in _providers) {
+        if (p is GemmaAPIProvider) return p;
+      }
+    }
+
+    return null;
   }
 
   static APIProvider? getProvider(String modelName) {
     for (final provider in _providers) {
       if (provider.canHandleModel(modelName)) {
         return provider;
+      }
+    }
+    // Fallback: check AIProviderConfig
+    final detected = AIProviderConfig.getProviderForModel(modelName);
+    if (detected == 'gemma') {
+      for (final p in _providers) {
+        if (p is GemmaAPIProvider) return p;
+      }
+    } else if (detected == 'openai_compatible') {
+      for (final p in _providers) {
+        if (p is OpenAICompatibleAPIProvider) return p;
+      }
+    } else if (detected == 'gemini') {
+      for (final p in _providers) {
+        if (p is GeminiAPIProvider) return p;
+      }
+    } else if (detected == 'ocr') {
+      for (final p in _providers) {
+        if (p is OcrAPIProvider) return p;
       }
     }
     return null;
@@ -1007,10 +1120,15 @@ abstract class AIService {
       return null;
     }
 
+    final mergedParams = <String, dynamic>{
+      'modelName': config.modelName,
+      ...additionalParams,
+    };
+
     return provider.prepareScreenshotAnalysisRequest(
       prompt: prompt,
       imageData: imageData,
-      additionalParams: additionalParams,
+      additionalParams: mergedParams,
     );
   }
 
@@ -1025,10 +1143,15 @@ abstract class AIService {
       return null;
     }
 
+    final mergedParams = <String, dynamic>{
+      'modelName': config.modelName,
+      ...additionalParams,
+    };
+
     return provider.prepareCategorizationRequest(
       prompt: prompt,
       screenshotMetadata: screenshotMetadata,
-      additionalParams: additionalParams,
+      additionalParams: mergedParams,
     );
   }
 }
