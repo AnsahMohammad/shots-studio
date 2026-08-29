@@ -46,6 +46,11 @@ class _QuickSettingsSectionState extends State<QuickSettingsSection> {
 
   Future<List<String>> _getAvailableModels() async {
     final prefs = await SharedPreferences.getInstance();
+    final cachedOpenAI = prefs.getStringList('openai_compatible_models_cache');
+    if (cachedOpenAI != null && cachedOpenAI.isNotEmpty) {
+      AIProviderConfig.setDynamicOpenAIModels(cachedOpenAI);
+    }
+
     List<String> availableModels = [];
 
     // Check which providers are enabled

@@ -293,8 +293,8 @@ class BackgroundProcessingService {
       final battery = Battery();
       final connectivity = Connectivity();
 
-      // Check if we should enable battery monitoring (only for Gemma models)
-      final isGemmaModel = modelName.toLowerCase().contains('gemma');
+      // Check if we should enable battery monitoring (for all local on-device models)
+      final isLocalModel = AIProviderConfig.getProviderForModel(modelName) == 'gemma';
 
       // Check if we should enable network monitoring (only for Gemini models)
       final isGeminiModel = modelName.toLowerCase().contains('gemini');
@@ -317,8 +317,8 @@ class BackgroundProcessingService {
         });
       }
 
-      if (isGemmaModel) {
-        // Monitor battery level changes for Gemma models only
+      if (isLocalModel) {
+        // Monitor battery level changes for local on-device models only
         _batterySubscription = battery.onBatteryStateChanged.listen((
           batteryState,
         ) async {
@@ -547,11 +547,16 @@ class BackgroundProcessingService {
         maxParallel,
       );
 
+      final provider = AIProviderConfig.getProviderForModel(modelName);
+
       // Set up AI service
       final config = AIConfig(
         apiKey: apiKey,
         modelName: modelName,
         maxParallel: effectiveMaxParallel,
+        providerSpecificConfig: {
+          'provider': provider,
+        },
       );
 
       final analysisService = ScreenshotAnalysisService(config);

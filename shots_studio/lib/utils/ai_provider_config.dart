@@ -1,4 +1,15 @@
 class AIProviderConfig {
+  // Dynamic cache for models discovered from OpenAI-compatible / Ollama servers
+  static List<String> _dynamicOpenAIModels = [];
+
+  static void setDynamicOpenAIModels(List<String> models) {
+    _dynamicOpenAIModels = List<String>.from(models);
+  }
+
+  static List<String> getDynamicOpenAIModels() {
+    return _dynamicOpenAIModels;
+  }
+
   // Available models for each provider
   static const Map<String, List<String>> providerModels = {
     'gemini': [
@@ -8,6 +19,9 @@ class AIProviderConfig {
       'gemini-2.5-pro',
     ],
     'gemma': ['gemma'],
+    'openai_compatible': [
+      'openai-compatible',
+    ],
     'ocr': ['tesseract-ocr'],
     'none': ['No AI Model'],
   };
@@ -19,6 +33,7 @@ class AIProviderConfig {
     'gemini-2.5-flash-lite': 16,
     'gemini-2.5-pro': 32,
     'gemma': 1,
+    'openai-compatible': 1,
     'tesseract-ocr': 1,
   };
 
@@ -29,6 +44,7 @@ class AIProviderConfig {
     'gemini-2.5-flash-lite': 50,
     'gemini-2.5-pro': 50,
     'gemma': 10,
+    'openai-compatible': 30,
     'tesseract-ocr': 0,
   };
 
@@ -39,11 +55,16 @@ class AIProviderConfig {
     'gemini-2.5-flash-lite': true,
     'gemini-2.5-pro': true,
     'gemma': false,
+    'openai-compatible': false,
     'tesseract-ocr': false,
   };
 
   static bool requiresApiKey(String model) {
-    return modelRequiresApiKey[model] ?? false; // Default to false
+    if (modelRequiresApiKey.containsKey(model)) {
+      return modelRequiresApiKey[model]!;
+    }
+    final provider = getProviderForModel(model);
+    return provider == 'gemini';
   }
 
   // Models capable of advanced extraction (dates, events, locations, flights)
@@ -64,6 +85,7 @@ class AIProviderConfig {
   static const Map<String, String> providerPrefKeys = {
     'gemini': 'ai_provider_gemini_enabled',
     'gemma': 'ai_provider_gemma_enabled',
+    'openai_compatible': 'ai_provider_openai_compatible_enabled',
     'ocr': 'ai_provider_ocr_enabled',
   };
 
@@ -74,6 +96,13 @@ class AIProviderConfig {
 
   // Get models for a specific provider
   static List<String> getModelsForProvider(String provider) {
+    if (provider == 'openai_compatible') {
+      final base = List<String>.from(providerModels['openai_compatible'] ?? []);
+      for (final m in _dynamicOpenAIModels) {
+        if (!base.contains(m)) base.add(m);
+      }
+      return base;
+    }
     return providerModels[provider] ?? [];
   }
 
@@ -89,18 +118,43 @@ class AIProviderConfig {
         return entry.key;
       }
     }
-    return 'unknown';
+    final lower = model.toLowerCase();
+    if (_dynamicOpenAIModels.contains(model) ||
+        model.contains(':') ||
+        lower.contains('openai-compatible') ||
+        lower.contains('ollama') ||
+        (providerModels['openai_compatible']?.contains(model) ?? false)) {
+      return 'openai_compatible';
+    }
+    if (lower.contains('gemini')) {
+      return 'gemini';
+    }
+    if (lower.contains('ocr') || lower.contains('tesseract')) {
+      return 'ocr';
+    }
+    if (lower == 'no ai model' || lower == 'none') {
+      return 'none';
+    }
+    // All other models (dynamic on-device models, Qwen, Phi, Llama, Falcon, SmolLM, .task, .bin, .gguf, .litertlm, .tflite)
+    // belong to the local on-device provider ('gemma')
+    return 'gemma';
   }
 
   // Get the model-specific maxParallel limit
   static int getMaxParallelLimitForModel(String model) {
-    return modelMaxParallelLimits[model] ?? 4; // Default to 4 if not found
+    if (modelMaxParallelLimits.containsKey(model)) {
+      return modelMaxParallelLimits[model]!;
+    }
+    final provider = getProviderForModel(model);
+    if (provider == 'gemma' || provider == 'openai_compatible' || provider == 'ocr') {
+      return 1;
+    }
+    return 4;
   }
 
   // Get the model-specific max categorization limit
   static int getMaxCategorizationLimitForModel(String model) {
-    return modelMaxCategorizationLimits[model] ??
-        20; // Default to 20 if not found
+    return modelMaxCategorizationLimits[model] ?? (getProviderForModel(model) == 'gemma' ? 10 : 20);
   }
 
   // Get the effective maxParallel value (minimum of model limit and global preference)

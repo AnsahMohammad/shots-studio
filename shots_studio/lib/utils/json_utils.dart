@@ -75,24 +75,31 @@ class JsonUtils {
     return fixed;
   }
 
-  /// Clean response text by removing markdown code fences
+  /// Clean response text by removing thinking tags (<think>...</think>) and markdown code fences
   static String cleanMarkdownCodeFences(String responseText) {
-    String cleanedResponseText = responseText.trim();
+    String cleaned = responseText.trim();
 
-    // Remove markdown code fences if present
-    if (cleanedResponseText.startsWith('```json')) {
-      cleanedResponseText = cleanedResponseText.substring(7); // Remove ```json
-    } else if (cleanedResponseText.startsWith('```')) {
-      cleanedResponseText = cleanedResponseText.substring(3); // Remove ```
+    // Strip <think>...</think> reasoning blocks if present (from reasoning/thinking models)
+    cleaned = cleaned.replaceAll(RegExp(r'<think>[\s\S]*?<\/think>', caseSensitive: false), '').trim();
+
+    // If there is a markdown code block ```json ... ``` inside, extract its content
+    final codeBlockMatch = RegExp(r'```(?:json)?\s*([\s\S]*?)\s*```', caseSensitive: false).firstMatch(cleaned);
+    if (codeBlockMatch != null && codeBlockMatch.group(1) != null) {
+      cleaned = codeBlockMatch.group(1)!.trim();
+    } else {
+      // Remove leading code fences
+      if (cleaned.startsWith('```json')) {
+        cleaned = cleaned.substring(7);
+      } else if (cleaned.startsWith('```')) {
+        cleaned = cleaned.substring(3);
+      }
+
+      // Remove trailing code fences
+      if (cleaned.endsWith('```')) {
+        cleaned = cleaned.substring(0, cleaned.length - 3);
+      }
     }
 
-    if (cleanedResponseText.endsWith('```')) {
-      cleanedResponseText = cleanedResponseText.substring(
-        0,
-        cleanedResponseText.length - 3,
-      ); // Remove ending ```
-    }
-
-    return cleanedResponseText.trim();
+    return cleaned.trim();
   }
 }
