@@ -199,7 +199,7 @@ class _AISetupOnboardingScreenState extends State<AISetupOnboardingScreen> {
           widget.onApiKeyEntered(apiKey);
         }
         // Set model to default Gemini model
-        await prefs.setString('modelName', 'gemini-2.5-flash-lite');
+        await prefs.setString('modelName', AIProviderConfig.defaultGeminiModel);
         AnalyticsService().logFeatureUsed('ai_setup_completed_gemini');
         break;
 

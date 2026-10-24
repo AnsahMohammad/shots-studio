@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/widgets/ai_settings/model_card.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Shows a dialog guide for selecting the right AI model.
 class ModelSelectionGuideDialog {
@@ -51,14 +52,15 @@ class ModelSelectionGuideDialog {
                   // Gemini Models
                   const ModelCard(
                     modelName: 'Gemini (Cloud)',
-                    description: 'Fast, accurate, requires API key',
+                    description: 'Image-capable models; requires API key',
                     icon: Icons.cloud,
                     iconColor: Colors.blue,
                     useCases: [
-                      '2.0 Flash - Basic, least expensive',
-                      '2.5 Flash Lite - Best balance (recommended)',
-                      '2.5 Flash - High quality, fast',
-                      '2.5 Pro - Maximum accuracy',
+                      '3.5 Flash-Lite - Fast and cost-efficient (Default)',
+                      '3.8 Flash - Strongest general-purpose Flash (recommended)',
+                      '3.6 Flash - Stable previous-generation workhorse',
+                      '3.1 Flash-Lite - Ultra-lightweight, budget-friendly option',
+                      '4 Argon - Flagship reasoning; paid tier only',
                     ],
                     recommended: true,
                   ),

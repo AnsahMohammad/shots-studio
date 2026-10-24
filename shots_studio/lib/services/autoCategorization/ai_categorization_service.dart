@@ -42,7 +42,7 @@ class AICategorizer {
 
     final prefs = await SharedPreferences.getInstance();
     final String modelName =
-        prefs.getString('modelName') ?? 'gemini-2.5-flash-lite';
+      prefs.getString('modelName') ?? AIProviderConfig.defaultGeminiModel;
     final String? apiKey = prefs.getString('apiKey');
 
     if (AIProviderConfig.requiresApiKey(modelName) &&

@@ -587,7 +587,7 @@ class _ScreenshotDetailScreenState extends State<ScreenshotDetailScreen>
 
     final prefs = await SharedPreferences.getInstance();
     final String modelName =
-        prefs.getString('modelName') ?? 'gemini-2.5-flash-lite';
+      prefs.getString('modelName') ?? AIProviderConfig.defaultGeminiModel;
     String? apiKey = prefs.getString('apiKey');
 
     if (AIProviderConfig.requiresApiKey(modelName) &&
