@@ -40,6 +40,7 @@ import 'package:shots_studio/services/custom_path_service.dart';
 import 'package:shots_studio/services/corrupt_file_service.dart';
 import 'package:shots_studio/widgets/custom_paths_dialog.dart';
 import 'package:shots_studio/utils/build_source.dart';
+import 'package:shots_studio/utils/ai_provider_config.dart';
 
 import 'package:shots_studio/services/haptic_service.dart';
 import 'package:shots_studio/services/logger_service.dart';
@@ -79,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _totalToLoad = 0;
 
   String? _apiKey;
-  String _selectedModelName = 'gemini-2.5-flash-lite';
+  String _selectedModelName = AIProviderConfig.defaultGeminiModel;
   int _screenshotLimit = 1200;
   int _maxParallelAI = 4;
   bool _devMode = false;
@@ -609,10 +610,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    final storedModelName = prefs.getString('modelName');
+    final modelName =
+        storedModelName != null && AIProviderConfig.isSupportedModel(storedModelName)
+            ? storedModelName
+            : AIProviderConfig.defaultGeminiModel;
+    if (storedModelName != modelName) {
+      await prefs.setString('modelName', modelName);
+    }
     setState(() {
       _apiKey = prefs.getString('apiKey');
-      _selectedModelName =
-          prefs.getString('modelName') ?? 'gemini-2.5-flash-lite';
+      _selectedModelName = modelName;
       _screenshotLimit = prefs.getInt('limit') ?? 1200;
       _maxParallelAI = prefs.getInt('maxParallel') ?? 4;
       _devMode = prefs.getBool('dev_mode') ?? false;

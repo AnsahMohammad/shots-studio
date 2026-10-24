@@ -5,6 +5,7 @@ import 'package:shots_studio/services/analytics/analytics_service.dart';
 import 'package:shots_studio/services/api_validation_service.dart';
 import 'package:shots_studio/services/snackbar_service.dart';
 import 'package:shots_studio/l10n/app_localizations.dart';
+import 'package:shots_studio/utils/ai_provider_config.dart';
 
 class ApiKeySection extends StatefulWidget {
   final bool isGeminiEnabled;
@@ -70,7 +71,7 @@ class _ApiKeySectionState extends State<ApiKeySection> {
     try {
       final result = await ApiValidationService().validateApiKey(
         apiKey: _apiKeyController.text,
-        modelName: 'gemini-2.0-flash',
+        modelName: AIProviderConfig.defaultGeminiModel,
         context: context,
         showMessages: true,
         forceValidation: true,
@@ -107,7 +108,7 @@ class _ApiKeySectionState extends State<ApiKeySection> {
     if (_apiKeyController.text.isNotEmpty) {
       final isValid = await ApiValidationService().isApiKeyValid(
         apiKey: _apiKeyController.text,
-        modelName: 'gemini-2.0-flash',
+        modelName: AIProviderConfig.defaultGeminiModel,
       );
       if (mounted) {
         setState(() {
