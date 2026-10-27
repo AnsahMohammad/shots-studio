@@ -47,6 +47,10 @@ android {
         versionName = flutter.versionName
     }
 
+    aaptOptions {
+        noCompress.add("onnx")
+    }
+
     flavorDimensions += "source"
     productFlavors {
         create("fdroid") {
@@ -124,6 +128,7 @@ android {
             val flavorName = productFlavors[0].name
             val buildTypeName = buildType.name
             outputImpl.outputFileName = "shots_studio-${flavorName}-${buildTypeName}-${versionName}.apk"
+
         }
     }
 }

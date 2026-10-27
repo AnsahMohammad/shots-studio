@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:shots_studio/models/screenshot_model.dart';
 import 'package:animations/animations.dart';
+import 'package:shots_studio/widgets/screenshots/prefilter_badge.dart';
 
 class ScreenshotCard extends StatelessWidget {
   final Screenshot screenshot;
@@ -181,6 +182,7 @@ class ScreenshotCard extends StatelessWidget {
         ),
         child: Stack(
           children: [
+            // Image container
             // Using a plain container instead of Card to avoid double clipping
             RepaintBoundary(
               child: Container(
@@ -247,6 +249,14 @@ class ScreenshotCard extends StatelessWidget {
                           )
                           : null,
                 ),
+              ),
+
+            // Prefilter badge (on top of image)
+            if (!isSelectionMode)
+              Positioned(
+                top: 0,
+                left: 0,
+                child: PrefilterBadge(screenshot: screenshot),
               ),
 
             // AI processed indicator (only show when not in selection mode)

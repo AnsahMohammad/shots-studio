@@ -9,6 +9,7 @@ import 'package:shots_studio/l10n/app_localizations.dart';
 import 'description_field.dart';
 import 'note_field.dart';
 import 'collapsible_links_section.dart';
+import 'package:shots_studio/widgets/screenshot_details/prefilter_status_section.dart';
 
 /// The main details content section showing file info, description, links, AI metadata, tags, and collections.
 class DetailsContent extends StatelessWidget {
@@ -35,6 +36,8 @@ class DetailsContent extends StatelessWidget {
   final ValueChanged<String> onTagTapped;
   final VoidCallback onClearAiReprocessing;
   final VoidCallback onScreenshotUpdated;
+  final VoidCallback? onAllowScreenshot;
+  final VoidCallback? onMarkSensitive;
 
   const DetailsContent({
     super.key,
@@ -59,6 +62,8 @@ class DetailsContent extends StatelessWidget {
     required this.onTagTapped,
     required this.onClearAiReprocessing,
     required this.onScreenshotUpdated,
+    this.onAllowScreenshot,
+    this.onMarkSensitive,
   });
 
   String _formatFileSize(int bytes) {
@@ -333,6 +338,12 @@ class DetailsContent extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
+        if (onAllowScreenshot != null && onMarkSensitive != null)
+          PrefilterStatusSection(
+            screenshot: screenshot,
+            onAllow: onAllowScreenshot!,
+            onMarkSensitive: onMarkSensitive!,
+          ),
         DescriptionField(
           controller: descriptionController,
           focusNode: descriptionFocusNode,

@@ -12,6 +12,8 @@ import 'package:shots_studio/services/gemma_download_service.dart';
 import 'package:shots_studio/widgets/ai_settings/index.dart';
 import 'dart:io';
 import 'package:shots_studio/services/logger_service.dart';
+import 'package:shots_studio/screens/prefilter_settings_screen.dart';
+import 'package:shots_studio/services/prefilter_service.dart';
 
 class AISettingsScreen extends StatefulWidget {
   final String currentModelName;
@@ -830,6 +832,60 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
             const SizedBox(height: 12),
             _buildSectionLabel(theme, 'AI Output Settings'),
             const LanguageSection(),
+
+            // --- Privacy Prefilter Section ---
+            const SizedBox(height: 12),
+            _buildSectionLabel(theme, 'Privacy Prefilter'),
+            Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+              elevation: 0,
+              color: theme.colorScheme.surfaceContainer,
+              child: ListTile(
+                leading: Icon(Icons.shield_outlined, color: theme.colorScheme.primary),
+                title: const Text('Configure Prefilter'),
+                subtitle: FutureBuilder<String>(
+                  future: PrefilterService.getMode(),
+                  builder: (context, snap) {
+                    const labels = {
+                      'none':  'Off — all screenshots sent to AI',
+                      'light': 'Light — fast regex scan',
+                      'deep':  'Deep — on-device GLiNER model',
+                    };
+                    return Text(labels[snap.data ?? 'none'] ?? 'Off');
+                  },
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FutureBuilder<String>(
+                      future: PrefilterService.getMode(),
+                      builder: (context, snap) {
+                        final m = snap.data ?? 'none';
+                        if (m == 'none') return const SizedBox.shrink();
+                        return Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(m == 'light' ? 'Light' : 'Deep',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.onPrimaryContainer)),
+                        );
+                      },
+                    ),
+                    Icon(Icons.arrow_forward_ios, size: 14,
+                        color: theme.colorScheme.onSurfaceVariant),
+                  ],
+                ),
+                onTap: () async {
+                  await Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const PrefilterSettingsScreen()));
+                  if (mounted) setState(() {}); // refresh subtitle on return
+                },
+              ),
+            ),
 
             const SizedBox(height: 32),
           ],
