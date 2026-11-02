@@ -24,6 +24,13 @@ class ServerMessageService {
     bool forceFetch = false,
   }) async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      // The background isolate may have cached an older value of this setting.
+      await prefs.reload();
+      if (!(prefs.getBool('server_messages_enabled') ?? true)) {
+        return null;
+      }
+
       // Check cooldown unless force fetch is requested
       if (!forceFetch && _lastRequestTime != null) {
         final timeSinceLastRequest = DateTime.now().difference(
@@ -142,6 +149,11 @@ class ServerMessageService {
     String currentVersion,
   ) async {
     final prefs = await SharedPreferences.getInstance();
+    // The user may have disabled messages while the request was in flight.
+    await prefs.reload();
+    if (!(prefs.getBool('server_messages_enabled') ?? true)) {
+      return null;
+    }
 
     // Check if user has beta testing enabled
     final betaTestingEnabled = prefs.getBool('beta_testing_enabled') ?? false;
